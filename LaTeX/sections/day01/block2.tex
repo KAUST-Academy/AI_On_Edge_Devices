@@ -246,7 +246,7 @@
 
 \begin{frame}{Example: where the costs are}
   \begingroup\centering
-  \begin{tikzpicture}[font=\footnotesize, x=1cm, y=0.027cm]
+  \begin{tikzpicture}[font=\footnotesize, x=0.92cm, y=0.027cm]
     % y unit: 1 = 1 percent. Three bars for each layer.
     \draw[coolgray] (0,0) -- (10.2,0);
     \foreach \v in {0,25,50,75,100} {
@@ -299,7 +299,7 @@
     parameter.
   \end{block}
   \begin{columns}[T]
-    \begin{column}{0.44\textwidth}
+    \begin{column}{0.40\textwidth}
       \begin{itemize}
         \item \code{float32}: 4 bytes
         \item \code{int8}: 1 byte (Day 4)
@@ -307,9 +307,10 @@
               part is small.
       \end{itemize}
     \end{column}
-    \begin{column}{0.52\textwidth}
+    \begin{column}{0.56\textwidth}
       \small
       \renewcommand{\arraystretch}{1.25}
+      \setlength{\tabcolsep}{4pt}
       \begin{tabular}{@{}lrr@{}}
         \toprule
         \textbf{Model} & \textbf{Parameters} & \textbf{float32} \\
@@ -606,8 +607,10 @@
 
 \begin{frame}{The result: two models for the same task}
   \begin{columns}[T]
-    \begin{column}{0.50\textwidth}
+    \begin{column}{0.52\textwidth}
+      \small
       \renewcommand{\arraystretch}{1.3}
+      \setlength{\tabcolsep}{4pt}
       \begin{tabular}{@{}lrr@{}}
         \toprule
         & \textbf{ResNet-50} & \textbf{MobileNetV2} \\
@@ -618,9 +621,10 @@
         \bottomrule
       \end{tabular}
       \vskip 0.6em
+      \normalsize
       Both models classify ImageNet images.
     \end{column}
-    \begin{column}{0.46\textwidth}
+    \begin{column}{0.44\textwidth}
       \begin{itemize}
         \item 7 times fewer parameters.
         \item 14 times fewer operations.

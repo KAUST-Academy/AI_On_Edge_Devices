@@ -9,7 +9,7 @@
 \begin{frame}{The course in three weeks}
   \small
   \renewcommand{\arraystretch}{1.25}
-  \begin{tabular}{@{}L{0.07\textwidth}L{0.25\textwidth}L{0.19\textwidth}L{0.39\textwidth}@{}}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.24\textwidth}L{0.19\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Week} & \textbf{Subject} & \textbf{Board} & \textbf{Days} \\
     \midrule
@@ -66,9 +66,9 @@
       \centering
       \begin{tikzpicture}[font=\footnotesize,
           ring/.style={rounded corners=6pt, line width=0.8pt}]
-        \node[ring, draw=coolgray, minimum width=5.0cm, minimum height=4.6cm] (a) at (0,0) {};
-        \node[ring, draw=darkcyan, minimum width=4.3cm, minimum height=3.5cm] (b) at (0,-0.4) {};
-        \node[ring, draw=treegreen, minimum width=3.6cm, minimum height=2.4cm] (c) at (0,-0.8) {};
+        \node[ring, draw=coolgray, minimum width=4.5cm, minimum height=4.6cm] (a) at (0,0) {};
+        \node[ring, draw=darkcyan, minimum width=3.9cm, minimum height=3.5cm] (b) at (0,-0.4) {};
+        \node[ring, draw=treegreen, minimum width=3.3cm, minimum height=2.4cm] (c) at (0,-0.8) {};
         \node[ring, draw=cardinalred, fill=boxgray, minimum width=2.6cm, minimum height=1.1cm]
           (d) at (0,-1.25) {\textbf{TinyML}};
         \node[anchor=north, text=coolgray] at (a.north) {Edge computing};
@@ -104,18 +104,18 @@
     % cloud path
     \node[anchor=west, text=coolgray] at (-0.95,0.85) {\textbf{Cloud path}};
     \node[box] (s1) at (0,0) {Sensor};
-    \node[box] (n1) at (3.0,0) {Network};
-    \node[model] (m1) at (6.0,0) {Model on\\a server};
-    \node[box] (a1) at (9.0,0) {Action};
+    \node[box] (n1) at (2.9,0) {Network};
+    \node[model] (m1) at (5.8,0) {Model on\\a server};
+    \node[box] (a1) at (8.7,0) {Action};
     \draw[->] (s1) -- node[lab]{raw\\data} (n1);
     \draw[->] (n1) -- (m1);
     \draw[->] (m1) -- node[lab]{result} (a1);
     % edge path
     \node[anchor=west, text=coolgray] at (-0.95,-1.25) {\textbf{Edge path}};
     \node[box] (s2) at (0,-2.1) {Sensor};
-    \node[model] (m2) at (3.0,-2.1) {Model on\\the device};
-    \node[box] (a2) at (6.0,-2.1) {Action};
-    \node[box, dashed] (c2) at (9.0,-2.1) {Cloud\\(optional)};
+    \node[model] (m2) at (2.9,-2.1) {Model on\\the device};
+    \node[box] (a2) at (5.8,-2.1) {Action};
+    \node[box, dashed] (c2) at (8.7,-2.1) {Cloud\\(optional)};
     \draw[->] (s2) -- node[lab]{raw\\data} (m2);
     \draw[->] (m2) -- node[lab]{result} (a2);
     \draw[->, dashed] (a2) -- node[lab]{result\\only} (c2);
@@ -205,7 +205,7 @@
   before the next frame: $1000 / 30 \approx 33$ ms.
   \vskip 0.6em
   \begingroup\centering
-  \begin{tikzpicture}[font=\footnotesize, x=0.055cm, y=1cm]
+  \begin{tikzpicture}[font=\footnotesize, x=0.046cm, y=1cm]
     % scale: 1 unit = 1 ms
     \draw[->, coolgray] (0,-0.2) -- (200,-0.2) node[right] {ms};
     \foreach \t in {0,50,100,150} {
@@ -448,23 +448,22 @@
 
 \begin{frame}{Edge ML: computation near the data}
   \begingroup\centering
-  \includegraphics[height=4.3cm]{images/day01/edge-device-deployment.pdf}\par
+  \includegraphics[height=5.3cm, trim=12 52 12 8, clip]%
+    {images/day01/edge-device-deployment.pdf}\par
   \endgroup
-  \vskip 0.2em
-  \small
+  \vskip 0.1em
+  \footnotesize
   \begin{columns}[T]
     \begin{column}{0.47\textwidth}
       \begin{itemize}
         \item A local computer or a gateway runs the model. The data stays
               on the site.
-        \item No round trip to a data centre.
       \end{itemize}
     \end{column}
     \begin{column}{0.47\textwidth}
       \begin{itemize}
-        \item Limits: less computation than the cloud. You must maintain
-              the hardware.
-        \item \textbf{In this course:} the Raspberry~Pi~5.
+        \item Limit: less computation than the cloud. \textbf{In this
+              course:} the Raspberry~Pi~5.
       \end{itemize}
     \end{column}
   \end{columns}
@@ -504,8 +503,9 @@
 \begin{frame}{TinyML: a different class, not a small phone}
   \begin{columns}[T]
     \begin{column}{0.50\textwidth}
-      \small
-      \renewcommand{\arraystretch}{1.25}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.3}
+      \setlength{\tabcolsep}{4pt}
       \begin{tabular}{@{}lll@{}}
         \toprule
         & \textbf{Mobile} & \textbf{TinyML} \\
@@ -516,6 +516,7 @@
         \bottomrule
       \end{tabular}
       \vskip 0.6em
+      \small
       Memory: a factor of about 30\,000.\\
       Power: a factor of 30 to 50.
     \end{column}
@@ -594,7 +595,7 @@
         \item A single-board computer with 8 GB of RAM
         \item Linux, Python, complete ML frameworks
         \item Camera connector, USB, Ethernet, Wi-Fi
-        \item With a camera and an active cooler
+        \item In the course: with a camera and an active cooler
       \end{itemize}
     \end{column}
   \end{columns}
