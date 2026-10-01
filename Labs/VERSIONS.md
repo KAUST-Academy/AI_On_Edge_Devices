@@ -13,6 +13,21 @@ computer.
 |---|---|---|---|
 | `arduino-cli` | 1.5.1 | optional, every day with a sketch | `github.com/arduino/arduino-cli` |
 
+## Software on the Raspberry Pi
+
+`Labs/hardware/` prepares these tools. The versions below are the versions of
+the test on the work computer (x86, 2026-10-01), or the version that a script
+installs. The pilot records the versions on the Raspberry Pi.
+
+| Tool | Version | Used on day | Where to get it | Folder |
+|---|---|---|---|---|
+| Raspberry Pi OS (64-bit) | record on the pilot | Days 7 to 15 | Raspberry Pi Imager | `HW-04` |
+| Ollama | 0.32.6 on the work computer | Day 10 | `ollama.com/install.sh` | `HW-05` |
+| MediaMTX | v1.21.1 | Day 11 | `github.com/bluenviron/mediamtx` | `HW-06` |
+| Mosquitto | record on the pilot | Days 12 and 13 | `apt` | `HW-07` |
+| Prometheus | 3.15.0 on the work computer. The `apt` version is older. | Day 13, option A | `apt` | `HW-08` |
+| Grafana | 13.2.3 on the work computer | Day 13, option A | `apt.grafana.com` | `HW-08` |
+
 ## Python packages
 
 `Labs/requirements.txt` lists the packages. Write the fixed version of each
@@ -20,6 +35,20 @@ package here after the pilot.
 
 | Package | Version | Used on day |
 |---|---|---|
+
+The scripts of `Labs/hardware/` were tested on the work computer with these
+versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
+
+| Package | Version in the test | Used by |
+|---|---|---|
+| `ai-edge-litert` | 2.2.0 | `HW-02` (check of the sine model) |
+| `numpy` | 2.2.6 | `HW-02`, `HW-06` |
+| `opencv-python-headless` | 5.0.0.93 | `HW-06` |
+| `paho-mqtt` | 2.1.0 | `HW-07`, `HW-08`, `HW-09` |
+| `psutil` | 7.2.2 | `HW-08` |
+| `prometheus-client` | 0.26.0 | `HW-08` |
+| `ollama` | 0.6.3 | `HW-05` |
+| `pyserial` | not tested | `HW-01` (`check_rate.py --port`) |
 
 ## Arduino board cores and libraries
 
@@ -30,6 +59,17 @@ package here after the pilot.
 | Seeed Arduino LSM6DS3 | 2.0.7 | — | Days 1 to 5 |
 | U8g2 by oliver | 2.36.19 | — | Days 1 to 5 |
 | Harvard_TinyMLx | 1.2.4-Alpha | — | Nano 33 backup modules |
+| Chirale_TensorFlowLite | 2.0.0 | — | Days 3 and 4 (`HW-02`, `HW-03`) |
+| PubSubClient by Nick O'Leary | 2.8 | — | Day 12 (`HW-07`) |
+| Arduino_BMI270_BMM150 | 1.2.4 | — | Nano 33 BLE Sense Rev2 (`HW-10`) |
+| ArduinoBLE | 2.1.0 | — | Nano 33 module NB-4 (`HW-10`) |
+
+Build options of the XIAO ESP32S3 (`HW-03`):
+
+| Option | Board name (FQBN) |
+|---|---|
+| No PSRAM (default of the board) | `esp32:esp32:XIAO_ESP32S3:PSRAM=disabled` |
+| 8 MB PSRAM | `esp32:esp32:XIAO_ESP32S3:PSRAM=opi` |
 
 The index of the esp32 core:
 `https://espressif.github.io/arduino-esp32/package_esp32_index.json`
@@ -38,6 +78,7 @@ The index of the esp32 core:
 
 | Item | Version | Device | Used on day |
 |---|---|---|---|
+| MicroPython `SEEED_XIAO_ESP32S3` | v1.29.0 (2026-08-24) | XIAO ESP32S3 | Days 2 and 12 (`HW-01`) |
 
 ## Compile check without a board
 
@@ -55,3 +96,18 @@ Result of the first check (2026-10-01):
 |---|---|---|---|
 | `imu_test` of the XIAOML Kit code | XIAO ESP32S3 | 302 941 bytes (9% of 3 342 336) | 23 352 bytes (7% of 327 680) |
 | `test_IMU` of the TinyMLx library | Nano 33 BLE | 95 552 bytes (9% of 983 040) | 45 944 bytes (17% of 262 144) |
+
+Sketches of `Labs/hardware/` (2026-10-01, XIAO ESP32S3, PSRAM disabled):
+
+| Sketch | Folder | Flash | RAM |
+|---|---|---|---|
+| `tflm_hello` | `HW-02` | 336 157 bytes | 25 616 bytes |
+| `memory_report` | `HW-03` | 274 217 bytes | 21 832 bytes |
+| `arena_report` | `HW-03` | 332 077 bytes | 23 592 bytes |
+| `mqtt_imu` | `HW-07` | 885 880 bytes | 47 744 bytes |
+
+`Labs/hardware/HW-10/README.md` gives the sizes of the eight examples for the
+Nano 33 BLE Sense Rev2.
+
+Use the option `--clean` after you change the version of a library. Without
+it, `arduino-cli` can use old compiled files of the library.

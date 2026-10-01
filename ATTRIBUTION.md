@@ -20,6 +20,8 @@ the licence of its own source. Section 1 gives the licence of each source.
 | HarvardX TinyML courseware | Vijay Janapa Reddi, Laurence Moroney, Pete Warden, Lara Suzuki, and the TinyMLx team | `github.com/tinyMLx/courseware` | CC BY-NC-SA 4.0 |
 | TinyMLx Arduino library | The TinyMLx team | `github.com/tinyMLx/arduino-library` | CC BY-NC-SA 4.0 |
 | TensorFlow Lite Micro Arduino examples | The TensorFlow Authors | `github.com/tensorflow/tflite-micro-arduino-examples` | Apache-2.0 |
+| Chirale_TensorFlowLite (Arduino library and its example) | Chirale and the TensorFlow Authors | `github.com/spaziochirale/Chirale_TensorFlowLite` | Apache-2.0 |
+| Seeed Arduino LSM6DS3 (Arduino library) | Seeed Studio | `github.com/Seeed-Studio/Seeed_Arduino_LSM6DS3` | MIT |
 
 Conditions:
 
@@ -27,6 +29,7 @@ Conditions:
   you adapt keeps this licence.
 - **Apache-2.0.** Keep the licence notice and the copyright line in the file.
 - **GPL-3.0.** The licence of this repository. Name the author.
+- **MIT.** Name the author. Keep the copyright line with a copy of the code.
 - **Not stated.** The text and the figures of the two books above carry no
   licence. The course uses them with attribution.
 
@@ -52,6 +55,24 @@ Each deck, lab, and module adds its rows here.
 | File in this repository | Type | Source | Path in the source | Licence | Change |
 |---|---|---|---|---|---|
 | `Labs/SETUP.md` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | sections 1, 2, and 3 follow the steps of the chapter, rewritten in short sentences |
+| `Labs/hardware/HW-01/board/lsm6ds3.py` | code | Seeed Arduino LSM6DS3 | `LSM6DS3.h`, `LSM6DS3.cpp` | MIT | new MicroPython driver. Only the register addresses, the bit values, and the scale factors come from the library. |
+| `Labs/hardware/HW-01/board/imu_stream.py` | code | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/motion_classification/motion_classification.qmd` | CC BY-NC-SA 4.0 | new MicroPython script. The 50 Hz rate and the deadline method follow the data collection sketch of the chapter. |
+| `Labs/hardware/HW-02/sketches/tflm_hello/tflm_hello.ino` | code | Chirale_TensorFlowLite | `examples/hello_world/hello_world.ino` | Apache-2.0 | own input values, one operator in place of all operators, prints the arena use and the latency, serial speed 115200 |
+| `Labs/hardware/HW-02/sketches/tflm_hello/model.h` | data | Chirale_TensorFlowLite | `examples/hello_world/model.h` | Apache-2.0 | the same model bytes, written again by `tflite_to_header.py` |
+| `Labs/hardware/HW-02/models/hello_world.tflite` | data | Chirale_TensorFlowLite | `examples/hello_world/model.h` | Apache-2.0 | the model bytes of the C array as a file |
+| `Labs/hardware/HW-03/sketches/arena_report/arena_report.ino` | code | Chirale_TensorFlowLite | `examples/hello_world/hello_world.ino` | Apache-2.0 | arena on the heap or in the PSRAM, memory report, latency loop, no serial input |
+| `Labs/hardware/HW-03/sketches/arena_report/model.h` | data | Chirale_TensorFlowLite | `examples/hello_world/model.h` | Apache-2.0 | copy of `HW-02/sketches/tflm_hello/model.h` |
+| `Labs/hardware/HW-03/README.md` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the PSRAM setting and the memory sizes of the board |
+| `Labs/hardware/HW-04/setup_pi.sh`, `check_pi.sh`, `README.md` | code, text | Machine Learning Systems | `kits/contents/raspi/setup/setup.qmd`, `kits/contents/raspi/llm/llm.qmd` | CC BY-NC-SA 4.0 | the install, camera, shutdown, and temperature commands of the chapters, in two scripts |
+| `Labs/hardware/HW-04/setup_pi.sh` | code | Edge AI Engineering: Raspberry Pi | `raspi/setup/setup.html`, `raspi/image_classification/image_classification_fund.html`, `raspi/object_detection/cv_yolo.html`, `raspi/llm/slm_intro.html` | Not stated | the environment names and the package lists of the chapters |
+| `Labs/hardware/HW-05/README.md`, `prompts.txt` | text | Machine Learning Systems | `kits/contents/raspi/llm/llm.qmd` | CC BY-NC-SA 4.0 | the published speed numbers and three prompts, with the source name |
+| `Labs/hardware/HW-05/README.md` | text | EdgeML with Raspberry Pi | `A_Guide_to_Local_Inference/README.md` | GPL-3.0 | the model table of section 5.1, the RAM rule, and the token speed limit, with the source name |
+| `Labs/hardware/HW-07/sketches/mqtt_imu/mqtt_imu.ino` | code | XIAO: Big Power, Small Board | `chapter_3-5.qmd` (Task 2 and Task 3) | GPL-3.0 | board ESP32S3, local broker, IMU in place of the DHT20 sensor, JSON payload, topic tree, last will, LED command, connection with no blocking loop |
+| `Labs/hardware/HW-07/sketches/mqtt_imu/mqtt_imu.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/imu_test/imu_test.ino` | Apache-2.0 | the IMU object and the six read calls |
+| `Labs/hardware/HW-07/micropython/mqtt_imu.py` | code | XIAO: Big Power, Small Board | `chapter_3-5.qmd` | GPL-3.0 | new MicroPython script that follows the telemetry and command design of the chapter |
+| `Labs/hardware/HW-08/python_dashboard/dashboard.py` | code | EdgeML with Raspberry Pi | `SLMs_for_IoT_CONTROL/data_logger.py` | GPL-3.0 | new program. Only the idea of a CSV log with a header row comes from the source. |
+| `Labs/hardware/HW-10/README.md` | text | HarvardX TinyML courseware | `edX/readings/4-2-3.pdf`, `4-2-5.pdf`, `4-2-13.pdf` | CC BY-NC-SA 4.0 | the install steps and the sensor test steps, rewritten in short sentences and changed for the Rev2 board |
+| `Labs/hardware/HW-10/README.md` | text | TinyMLx Arduino library | `examples/`, `library.properties` | CC BY-NC-SA 4.0 | the list of the examples with their sensors and arena sizes |
 
 <!-- Example rows. Keep them in this comment.
 | `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |

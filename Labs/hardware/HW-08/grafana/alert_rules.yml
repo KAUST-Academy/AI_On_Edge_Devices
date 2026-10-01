@@ -1,0 +1,35 @@
+# alert_rules.yml - alert rules of the Day 13 lab
+#
+# Check the file:  promtool check rules alert_rules.yml
+# See the state:   http://pi-NN.local:9090/alerts
+
+groups:
+  - name: edgeai
+    rules:
+      # Drift: the mean confidence of the last 30 seconds is low.
+      - alert: LowConfidence
+        expr: avg_over_time(edgeai_confidence[30s]) < 0.6
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low confidence on {{ $labels.device }} of {{ $labels.group }}"
+          description: "The mean confidence of 30 s is {{ $value | printf \"%.2f\" }}."
+
+      # The device sends no message.
+      - alert: DeviceSilent
+        expr: time() - edgeai_last_message_timestamp_seconds > 15
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "No message from {{ $labels.device }} of {{ $labels.group }}"
+
+      # Heat: the Raspberry Pi 5 reduces its clock speed at high temperature.
+      - alert: HighTemperature
+        expr: edgeai_cpu_temp_celsius > 80
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU temperature {{ $value | printf \"%.0f\" }} C on {{ $labels.device }}"

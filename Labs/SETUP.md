@@ -46,7 +46,11 @@ The guide prepares the computer. It does not prepare a board. The folder
    with the controller SSD1306 (I2C address 0x3C).
 4. Write both versions in `VERSIONS.md`.
 
-The lab of each day names the other libraries that it needs.
+The lab of each day names the other libraries that it needs. Two of them
+are prepared in `Labs/hardware/`:
+
+- **Chirale_TensorFlowLite** 2.0.0 for Days 3 and 4 (`HW-02`).
+- **PubSubClient** 2.8 for Day 12 (`HW-07`).
 
 ## 3. Board settings of the XIAO ESP32S3
 
@@ -130,7 +134,12 @@ Rev2.
 
 1. Open the Boards Manager. Install **Arduino Mbed OS Nano Boards**.
 2. Open the Library Manager. Install **Harvard_TinyMLx**.
-3. Write both versions in `VERSIONS.md`.
+3. For the Rev2 board, install also **Arduino_BMI270_BMM150** (the IMU) and
+   **ArduinoBLE** (the magic wand example).
+4. Write the versions in `VERSIONS.md`.
+
+`Labs/hardware/HW-10/` gives the one line to change for the Rev2 board and
+the list of the examples.
 
 ## 8. `arduino-cli` (optional)
 

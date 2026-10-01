@@ -8,7 +8,7 @@ This folder holds the lab files of the course "AI on Edge Devices".
 |---|---|
 | `Labs/dayNN/` | The lab of core day `NN`: `README.md`, notebooks, `sketches/`, `solutions/`, `TEST_NOTES.md` |
 | `Labs/modules/<ID>/` | The lab of backup module `<ID>` |
-| `Labs/hardware/HW-nn/` | Preparation and test steps for one hardware decision |
+| `Labs/hardware/HW-nn/` | Preparation and test steps for one hardware decision. Index: `Labs/hardware/README.md`. |
 | `Labs/templates/` | Skeletons for a lab folder |
 | `Labs/SETUP.md` | Setup guide for the lab computers |
 | `Labs/VERSIONS.md` | The tool versions and the board names of the course |

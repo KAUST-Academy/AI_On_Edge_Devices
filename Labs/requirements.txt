@@ -30,3 +30,10 @@ opencv-python
 # Messages and telemetry (Days 12 and 13).
 paho-mqtt
 requests
+
+# Serial port of a board (Day 2, Labs/hardware/HW-01).
+pyserial
+
+# System metrics and the bridge to Prometheus (Day 13, Labs/hardware/HW-08).
+psutil
+prometheus-client
