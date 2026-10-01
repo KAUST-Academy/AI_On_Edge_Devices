@@ -51,6 +51,7 @@ Each deck, lab, and module adds its rows here.
 
 | File in this repository | Type | Source | Path in the source | Licence | Change |
 |---|---|---|---|---|---|
+| `Labs/SETUP.md` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | sections 1, 2, and 3 follow the steps of the chapter, rewritten in short sentences |
 
 <!-- Example rows. Keep them in this comment.
 | `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |
