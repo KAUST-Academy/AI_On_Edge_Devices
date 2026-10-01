@@ -1,0 +1,68 @@
+% Goal and plan of the Day 2 lab.
+% The parts and the times come from the Day 2 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has a labelled motion dataset that
+          Day 3 uses, with a constant sampling rate and a correct split
+          between training and test data.
+    \item \textbf{Board:} the XIAOML Kit. Each group has two students and one
+          kit.
+    \item \textbf{Deliverable:} the folder \code{data/} with your recordings
+          and the file \code{split.json}, and the file \code{report.md} with
+          the data card and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the rules: a timer for a constant rate, a window that
+    holds the pattern, and a split by session. In the lab, you measure your
+    rate, you record four motion classes, and you measure the effect of a
+    wrong split.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{Day 3 trains a model on the dataset of today. An error in the
+    data today gives a wrong accuracy tomorrow.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (40,0.8);
+    \fill[treegreen!60]   (40,0)  rectangle (90,0.8);
+    \fill[cardinalred!55] (90,0)  rectangle (130,0.8);
+    \fill[darkcyan!30]    (130,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (40,0) -- (40,0.8) (90,0) -- (90,0.8)
+      (130,0) -- (130,0.8) (150,0) -- (150,0.8);
+    \node at (20,0.4)  {\textbf{A}: 40 min};
+    \node at (65,0.4)  {\textbf{B}: 50 min};
+    \node at (110,0.4) {\textbf{C}: 40 min};
+    \node at (140,0.4) {\textbf{D}: 20};
+    \node at (165,0.4) {check};
+    \foreach \t in {0,40,90,130,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & MicroPython start: firmware, REPL, GPIO, timer, I2C scan & 40 min \\
+    B & Sensor input: the IMU at a fixed rate, serial port and Wi-Fi
+      & 50 min \\
+    C & Dataset: logger, four motion classes, split by session & 40 min \\
+    D & Edge Impulse: upload and inspect the same data & 20 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.5em
+  Write each result in \code{report.md} when you get it. Do not wait for the
+  end of the lab.
+\end{frame}

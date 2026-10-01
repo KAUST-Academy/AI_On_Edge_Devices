@@ -1,0 +1,50 @@
+% Check criterion, deliverable, and the Decision Log question of Day 2.
+% The criterion and the deliverable come from the Day 2 section of the
+% syllabus and from Labs/day02/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{host/check\_rate.py} prints \code{RESULT: PASS} for
+          the deadline version. The report has the rate of the two versions.
+    \item \cmark\ The report has the two predictions: the rate of Part B,
+          and task 4 of the notebook. You wrote them before the measurement.
+    \item \cmark\ \code{python3 host/logger.py --self-test} prints
+          \code{complete} for the two tasks.
+    \item \cmark\ The folder \code{data/} has four classes and a minimum of
+          two sessions. The notebook reports no recording with a problem.
+    \item \cmark\ The notebook prints \code{complete} for tasks 1, 2, and 3.
+          No session is in the training set and also in the test set.
+    \item \cmark\ The data card is complete: classes, duration, sampling
+          rate, split, known limits.
+    \item \cmark\ The Edge Impulse project shows the four classes.
+    \item \cmark\ The board runs the Arduino Blink sketch again.
+  \end{itemize}
+  \vskip 0.3em
+  \textbf{Hand in:} the folder \code{data/} with \code{split.json}, and the
+  file \code{report.md}.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    Your group has 10 more minutes to record data.
+    \begin{itemize}
+      \item Do you add more recordings to the three sessions that you have?
+      \item Or do you record a new session with a different person?
+    \end{itemize}
+    Use the two results of your leakage experiment.
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the accuracy of procedure A and the accuracies of
+          procedure B from your notebook,
+    \item says what the difference between the two numbers means for a new
+          person,
+    \item names what you lose with your decision. Example: variation
+          against the quantity of data for each session.
+  \end{itemize}
+\end{frame}

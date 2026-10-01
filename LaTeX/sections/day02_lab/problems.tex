@@ -1,0 +1,64 @@
+% Fallbacks and common problems of the Day 2 lab. The rows come from
+% Labs/day02/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.33\textwidth}L{0.60\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fallback} \\
+    \midrule
+    MicroPython does not start on your kit
+      & Upload the Arduino sketch \code{sketches/imu\_data\_collection}. It
+        sends the same lines. Continue with the rate check and with
+        Part C. \\
+    The board does not work at all
+      & Start \code{python3 host/sim\_board.py --label lift --session s1}.
+        Use \code{--udp 5005} in place of \code{--port PORT}. The signals
+        are simulated. \\
+    The lab Wi-Fi does not work
+      & Do not do the Wi-Fi step of Part B. Write the reason in the
+        report. \\
+    Your group has no dataset at the end
+      & The notebook makes the fallback dataset. Write in the data card
+        that the signals are simulated. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \keypoint{A fallback keeps your group in the lab. Write in the report
+    which fallback you used.}
+\end{frame}
+
+\begin{frame}{Common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix} \\
+    \midrule
+    \code{esptool} cannot connect
+      & Start bootloader mode again. Hold the button before you connect the
+        cable. \\
+    \code{mpremote} prints \code{could not enter raw repl}
+      & \code{main.py} uses the port. Open the REPL, press \code{Ctrl-C},
+        then \code{Ctrl-]}. \\
+    \code{ImportError: no module named 'lsm6ds3'}
+      & Copy the driver to the board: \code{mpremote connect PORT fs cp
+        board/lsm6ds3.py :lsm6ds3.py} \\
+    \code{check\_rate.py} prints \code{Not enough samples: 0}
+      & Check that \code{main.py} is on the board. Close the REPL and the
+        Serial Monitor. \\
+    \code{check\_rate.py --udp} gets no samples
+      & Check the laptop address in \code{config.py}. Permit the UDP port
+        5005 in the firewall of the laptop. \\
+    The board does not connect to the Wi-Fi
+      & Connect the antenna. Check \code{config.py}. The XIAO has 2.4 GHz
+        Wi-Fi only. \\
+    The logger prints \code{WARNING: samples are missing}
+      & Record again. Close other programs that use the port. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}

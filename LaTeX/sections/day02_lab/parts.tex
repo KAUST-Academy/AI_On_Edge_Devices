@@ -1,0 +1,380 @@
+% The four parts of the Day 2 lab. The steps follow Labs/day02/README.md.
+%
+% Hardware status: not tested on hardware. A value that only a board can
+% give is written as "..." and the students measure it. The deck does not
+% show a result that the students must predict.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: write the MicroPython firmware (40 min)}
+  \small
+  \begin{enumerate}
+    \item Download the firmware file and check it.
+    \item Start bootloader mode: disconnect the USB cable, hold the \code{B}
+          (boot) button of the XIAO, connect the cable, release the button.
+    \item Erase the flash and write the firmware.
+    \item Press the \code{RST} button of the expansion board.
+  \end{enumerate}
+\begin{lstlisting}[style=shell]
+bash ../hardware/HW-01/get_firmware.sh
+python3 -m esptool --chip esp32s3 --port PORT erase_flash
+python3 -m esptool --chip esp32s3 --port PORT write_flash 0 \
+  ../hardware/HW-01/downloads/SEEED_XIAO_ESP32S3-20260824-v1.29.0.bin
+\end{lstlisting}
+  \begin{itemize}
+    \item \code{PORT} is the serial port of the board: \code{/dev/ttyACM0}
+          (Linux), \code{/dev/cu.usbmodem101} (macOS), or \code{COM4}
+          (Windows).
+    \item The port name can change after the reset. The command
+          \code{mpremote devs} lists the ports.
+    \item The boot button is on the XIAO, not on the expansion board. It is
+          very small.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: the REPL and a GPIO pin}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT repl
+\end{lstlisting}
+\begin{lstlisting}[style=python]
+>>> import sys, machine, gc
+>>> sys.implementation
+>>> machine.freq()
+>>> gc.mem_free()
+
+>>> from machine import Pin
+>>> led = Pin(21, Pin.OUT)
+>>> led.value(0)       # LED on
+>>> led.value(1)       # LED off
+\end{lstlisting}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \small
+      \begin{itemize}
+        \item The REPL is the prompt of MicroPython. You enter one line and
+              you see the result.
+        \item \textbf{You record:} the MicroPython version, the clock
+              frequency in Hz, and the free memory in bytes.
+        \item \textbf{You see:} the LED of the XIAO is on when the pin is
+              low.
+        \item Press \code{Ctrl-]} to close the REPL.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{Part 1 of the lecture gave the clock and the memory of the
+    board. The REPL shows the two values that your program has.}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: timer, interrupt, and I2C scan}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT run board/blink_timer.py
+\end{lstlisting}
+\begin{lstlisting}
+The LED changes two times each second. Press the boot button.
+ticks = ..., presses = ...
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A hardware timer calls a handler two times each second. The
+          handler changes the LED and counts.
+    \item A pin interrupt counts each press of the boot button.
+    \item \textbf{You record:} the number of ticks after 10 s.
+  \end{itemize}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT run board/i2c_scan.py
+\end{lstlisting}
+\begin{lstlisting}
+Found 2 device(s)
+  0x3C  OLED display (SSD1306)
+  0x6A  IMU (LSM6DS3TR-C)
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You record:} the two addresses.
+  \end{itemize}
+  \source{The two outputs show the form that the scripts print. Nobody
+    measured them on the kit.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: read the IMU (50 min)}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT fs cp board/lsm6ds3.py :lsm6ds3.py
+mpremote connect PORT repl
+\end{lstlisting}
+\begin{lstlisting}[style=python]
+>>> from machine import I2C, Pin
+>>> from lsm6ds3 import LSM6DS3
+>>> imu = LSM6DS3(I2C(0, sda=Pin(5), scl=Pin(6), freq=400000))
+>>> hex(imu.chip_id)       # the identity register: 0x6a
+>>> imu.read()             # (ax, ay, az, gx, gy, gz)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The first command copies the driver to the file system of the
+          board. The file stays there after a reset.
+    \item \code{imu.read()} gives the acceleration in $g$ and the angular
+          rate in degrees each second.
+    \item \textbf{You see:} with the kit flat on the table, one acceleration
+          axis is near 1.0 $g$. The other two are near 0.
+    \item \textbf{You record:} the six values.
+  \end{itemize}
+  \keypoint{The driver has about 130 lines. Read it: it uses the registers
+    of Part 1 of the lecture.}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: predict the rate, then measure it}
+  \small
+  The first version of \code{board/imu\_stream.py} reads the sensor, prints
+  one line, and then waits 20 ms.
+  \begin{exerciseblock}
+    \textbf{Prediction.} Is the real rate equal to 50 Hz, lower, or higher?
+    By how much? Write your prediction in the report before you measure.
+  \end{exerciseblock}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT fs cp board/imu_stream.py :main.py
+mpremote connect PORT reset
+python3 host/check_rate.py --port PORT --seconds 20 --save rate_wait.csv
+\end{lstlisting}
+\begin{lstlisting}
+Samples:            ...
+Lost lines:         ...
+Mean rate:          ... Hz (nominal 50.00 Hz)
+Period min / max:   ... us / ... us
+RESULT: ...
+\end{lstlisting}
+  \begin{itemize}
+    \item A script with the name \code{main.py} starts at each power-on.
+    \item \textbf{You record:} the mean rate and the result.
+  \end{itemize}
+  \source{The output shows the form of the lines. Nobody measured the rate
+    on the kit.}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: task B1, a deadline for each sample}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      Change the end of the loop in \code{board/imu\_stream.py}:
+      \begin{enumerate}
+        \item Start \code{deadline} with \code{time.ticks\_us()} before
+              the loop.
+        \item Add \code{PERIOD\_US} with \code{time.ticks\_add()}.
+        \item Get the time to the deadline with \code{time.ticks\_diff()}.
+        \item Sleep only for this time.
+        \item If the time is negative, start a new time base.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+\begin{lstlisting}[style=python]
+# The first version: replace this line.
+time.sleep_us(PERIOD_US)
+\end{lstlisting}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT fs cp \
+  board/imu_stream.py :main.py
+mpremote connect PORT reset
+python3 host/check_rate.py --port PORT \
+  --seconds 20 --save rate_deadline.csv
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \small
+  \begin{itemize}
+    \item \textbf{You see:} \code{RESULT: PASS - the sampling rate is
+          constant}.
+    \item \textbf{You record:} the mean rate, the minimum period, and the
+          maximum period.
+    \item The check passes when the mean rate is within 1 percent of 50 Hz,
+          at most 1 percent of the periods are outside 18 to 22 ms, and no
+          line is lost.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: the same samples over Wi-Fi}
+  \small
+  \begin{enumerate}
+    \item Connect the antenna to the XIAO.
+    \item Write the name of the lab Wi-Fi, its password, and the IP address
+          of your laptop in \code{board/config.py}.
+    \item Copy the settings and start the Wi-Fi script. In a second
+          terminal, measure the rate.
+  \end{enumerate}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT fs cp board/config.py :config.py
+mpremote connect PORT run board/imu_wifi.py
+
+python3 host/check_rate.py --udp 5005 --seconds 20     # second terminal
+\end{lstlisting}
+  \begin{itemize}
+    \item The board sends the lines of 5 samples in one UDP packet: 10
+          packets each second.
+    \item UDP does not repeat a packet that the network loses. The sample
+          number shows each lost sample.
+    \item \textbf{You record:} the mean rate and the number of lost lines.
+    \item \textbf{Question:} which connection loses samples, the serial
+          port or Wi-Fi? Why?
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: the logger (40 min)}
+  \small
+  Open \code{host/logger.py}. Complete the two functions with the mark
+  \code{TODO (student)}.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.10\textwidth}L{0.22\textwidth}L{0.58\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{Function} & \textbf{Example} \\
+    \midrule
+    C1 & \code{file\_name} & label \code{lift}, session \code{s2}, number
+         7 gives \code{lift.s2.07.csv} \\
+    C2 & \code{count\_lost} & the sample numbers 4, 5, 6, 9, 10 give 2 lost
+         samples \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  Test the two functions with no board:
+\begin{lstlisting}[style=shell]
+python3 host/logger.py --self-test
+\end{lstlisting}
+\begin{lstlisting}
+Task C1 (file_name):  complete
+Task C2 (count_lost): complete
+\end{lstlisting}
+  \begin{itemize}
+    \item The file name holds the label and the session. The notebook and
+          Edge Impulse Studio read the label from the file name.
+    \item The sample number of the board shows a lost sample. A recording
+          with a lost sample is not a recording at 50 Hz.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: the protocol and the recordings}
+  \small
+  Write the protocol in the report before the first recording: one sentence
+  for each class, and the person of each session.
+  \vskip 0.3em
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{itemize}
+        \item \code{idle}: the kit lies on the table.
+        \item \code{terrestrial}: left and right in a horizontal line.
+        \item \code{lift}: up and down.
+        \item \code{maritime}: slowly on all axes, as a boat on waves.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{itemize}
+        \item Three sessions: \code{s1}, \code{s2}, \code{s3}.
+        \item Change the person, the speed, or the size of the motion
+              between the sessions.
+        \item 4 recordings of 10 s for each class in each session.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\begin{lstlisting}[style=shell]
+python3 host/logger.py --port PORT --label lift --session s1 --person A \
+  --count 4 --plot
+\end{lstlisting}
+\begin{lstlisting}
+Recording 1 of 4, class 'lift'. Start the motion now.
+  recording 10 s ...
+  saved data/lift.s1.01.csv: 500 samples, ... Hz, ... lost, ... clipped
+  plot: data/plots/lift.s1.01.png
+\end{lstlisting}
+  Look at each plot. If a plot does not agree with its label, delete the
+  file and record again.
+  \source{The output shows the form of the lines. Nobody recorded with the
+    kit.}
+\end{frame}
+
+\begin{frame}{Part C: the notebook has five tasks}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.36\textwidth}L{0.45\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
+    \midrule
+    1 & The mean sampling rate of a recording
+      & Two known cases: 50 Hz and 41.67 Hz \\
+    2 & The split by session
+      & No session is in the two sets. Each class is in the two sets. \\
+    3 & The number of windows of a recording
+      & 500 samples give 41 windows of 100 samples with a stride of 10 \\
+    4 & Your prediction for the leakage experiment
+      & Not checked. You compare it with the result. \\
+    5 & The data card in \code{report.md}
+      & Not checked. The instructor reads it. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Start the notebook with \code{jupyter lab dataset.ipynb}.
+    \item The notebook writes \code{data/split.json}. Day 3 reads this
+          file.
+    \item If \code{data/} has no recordings, the notebook uses a fallback
+          dataset with simulated signals. Use it only if your group has no
+          recordings.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: the leakage experiment}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.10\textwidth}L{0.40\textwidth}L{0.40\textwidth}@{}}
+    \toprule
+    & \textbf{Procedure A (wrong)} & \textbf{Procedure B (correct)} \\
+    \midrule
+    Step 1 & Cut all recordings into windows & Split the recordings by
+             session \\
+    Step 2 & Normalize with the statistics of all windows
+           & Cut the windows in each set \\
+    Step 3 & Mix the windows: 80 percent training, 20 percent test
+           & Normalize with the statistics of the training set \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{exerciseblock}
+    \textbf{Prediction (task 4).} Which procedure gives the higher test
+    accuracy? Which two numbers do you expect? Write them before you run
+    the experiment.
+  \end{exerciseblock}
+\begin{lstlisting}
+Procedure A, random split of the windows:    ... percent
+Procedure B, test session s1                 ... percent
+Procedure B, test session s2                 ... percent
+Procedure B, test session s3                 ... percent
+\end{lstlisting}
+  The classifier is the same in the two procedures: the nearest neighbour
+  on six features of a window. Only the split is different.
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}[fragile]{Part D: Edge Impulse (20 min)}
+  \small
+\begin{lstlisting}[style=shell]
+python3 host/to_edge_impulse.py --data data
+edge-impulse-uploader --category training ei_upload/training/*.csv
+edge-impulse-uploader --category testing ei_upload/testing/*.csv
+\end{lstlisting}
+  \begin{enumerate}
+    \item Convert: the time in milliseconds, the acceleration in m/s$^2$,
+          one folder for each set.
+    \item Make the project \code{motion-gNN} in Edge Impulse Studio, and
+          upload. With no CLI, upload in the browser: \code{Data
+          acquisition}, then \code{Add data}.
+    \item Do not use the automatic split of the Studio. It does not know
+          your sessions.
+    \item Inspect: the four labels, one plot of each class, the duration
+          of the training data and of the test data.
+  \end{enumerate}
+  \begin{block}{Before you leave: the Arduino firmware}
+    In the Arduino IDE, set \code{Tools > Erase All Flash Before Sketch
+    Upload > Enabled}. Upload \code{Labs/day01/sketches/blink/blink.ino}.
+    Then set the option to \code{Disabled} again. If the upload fails,
+    start bootloader mode first.
+  \end{block}
+\end{frame}
