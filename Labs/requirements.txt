@@ -14,6 +14,9 @@ pandas
 jupyterlab
 
 # Training and profiling of models (Days 1, 3, 4, and 6).
+# On Linux, install the CPU version first. The default package is larger
+# than 2 GB:
+#   .venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 torch
 torchvision
 

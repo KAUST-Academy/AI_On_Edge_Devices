@@ -20,6 +20,7 @@ Each lab adds one row here.
 
 | Day or module | Title | Board | Folder | Hardware status |
 |---|---|---|---|---|
+| Day 1 | Toolchain, sensor tests, and model budgets | XIAOML Kit | `day01/` | not tested on hardware. The sketches compile. The notebook runs on a laptop. |
 
 ## Rules for every lab folder
 

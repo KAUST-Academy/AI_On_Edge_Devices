@@ -78,6 +78,17 @@ are prepared in `Labs/hardware/`:
    .venv/bin/pip install -r Labs/requirements.txt
    ```
 
+   On Linux, the default package of PyTorch is larger than 2 GB. The labs
+   need only the CPU version. Install the CPU version before the command
+   above:
+
+   ```bash
+   .venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+   ```
+
+   On Windows, the programs of the environment are in `.venv\Scripts\`, not
+   in `.venv/bin/`.
+
 3. Start every notebook from this environment:
 
    ```bash

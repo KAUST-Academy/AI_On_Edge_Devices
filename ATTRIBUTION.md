@@ -22,6 +22,7 @@ the licence of its own source. Section 1 gives the licence of each source.
 | TensorFlow Lite Micro Arduino examples | The TensorFlow Authors | `github.com/tensorflow/tflite-micro-arduino-examples` | Apache-2.0 |
 | Chirale_TensorFlowLite (Arduino library and its example) | Chirale and the TensorFlow Authors | `github.com/spaziochirale/Chirale_TensorFlowLite` | Apache-2.0 |
 | Seeed Arduino LSM6DS3 (Arduino library) | Seeed Studio | `github.com/Seeed-Studio/Seeed_Arduino_LSM6DS3` | MIT |
+| Arduino core for the ESP32 (camera example) | Espressif Systems | `github.com/espressif/arduino-esp32` | LGPL-2.1 |
 
 Conditions:
 
@@ -30,6 +31,8 @@ Conditions:
 - **Apache-2.0.** Keep the licence notice and the copyright line in the file.
 - **GPL-3.0.** The licence of this repository. Name the author.
 - **MIT.** Name the author. Keep the copyright line with a copy of the code.
+- **LGPL-2.1.** Name the author. The course copies no file of this source. It
+  uses only pin numbers and settings.
 - **Not stated.** The text and the figures of the two books above carry no
   licence. The course uses them with attribution.
 
@@ -81,6 +84,14 @@ Each deck, lab, and module adds its rows here.
 | `LaTeX/sections/day01/block2.tex` | text | Machine Learning Systems | `slides/vol1/05_nn_computation/05_nn_computation.tex`, `slides/vol1/06_nn_architectures/06_nn_architectures.tex`, `slides/vol1/02_ml_systems/02_ml_systems.tex` | CC BY-NC-SA 4.0 | the example layers (784 to 128, 1024 to 1024), the comparison of ResNet-50 and MobileNetV2, the keyword spotting model, and the statement that the operation count does not give the speed, rewritten in short sentences. The example network, its numbers, and all diagrams are new. |
 | `LaTeX/images/day01/kws-on-the-kit.png` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/kws/images/png/kit-infer.png` | CC BY-NC-SA 4.0 | none (new file name) |
 | `LaTeX/sections/day01/block3.tex` | text | Machine Learning Systems | `slides/vol1/01_introduction/01_introduction.tex`, `slides/vol1/02_ml_systems/02_ml_systems.tex`, `slides/vol1/03_ml_workflow/03_ml_workflow.tex`, `books/vol1/02_ml_systems/02_ml_systems.qmd`, `kits/contents/seeed/xiao_esp32s3/kws/kws.qmd` | CC BY-NC-SA 4.0 | the workflow loop, the rule for the correction cost, the loss of accuracy with time, the voice assistant example, the three hybrid patterns, and the data of the keyword spotting project, rewritten in short sentences. All diagrams are drawn again. |
+| `Labs/day01/sketches/blink/blink.ino` | code | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` (code block of the section "Testing the board with BLINK") | CC BY-NC-SA 4.0 | new header comment, serial messages, pin name `LED_PIN` |
+| `Labs/day01/sketches/imu_test/imu_test.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/imu_test/imu_test.ino` | Apache-2.0 | new header comment. The two lines that print the sensor range give 16 g and 2000 dps. |
+| `Labs/day01/sketches/oled_test/oled_test.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/oled_test/oled_test.ino` | Apache-2.0 | new header comment. The code has no change. |
+| `Labs/day01/sketches/mic_test/mic_test.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/XIAOML_Kit_Mic_Test/XIAOML_Kit_Mic_Test.ino` | Apache-2.0 | new header comment and new file name. The code has no change. |
+| `Labs/day01/sketches/camera_test/camera_test.ino` | code | Arduino core for the ESP32 | `libraries/ESP32/examples/Camera/CameraWebServer/camera_pins.h`, `CameraWebServer.ino` | LGPL-2.1 | new sketch. Only the pin numbers of the model `CAMERA_MODEL_XIAO_ESP32S3` and the camera settings come from the example. |
+| `Labs/day01/sketches/memory_report/memory_report.ino` | code | This repository | `Labs/hardware/HW-03/sketches/memory_report/memory_report.ino` | GPL-3.0 | none |
+| `Labs/day01/README.md` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the order of the tests and the expected results, rewritten in short sentences |
+| `Labs/day01/model_budgets.ipynb`, `solutions/model_budgets.ipynb` | text | Machine Learning Systems | `books/vol1/02_ml_systems/02_ml_systems.qmd`, `books/vol1/06_nn_architectures/06_nn_architectures.qmd` | CC BY-NC-SA 4.0 | the method: three budgets, the fit check, the models MobileNetV2 and a small depthwise CNN. All code is new. |
 
 <!-- Example rows. Keep them in this comment.
 | `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |

@@ -49,6 +49,10 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `prometheus-client` | 0.26.0 | `HW-08` |
 | `ollama` | 0.6.3 | `HW-05` |
 | `pyserial` | not tested | `HW-01` (`check_rate.py --port`) |
+| `torch` | 2.14.1 (CPU version) | `day01` (`model_budgets.ipynb`) |
+| `torchvision` | 0.29.1 (CPU version) | `day01` |
+| `matplotlib` | 3.10.9 | `day01` |
+| `nbconvert` | 7.17.1 | Run of the notebooks with no browser |
 
 ## Arduino board cores and libraries
 
@@ -105,6 +109,19 @@ Sketches of `Labs/hardware/` (2026-10-01, XIAO ESP32S3, PSRAM disabled):
 | `memory_report` | `HW-03` | 274 217 bytes | 21 832 bytes |
 | `arena_report` | `HW-03` | 332 077 bytes | 23 592 bytes |
 | `mqtt_imu` | `HW-07` | 885 880 bytes | 47 744 bytes |
+
+Sketches of `Labs/day01/` (2026-10-01, XIAO ESP32S3, PSRAM disabled):
+
+| Sketch | Flash | RAM |
+|---|---|---|
+| `blink` | 271 701 bytes | 21 824 bytes |
+| `imu_test` | 303 021 bytes | 23 352 bytes |
+| `oled_test` | 304 165 bytes | 23 544 bytes |
+| `mic_test` | 301 981 bytes | 21 944 bytes |
+| `camera_test` (with OPI PSRAM) | 353 535 bytes | 33 472 bytes |
+
+`Labs/day01/TEST_NOTES.md` gives the sizes for the two PSRAM options and for
+the two examples of the core that the lab uses.
 
 `Labs/hardware/HW-10/README.md` gives the sizes of the eight examples for the
 Nano 33 BLE Sense Rev2.
