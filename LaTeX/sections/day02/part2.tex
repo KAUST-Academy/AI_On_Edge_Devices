@@ -7,3 +7,731 @@
 
 \theorypart{Sensors and sampling}%
   {select the sampling rate and the window for three signals}
+
+% ------------------------------------------------------------------- the chain
+\begin{frame}{From the physical world to a tensor}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (p) at (0,0)    {Motion,\\sound, light};
+    \node[b] (s) at (2.15,0) {Sensor};
+    \node[b] (a) at (4.3,0)  {Sampling};
+    \node[b] (f) at (6.45,0) {Buffer};
+    \node[b, draw=cardinalred] (w) at (8.6,0) {Window};
+    \foreach \a/\b in {p/s, s/a, a/f, f/w} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {a physical\\quantity};
+    \node[lab] at (2.15,-0.95) {a voltage};
+    \node[lab] at (4.3,-0.95)  {numbers at\\a fixed rate};
+    \node[lab] at (6.45,-0.95) {numbers\\in RAM};
+    \node[lab] at (8.6,-0.95)  {one input of\\the model};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item Each step has a setting that you select: the range of the sensor,
+          the sampling rate, the size of the buffer, the length of the
+          window.
+    \item The model sees only the window. Information that a step removes
+          does not come back.
+    \item The same settings must apply when you collect the training data
+          and when the device runs the model.
+  \end{itemize}
+  \vskip 0.3em
+  \keypoint{The data collection is part of the model design. You decide it
+    before you train.}
+\end{frame}
+
+% ------------------------------------------------------------------------- IMU
+\begin{frame}{The IMU: accelerometer and gyroscope}
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=5pt]}]
+        \draw[coolgray, line width=0.8pt] (-2,-1.1) rectangle (2,1.1);
+        \fill[cardinalred!45] (-0.5,-0.5) rectangle (0.5,0.5);
+        \node at (0,0) {mass};
+        % two springs, drawn as zigzag lines
+        \draw[coolgray] (-2,0) -- (-1.85,0) -- (-1.75,0.12) -- (-1.55,-0.12)
+          -- (-1.35,0.12) -- (-1.15,-0.12) -- (-0.95,0.12) -- (-0.75,-0.12)
+          -- (-0.65,0) -- (-0.5,0);
+        \draw[coolgray] (0.5,0) -- (0.65,0) -- (0.75,0.12) -- (0.95,-0.12)
+          -- (1.15,0.12) -- (1.35,-0.12) -- (1.55,0.12) -- (1.75,-0.12)
+          -- (1.85,0) -- (2,0);
+        \draw[darkcyan, line width=1.2pt] (-0.35,0.62) -- (0.35,0.62);
+        \draw[darkcyan, line width=1.2pt] (-0.35,0.82) -- (0.35,0.82);
+        \node[darkcyan, anchor=west] at (0.45,0.74) {capacitor};
+        \draw[->, cardinalred, line width=0.9pt] (-1.2,-1.5) --
+          node[below] {acceleration} (1.2,-1.5);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \small
+      \begin{block}{Accelerometer}
+        \begin{itemize}
+          \item A small mass on springs moves when the chip accelerates.
+                The distance changes a capacitance.
+          \item Unit: $g$. The sensor also measures gravity: a board at
+                rest reads 1 $g$ on one axis.
+        \end{itemize}
+      \end{block}
+      \begin{block}{Gyroscope}
+        \begin{itemize}
+          \item It measures the rate of rotation around each axis.
+          \item Unit: degrees each second (dps).
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{An IMU with 6 axes gives 6 numbers for each sample: three
+    accelerations and three rotation rates.}
+\end{frame}
+
+\begin{frame}{The IMU of the kit: LSM6DS3TR-C}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      % The frame shows the right part of the source figure: the axes.
+      \includegraphics[height=4.0cm, trim=450 0 0 0, clip]%
+        {images/day02/imu-directions.png}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        \textbf{Accelerometer range} & \textbf{One count} \\
+        \midrule
+        $\pm 2\ g$  & 0.061 m$g$ \\
+        $\pm 4\ g$  & 0.122 m$g$ \\
+        $\pm 8\ g$  & 0.244 m$g$ \\
+        $\pm 16\ g$ & 0.488 m$g$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.5em
+      Each value has 16 bits: 65\,536 levels.\\
+      Gyroscope ranges: 125, 250, 500, 1000, and 2000 dps.
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A larger range gives a larger step. Select the smallest range
+          that the motion does not exceed.
+    \item The Arduino library of the kit sets 16 $g$ and 2000 dps. The lab
+          uses the same values, so Day 2 and Day 3 see the same numbers.
+  \end{itemize}
+  \source{Figure and ranges: \emph{Machine Learning Systems}, XIAOML Kit,
+    ``Motion Classification and Anomaly Detection'' (CC BY-NC-SA 4.0).
+    Count values: library ``Seeed Arduino LSM6DS3''.}
+\end{frame}
+
+% ------------------------------------------------------------------ microphone
+\begin{frame}{The microphone}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item Sound is a change of air pressure. A membrane in the
+              microphone moves with the pressure.
+        \item The microphone of the kit is digital. The XIAO receives
+              samples of 16 bits.
+        \item The labs use 16\,000 samples each second.
+        \item One second of audio is 16\,000 samples, or 32\,000 bytes.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=4.4cm, y=1cm]
+        \draw[->, coolgray] (0,0) -- (1.06,0) node[below left] {time};
+        \draw[->, coolgray] (0,-1.2) -- (0,1.3);
+        \node[coolgray, anchor=west] at (0.02,1.25) {amplitude};
+        \draw[cardinalred, line width=0.8pt]
+          plot[domain=0:1, samples=160, smooth]
+          (\x,{0.9*exp(-3*(\x-0.45)*(\x-0.45)*8)*sin(360*14*\x)
+               + 0.12*sin(360*31*\x)});
+        \node at (0.5,-1.45) {a word: less than 1 second};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{Audio has one channel and a high rate. An IMU has six channels
+    and a low rate. The window of a keyword model holds 16\,000 numbers.
+    The window of a motion model holds some hundreds.}
+  \source{Audio settings: \emph{Machine Learning Systems}, XIAOML Kit,
+    ``Keyword Spotting''. The curve is a drawing, not a recording.}
+\end{frame}
+
+% ---------------------------------------------------------------------- camera
+\begin{frame}{The camera}
+  \begin{columns}[T]
+    \begin{column}{0.44\textwidth}
+      \small
+      \begin{itemize}
+        \item An image sensor is a grid of light sensors: the pixels.
+        \item The resolution is the sampling in space. The frame rate is
+              the sampling in time.
+        \item The pixel format sets the bytes for each pixel.
+        \item A large image needs the PSRAM. The model input is much
+              smaller than the sensor image.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.25}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}llr@{}}
+        \toprule
+        \textbf{Image} & \textbf{Format} & \textbf{Bytes} \\
+        \midrule
+        $96 \times 96$     & grayscale, 1 byte & 9\,216 \\
+        $96 \times 96$     & RGB888, 3 bytes   & 27\,648 \\
+        $320 \times 240$   & grayscale, 1 byte & 76\,800 \\
+        $320 \times 240$   & RGB565, 2 bytes   & 153\,600 \\
+        $1600 \times 1200$ & RGB565, 2 bytes   & 3\,840\,000 \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.5em
+      \small
+      Bytes $=$ width $\times$ height $\times$ bytes for each pixel.
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{The largest image of the table is 3.7 MB. It is seven times the
+    internal RAM of the XIAO. The camera can also send JPEG data, which is
+    smaller.}
+\end{frame}
+
+% --------------------------------------------------------------- signal types
+\begin{frame}{Three sensors, three types of signal}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.23\textwidth}L{0.23\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    & \textbf{IMU} & \textbf{Microphone} & \textbf{Camera} \\
+    \midrule
+    Signal        & Time series, 6 channels & Time series, 1 channel
+                  & Image, 2 dimensions \\
+    Rate in the labs & 50 samples each second
+                  & 16\,000 samples each second & Some images each second \\
+    One window    & 2 s & 1 s & 1 image \\
+    Values in one window & $2 \times 50 \times 6 = 600$
+                  & 16\,000 & $96 \times 96 = 9216$ \\
+    Day of the course & 2, 3, 4 & 5 & 5 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \begin{itemize}
+    \item For each sensor you select a rate and a window. The next frames
+          give the rules.
+    \item The motion lab of the kit uses only the 3 accelerometer channels:
+          300 values in one window.
+  \end{itemize}
+  \source{Settings of the kit labs: \emph{Machine Learning Systems}, XIAOML
+    Kit chapters.}
+\end{frame}
+
+% -------------------------------------------------------------------- sampling
+\begin{frame}{Sampling: a continuous signal becomes numbers}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=9cm, y=1.1cm]
+    \draw[->, coolgray] (0,0) -- (1.06,0) node[right] {s};
+    \draw[->, coolgray] (0,-1.15) -- (0,1.25);
+    \foreach \t in {0,0.25,0.5,0.75,1} {
+      \draw[coolgray] (\t,-0.05) -- (\t,0.05);
+      \node[below, coolgray] at (\t,-1.15) {\t};
+    }
+    \draw[coolgray!70, line width=0.8pt]
+      plot[domain=0:1, samples=120, smooth] (\x,{sin(360*2*\x)});
+    \foreach \k in {0,...,20} {
+      \draw[cardinalred] (\k/20,0) -- (\k/20,{sin(360*2*\k/20)});
+      \fill[cardinalred] (\k/20,{sin(360*2*\k/20)}) circle (1.6pt);
+    }
+    \draw[<->] (0.5,1.2) -- node[above] {$T = 1 / f_s$} (0.55,1.2);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The sampling rate $f_s$ is the number of samples each second. The
+          period $T$ is the time between two samples.
+    \item The figure shows a signal of 2 Hz with $f_s = 20$ Hz:
+          10 samples for each cycle.
+    \item Between two samples, the system knows nothing about the signal.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Sampling makes the signal discrete in time. Quantization makes
+    it discrete in value. The two steps lose information.}
+\end{frame}
+
+\begin{frame}{The sampling theorem}
+  \begin{block}{Rule of Nyquist and Shannon}
+    A sampled signal keeps all information only if the sampling rate is more
+    than two times the highest frequency of the signal.
+    \[ f_s > 2\, f_{\max} \]
+  \end{block}
+  \vskip 0.4em
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{itemize}
+        \item The frequency $f_s / 2$ is the Nyquist frequency.
+        \item With $f_s = 50$ Hz, the system can represent frequencies
+              below 25 Hz.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{itemize}
+        \item The rule gives the minimum. With exactly two samples for
+              each cycle, the amplitude is not reliable.
+        \item In practice, use a rate with a margin above the minimum.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{First find the highest frequency that the application needs.
+    Then select the sampling rate.}
+\end{frame}
+
+% -------------------------------------------------------------------- aliasing
+\begin{frame}{Aliasing: a frequency that is not there}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=9cm, y=1.0cm]
+    \draw[->, coolgray] (0,0) -- (1.06,0) node[right] {s};
+    \draw[->, coolgray] (0,-1.15) -- (0,1.25);
+    \foreach \t in {0,0.5,1} {
+      \node[below, coolgray] at (\t,-1.15) {\t};
+    }
+    \draw[coolgray!70, line width=0.6pt]
+      plot[domain=0:1, samples=400, smooth] (\x,{sin(360*9*\x)});
+    \draw[cardinalred, line width=1pt, dashed]
+      plot[domain=0:1, samples=80, smooth] (\x,{-sin(360*\x)});
+    \foreach \k in {0,...,10} {
+      % sin(360*9*k/10) is equal to -sin(36*k). The short form keeps the
+      % numbers small enough for TeX.
+      \fill[cardinalred] (\k/10,{-sin(36*\k)}) circle (1.8pt);
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item Gray: the real signal of 9 Hz. Red points: the samples at
+          $f_s = 10$ Hz.
+    \item The samples are on a curve of 1 Hz. The system sees a signal of
+          1 Hz.
+    \item A frequency $f$ above $f_s / 2$ appears as the alias
+          $|f - k f_s|$, for the integer $k$ that gives a result below
+          $f_s / 2$. Here: $|9 - 10| = 1$ Hz.
+  \end{itemize}
+  \keypoint{The data show a wrong frequency and give no warning. A model
+    then learns from a signal that does not exist.}
+\end{frame}
+
+\begin{frame}{Aliasing: remove the high frequencies before sampling}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=0.9cm, align=center}]
+    \node[b] (s) at (0,0)   {Sensor\\element};
+    \node[b, draw=cardinalred] (f) at (2.9,0) {Low-pass\\filter};
+    \node[b] (a) at (5.8,0) {Sampling\\at $f_s$};
+    \node[b] (d) at (8.7,0) {Samples};
+    \draw[->] (s) -- (f); \draw[->] (f) -- (a); \draw[->] (a) -- (d);
+    \node[font=\scriptsize, text=cardinalred] at (2.9,-0.85)
+      {removes $f > f_s / 2$};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item A filter after the sampling cannot remove an alias. The alias has
+          the same samples as a real low frequency.
+    \item A digital sensor has this filter inside. The filter fits the
+          output data rate of the sensor.
+    \item If the program reads the sensor at a lower rate than its output
+          data rate, the filter does not protect the program.
+  \end{itemize}
+  \vskip 0.3em
+  \begin{block}{In the lab}
+    The IMU makes 416 samples each second. The program reads 50 of them.
+    This is correct for hand motion, which is slow. It is not correct for
+    the vibration of a motor.
+  \end{block}
+\end{frame}
+
+% -------------------------------------------------------------- select a rate
+\begin{frame}{How to select the sampling rate}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.27\textwidth}L{0.22\textwidth}L{0.20\textwidth}@{}}
+    \toprule
+    \textbf{Signal} & \textbf{Frequencies that matter}
+    & \textbf{Minimum rate} & \textbf{Typical rate} \\
+    \midrule
+    Motion of a person or a package & Some hertz
+        & Some tens of hertz & 50 to 100 Hz \\
+    Speech & Up to about 4 kHz for a telephone & 8 kHz
+        & 16 kHz \\
+    Vibration of a machine & Up to some kilohertz
+        & Two times the fault frequency & Some kilohertz \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item Find the highest frequency that the application needs.
+    \item Multiply by two, and add a margin.
+    \item Check the cost: a higher rate needs more RAM, more computation,
+          and more energy.
+    \item Check that the sensor, the bus, and the program reach the rate.
+  \end{enumerate}
+  \source{Motion and speech rates: \emph{Machine Learning Systems}, XIAOML
+    Kit chapters. Telephone band: ITU-T Recommendation G.711.}
+\end{frame}
+
+% --------------------------------------------------------- range and clipping
+\begin{frame}{Range and clipping}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=3.8cm, y=0.55cm]
+        \draw[->, coolgray] (0,0) -- (1.08,0);
+        \draw[->, coolgray] (0,-3.6) -- (0,3.8);
+        \draw[cardinalred, dashed] (0,2) -- (1.04,2);
+        \draw[cardinalred, dashed] (0,-2) -- (1.04,-2);
+        \node[cardinalred, anchor=east] at (0,2) {$+2\ g$};
+        \node[cardinalred, anchor=east] at (0,-2) {$-2\ g$};
+        \draw[coolgray!60, line width=0.7pt]
+          plot[domain=0:1, samples=100, smooth] (\x,{3.2*sin(360*2*\x)});
+        \draw[darkcyan, line width=1.1pt]
+          plot[domain=0:1, samples=200]
+          (\x,{max(min(3.2*sin(360*2*\x),2),-2)});
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item Gray: the real acceleration, up to 3.2 $g$.
+        \item Blue: the output of a sensor with a range of $\pm 2\ g$.
+        \item The sensor cuts each value outside its range. This is
+              clipping.
+        \item A clipped signal has a different form and new frequencies.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A range that is too small clips. A range that is too large loses
+          resolution.
+    \item Look at the raw data before you train. A flat top at the limit
+          of the range shows clipping.
+  \end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------------- windows
+\begin{frame}{The motion classes of the lab}
+  \begingroup\centering
+  \includegraphics[width=0.92\textwidth]{images/day02/motion-classes.jpg}
+  \par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The project of the kit lab: a sensor on a package finds how the
+          package moves.
+    \item Four classes: \textbf{idle} (no motion), \textbf{terrestrial}
+          (horizontal motion), \textbf{lift} (vertical motion), and
+          \textbf{maritime} (motion on all axes).
+    \item You make each motion with the kit in your hand.
+  \end{itemize}
+  \source{Figure: \emph{Machine Learning Systems}, XIAOML Kit, ``Motion
+    Classification and Anomaly Detection'' (CC BY-NC-SA 4.0).}
+\end{frame}
+
+\begin{frame}{Windows: the input of the model}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \includegraphics[width=\textwidth]{images/day02/terrestrial-raw-data.png}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item One recording of the class ``terrestrial'': 10 s at 50 Hz,
+              three axes, in m/s$^2$.
+        \item A model takes a window of a fixed length, not the complete
+              recording.
+        \item The window must hold the pattern. One cycle of this motion
+              needs about 1 s. A window of 2 s holds two cycles.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{A window of 2 s at 50 Hz with 3 axes holds
+    $2 \times 50 \times 3 = 300$ values. This is the input size of the
+    Day 3 model.}
+  \source{Figure and window: \emph{Machine Learning Systems}, XIAOML Kit,
+    ``Motion Classification and Anomaly Detection'' (CC BY-NC-SA 4.0).}
+\end{frame}
+
+\begin{frame}{Window length and stride}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.93cm, y=0.7cm]
+    \draw[->, coolgray] (0,-0.9) -- (10.4,-0.9) node[right] {s};
+    \foreach \t in {0,2,4,6,8,10} {
+      \draw[coolgray] (\t,-0.9) -- (\t,-1.0);
+      \node[below, coolgray] at (\t,-1.0) {\t};
+    }
+    \draw[coolgray, line width=0.7pt]
+      plot[domain=0:10, samples=240, smooth]
+      (\x,{0.55*sin(360*0.9*\x) + 0.2*sin(360*2.3*\x)});
+    \draw[cardinalred, line width=1pt] (0,-0.8) rectangle (2,0.85);
+    \draw[darkcyan, line width=1pt] (1,-0.72) rectangle (3,0.93);
+    \draw[treegreen, line width=1pt] (2,-0.64) rectangle (4,1.01);
+    \node[cardinalred, anchor=south] at (0.5,0.85) {window 1};
+    \draw[<->] (0,1.45) -- node[above] {length $W$} (2,1.45);
+    \draw[<->] (2,1.45) -- node[above] {stride $S$} (3,1.45);
+  \end{tikzpicture}\par\endgroup
+  \small
+  \[
+    \text{number of windows} = \left\lfloor \frac{L - W}{S} \right\rfloor + 1
+    \qquad (L\text{: length of the recording})
+  \]
+  \begin{itemize}
+    \item The kit lab: $L = 10$ s, $W = 2$ s, $S = 0.2$ s gives
+          $(10 - 2) / 0.2 + 1 = 41$ windows.
+    \item A longer window holds more of the pattern. It needs more RAM, and
+          the first result comes later.
+    \item A smaller stride gives more windows. With $S = 0.2$ s, two
+          adjacent windows share 90 percent of their samples.
+  \end{itemize}
+  \source{The figure shows a stride of 1 s. Window and stride of the
+    example: \emph{Machine Learning Systems}, XIAOML Kit, ``Motion
+    Classification and Anomaly Detection''.}
+\end{frame}
+
+% --------------------------------------------------------------------- buffers
+\begin{frame}{Buffers: where the samples wait}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=5pt]}, x=0.8cm,
+      y=0.8cm]
+    \foreach \k in {0,...,9} {
+      \draw[coolgray, fill=boxgray] (\k,0) rectangle (\k+1,1);
+    }
+    \foreach \k/\v in {0/11,1/12,2/13,3/4,4/5,5/6,6/7,7/8,8/9,9/10} {
+      \node at (\k+0.5,0.5) {\v};
+    }
+    \draw[cardinalred, line width=1pt] (3,0) rectangle (4,1);
+    \draw[->, cardinalred] (3.5,1.7) node[above] {next write: sample 14}
+      -- (3.5,1.05);
+    \draw[->, coolgray] (10,0.5) -- (10.6,0.5) -- (10.6,-0.5) -- (-0.6,-0.5)
+      -- (-0.6,0.5) -- (0,0.5);
+    \node[coolgray] at (5,-0.8) {after the last cell, the index goes back to
+      the first cell};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item A ring buffer holds the newest $N$ samples. A new sample replaces
+          the oldest sample.
+    \item One part of the program writes at the sampling rate. A different
+          part reads a window when the model is ready.
+    \item If the reader is too slow, the writer overwrites samples that
+          the reader did not use.
+  \end{itemize}
+  \begin{block}{Size of the buffer}
+    Motion: $2\ \text{s} \times 50 \times 3$ values $\times$ 4 bytes
+    $= 1200$ bytes. Audio: 1 s $\times$ 16\,000 values $\times$ 2 bytes
+    $= 32\,000$ bytes.
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{A ring buffer in MicroPython}
+  \begin{columns}[T]
+    \begin{column}{0.56\textwidth}
+\begin{lstlisting}[style=python]
+from array import array
+
+N = 100                    # 2 s at 50 Hz
+ax = array("f", [0.0] * N) # allocate once
+head = 0                   # next write
+
+def push(value):
+    global head
+    ax[head] = value
+    head = (head + 1) % N
+
+def window():
+    # oldest sample first
+    return [ax[(head + i) % N]
+            for i in range(N)]
+\end{lstlisting}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item \code{array("f")} holds 4 bytes for each value. A list of
+              Python numbers needs more.
+        \item The program allocates the buffer one time, before the loop.
+        \item \code{push()} allocates no memory. It is safe in the sampling
+              loop.
+        \item \code{window()} makes a new list. Call it outside the
+              sampling loop.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{MicroPython has a garbage collector. An allocation in the
+    sampling loop can start it, and then one period is longer.}
+\end{frame}
+
+% ------------------------------------------------------------ measure the rate
+\begin{frame}{Measure the sampling rate}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.085cm, y=1cm]
+    \draw[->, coolgray] (0,0) -- (112,0) node[right] {ms};
+    \foreach \t/\l in {0/0,20/20,41/41,60/60,80/80,103/103} {
+      \draw[cardinalred, line width=1pt] (\t,0) -- (\t,0.8);
+      \fill[cardinalred] (\t,0.8) circle (1.6pt);
+      \node[below, coolgray] at (\t,0) {\l};
+    }
+    \draw[<->] (0,1.05) -- node[above] {20} (20,1.05);
+    \draw[<->] (20,1.05) -- node[above] {21} (41,1.05);
+    \draw[<->] (41,1.05) -- node[above] {19} (60,1.05);
+    \draw[<->] (60,1.05) -- node[above] {20} (80,1.05);
+    \draw[<->] (80,1.05) -- node[above] {23} (103,1.05);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item The board writes a time stamp with each sample. The period is
+          the difference between two time stamps.
+    \item The mean period gives the real rate. The variation of the period
+          is the jitter.
+    \item Use the time stamp of the board. The arrival time on the laptop
+          is not constant, because USB sends the lines in groups.
+  \end{itemize}
+  \begin{block}{The check of the lab}
+    The mean rate is within 1 percent of 50 Hz. At most 1 percent of the
+    periods are outside 18 to 22 ms. No line is lost.
+  \end{block}
+  \source{The periods of the figure are an example, not measured values.}
+\end{frame}
+
+% ------------------------------------------------------- MicroPython and C++
+\begin{frame}{MicroPython and C++}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.37\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    & \textbf{MicroPython} & \textbf{C++ (Arduino)} \\
+    \midrule
+    Work cycle & You enter a line at the prompt and see the result
+               & You edit, compile, and upload the complete program \\
+    Speed      & An interpreter runs the code: slower
+               & The compiler makes machine code: faster \\
+    Memory     & The interpreter and its heap use RAM
+               & The program uses only the memory that it needs \\
+    Timing     & The garbage collector can pause the program
+               & The program controls the timing \\
+    ML runtime & Not in the standard firmware
+               & TensorFlow Lite Micro, Edge Impulse library \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Use MicroPython to}
+        learn a sensor, test a bus, and collect data at a low rate.
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Use C++ to}
+        run a model, read audio or images, and build the final product.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{The same task in the two languages}
+  \begin{columns}[T]
+    \begin{column}{0.49\textwidth}
+      {\small\textbf{MicroPython} (today)}
+\begin{lstlisting}[style=python]
+from machine import I2C, Pin
+from lsm6ds3 import LSM6DS3
+
+i2c = I2C(0, sda=Pin(5), scl=Pin(6),
+          freq=400000)
+imu = LSM6DS3(i2c)
+
+ax, ay, az, gx, gy, gz = imu.read()
+print(ax, ay, az)
+\end{lstlisting}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      {\small\textbf{C++ with Arduino} (Day 3)}
+\begin{lstlisting}[style=cpp]
+#include <LSM6DS3.h>
+#include <Wire.h>
+LSM6DS3 myIMU(I2C_MODE, 0x6A);
+
+void setup() {
+  Serial.begin(115200);
+  myIMU.begin();
+}
+void loop() {
+  float ax = myIMU.readFloatAccelX();
+  Serial.println(ax);
+}
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The two programs use the same bus, the same address, and the
+          same registers.
+    \item The course uses MicroPython today. Days 3 to 5 use C++, because
+          the model runs with TensorFlow Lite Micro.
+  \end{itemize}
+  \source{C++ code: \emph{Machine Learning Systems}, XIAOML Kit, ``Motion
+    Classification and Anomaly Detection'' (short form).}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{sampling rate and window}{%
+  For each signal, select a sampling rate and a window length. Then
+  calculate the number of values in one window.
+  \begin{enumerate}
+    \item \textbf{Gesture.} An accelerometer with 3 axes on a wrist. The
+          motion has frequencies up to 15 Hz. One gesture needs about
+          1.5 s.
+    \item \textbf{Speech.} One microphone. The model needs the frequencies
+          up to 6 kHz. One keyword needs less than 1 s.
+    \item \textbf{Vibration.} An accelerometer with 1 axis on a motor. A
+          damaged bearing makes a vibration at 1.2 kHz. The motor turns
+          25 times each second. The model must see 5 turns.
+  \end{enumerate}
+  Use these rates: 50 Hz, 100 Hz, 4 kHz, 8 kHz, 16 kHz.\\
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{sampling rate and window}{%
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}lllll@{}}
+    \toprule
+    & \textbf{Minimum} & \textbf{Rate} & \textbf{Window}
+    & \textbf{Values in one window} \\
+    \midrule
+    Gesture   & 30 Hz   & 50 Hz  & 2 s   & $2 \times 50 \times 3 = 300$ \\
+    Speech    & 12 kHz  & 16 kHz & 1 s   & 16\,000 \\
+    Vibration & 2.4 kHz & 4 kHz  & 0.2 s & $0.2 \times 4000 = 800$ \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Gesture: 100 Hz is also correct. It gives 600 values for the
+          same information.
+    \item Speech: 8 kHz is too low. The frequencies between 4 and 6 kHz
+          then give aliases.
+    \item Vibration: 5 turns need $5 / 25 = 0.2$ s. A rate of 4 kHz needs
+          C++. A MicroPython loop with one bus transfer for each sample is
+          probably too slow. Measure before you decide.
+  \end{itemize}
+}
