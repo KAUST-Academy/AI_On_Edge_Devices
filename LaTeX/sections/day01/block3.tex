@@ -40,8 +40,6 @@
     \item The workflow is a loop. Deployment is the start of the feedback,
           not the end of the project.
   \end{itemize}
-  \source{The loop: \emph{Machine Learning Systems}, Volume I, chapters 1
-    and 3. Diagram drawn for this course.}
 \end{frame}
 
 \begin{frame}{Each stage has a place and an output}
@@ -66,9 +64,7 @@
   \end{tabular}
   \vskip 0.8em
   \keypoint{Training runs where the computation is. Inference runs where the
-    data is. The book names this pattern the train-serve split.}
-  \source{Train-serve split: \emph{Machine Learning Systems}, Volume I,
-    chapter 2.}
+    data is. This pattern is the train-serve split.}
 \end{frame}
 
 \begin{frame}{The device constraints come first}
@@ -106,8 +102,7 @@
   \end{itemize}
   \keypoint{Write the budgets of the device before you collect data: flash,
     RAM, latency, energy.}
-  \source{\emph{Machine Learning Systems}, slide deck of Volume I, chapter 3.
-    Chart drawn again.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 3.}
 \end{frame}
 
 % ------------------------------------------------------------------ stages
@@ -137,8 +132,6 @@
       \end{block}
     \end{column}
   \end{columns}
-  \source{Kit chapters ``Keyword Spotting'' and ``Motion Classification'' of
-    \emph{Machine Learning Systems}.}
 \end{frame}
 
 \begin{frame}{Stage 2: training}
@@ -168,8 +161,6 @@
       \end{block}
     \end{column}
   \end{columns}
-  \source{\emph{Machine Learning Systems}, Volume I, chapter 2 (train-serve
-    split).}
 \end{frame}
 
 \begin{frame}{Stage 3: optimization}
@@ -192,8 +183,6 @@
     \item Measure the accuracy and the three budgets before and after each
           step.
   \end{itemize}
-  \source{Methods: \emph{Machine Learning Systems}, Volume I, chapter 2
-    (progressive deployment).}
 \end{frame}
 
 \begin{frame}{Stage 4: conversion}
@@ -228,7 +217,6 @@
     \item Risk: the runtime does not support an operator of the model.
           Check this before you train for a long time.
   \end{itemize}
-  \source{Days 3 and 7 use these paths. Diagram of this course.}
 \end{frame}
 
 \begin{frame}{Stage 5: deployment}
@@ -264,8 +252,6 @@
     \item Then you measure on the device: latency, memory, and energy
           (Day 9).
   \end{itemize}
-  \source{Pipeline: kit chapter ``Keyword Spotting'' of \emph{Machine Learning
-    Systems}. Diagram drawn again for this course.}
 \end{frame}
 
 \begin{frame}{Stage 6: monitoring}
@@ -300,8 +286,8 @@
   \vskip 0.5em
   \keypoint{Send measured values from the device: confidence, latency,
     temperature. Days 12 and 13 show the method.}
-  \source{\emph{Machine Learning Systems}, Volume I, chapter 1 and its slide
-    deck. The curve is a sketch, not measured data.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 1. The curve is
+    a sketch, not measured data.}
 \end{frame}
 
 % ------------------------------------------------------------------- hybrid
@@ -330,8 +316,7 @@
     \item The total budget is 200 ms. The network is the part that varies
           most.
   \end{itemize}
-  \source{\emph{Machine Learning Systems}, slide decks of Volume I, chapters 1
-    and 2. Diagram drawn again for this course.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapters 1 and 2.}
 \end{frame}
 
 \begin{frame}{Three patterns for a hybrid system}
@@ -355,7 +340,6 @@
   A special case of hierarchical processing: a small model on the device
   answers when its confidence is high. It sends only the difficult inputs
   to a larger model.
-  \source{\emph{Machine Learning Systems}, Volume I, chapter 2.}
 \end{frame}
 
 \begin{frame}{The hybrid system of this course}

@@ -1,0 +1,63 @@
+% Goal and plan of the Day 1 lab.
+% The parts and the times come from the Day 1 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has a toolchain that works, and a first
+          resource budget for each device class.
+    \item \textbf{Board:} the XIAOML Kit. Each group has two students and one
+          kit.
+    \item \textbf{Deliverable:} the file \code{report.md} with the results of
+          the five sensor tests, the completed table ``model and device'',
+          and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the method: three budgets of a model, and two budgets of
+    a device. In the lab, you read the budgets of your board, and you
+    calculate the budgets of three models.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{You decide from flash and RAM numbers if a model fits a device.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (50,0.8);
+    \fill[treegreen!60]   (50,0)  rectangle (95,0.8);
+    \fill[cardinalred!55] (95,0)  rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (50,0) -- (50,0.8) (95,0) -- (95,0.8)
+      (150,0) -- (150,0.8);
+    \node at (25,0.4)    {\textbf{A}: 50 min};
+    \node at (72.5,0.4)  {\textbf{B}: 45 min};
+    \node at (122.5,0.4) {\textbf{C}: 55 min};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,50,95,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lL{0.62\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Toolchain: Arduino IDE, esp32 core, Python environment, Blink
+      & 50 min \\
+    B & Sensor tests: IMU, display, microphone, camera, Wi-Fi & 45 min \\
+    C & Model budgets: memory of the board, notebook, table, Decision Log
+      & 55 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.6em
+  Write each result in \code{report.md} when you get it. Do not wait for the
+  end of the lab.
+\end{frame}

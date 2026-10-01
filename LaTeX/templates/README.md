@@ -71,8 +71,12 @@ step. The PDF is still correct.
 - Keep the cover frame unchanged.
 - Set `\coursecredits` in the main file. Name only the sources that the deck
   uses. The header of `preamble/course.tex` lists the commands.
-- Name the source of each reused figure and each reused text on the same
-  frame, with `\source{...}` or `\sourcehere{...}`.
+- The credits frame names the sources of the deck. Add a source line to a
+  frame (`\source{...}` or `\sourcehere{...}`) only in these cases: a copied
+  figure, photograph, or table; a number that a source measured or reported;
+  a result of a work that the credits frame does not name. A frame with
+  rewritten text and a new diagram has no source line. Rule 2 of
+  `ATTRIBUTION.md` gives the complete rule.
 - A frame that holds code needs the option `[fragile]`. A listing cannot stand
   in the argument of a command, so such a frame uses the environment
   `exerciseblock` or `answerblock` in place of `\exerciseframe`.

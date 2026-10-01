@@ -1,0 +1,48 @@
+% Check criterion, deliverable, and the Decision Log question of Day 1.
+% The criterion and the deliverable come from the Day 1 section of the
+% syllabus and from Labs/day01/README.md.
+\begin{frame}{Check criterion}
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ All five sensor tests of Part B pass.
+    \item \cmark\ The report has the two lines of the build output, and the
+          values of \code{memory\_report} for the two PSRAM settings.
+    \item \cmark\ The notebook prints \code{Task 1: complete}.
+    \item \cmark\ The report has the predictions of task 2. You wrote the
+          predictions before the measurement.
+    \item \cmark\ The table has six rows and four devices. Each ``does not
+          fit'' has a reason.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.5em
+  \textbf{Hand in:} the file \code{report.md}. Show the notebook and the
+  report to the instructor.
+  \vskip 0.5em
+  \keypoint{A result with no reason is not complete. ``Does not fit'' is the
+    start of the answer. The budget that decides is the answer.}
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    You must classify images of 96 $\times$ 96 pixels on the XIAOML Kit.
+    \begin{itemize}
+      \item Which of the three models do you select?
+      \item In which data type: \code{float32} or \code{int8}?
+      \item With PSRAM or with no PSRAM?
+      \item Which budget decides?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the model size and the peak activation memory from your
+          table,
+    \item gives the flash budget and the RAM budget that you measured on
+          your board,
+    \item names what you lose with your decision. Example: memory against
+          accuracy.
+  \end{itemize}
+\end{frame}

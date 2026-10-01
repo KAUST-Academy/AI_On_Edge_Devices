@@ -126,7 +126,6 @@
   \vskip 0.6em
   \keypoint{Each weight is used one time. The number of operations is equal
     to the number of weights. The layer is expensive in flash.}
-  \source{Example layer: \emph{Machine Learning Systems}, Volume I, chapter 5.}
 \end{frame}
 
 \begin{frame}{Cost of a convolution layer}
@@ -180,13 +179,11 @@
   \end{tabular}
   \vskip 0.8em
   \begin{itemize}
-    \item Example of the book: a fully connected layer from 1024 inputs to
-          1024 outputs has 1\,048\,576 weights.
+    \item Example: a fully connected layer from 1024 inputs to 1024 outputs
+          has 1\,048\,576 weights.
     \item A convolution layer with a $3 \times 3$ kernel shares its weights
           across the image. Its parameters do not depend on the image size.
   \end{itemize}
-  \source{\emph{Machine Learning Systems}, Volume I, chapter 6 and its slide
-    deck.}
 \end{frame}
 
 \begin{frame}{Layers with few parameters or no parameters}
@@ -240,8 +237,6 @@
   \vskip 0.6em
   \normalsize
   Calculate one row with the formulas before you continue.
-  \source{Example of this course. The numbers come from the formulas of the
-    two frames before.}
 \end{frame}
 
 \begin{frame}{Example: where the costs are}
@@ -326,8 +321,8 @@
   \vskip 0.6em
   On a microcontroller, the flash holds the program and the model. The
   weights stay in the flash. The device does not copy them to the RAM.
-  \source{Parameters of the three models: slide decks of \emph{Machine
-    Learning Systems}, Volume I, chapters 2 and 6. Sizes with 1 MB = 1024 KB.}
+  \source{Parameters of the three models: \emph{Machine Learning Systems},
+    Volume I, chapters 2 and 6. Sizes with 1 MB = 1024 KB.}
 \end{frame}
 
 % -------------------------------------------------------------------- budget 2
@@ -358,8 +353,7 @@
   \vskip 0.6em
   \keypoint{Use the count to compare models. Then measure the latency on
     the device (Day 9).}
-  \source{\emph{Machine Learning Systems}, Volume I, chapter 6 and its slide
-    deck.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 6.}
 \end{frame}
 
 % -------------------------------------------------------------------- budget 3
@@ -398,8 +392,6 @@
     \item After the layer, the runtime uses the memory of the input again.
     \item The peak activation memory is the largest sum over all layers.
   \end{itemize}
-  \source{Example network of this course. Day 3 shows how TensorFlow Lite
-    Micro plans this memory.}
 \end{frame}
 
 \begin{frame}{The same network in two data types}
@@ -423,7 +415,6 @@
   \vskip 0.4em
   \keypoint{This model is small in flash in the two data types. The RAM
     decides. You cannot see this from the number of parameters.}
-  \source{Example of this course, calculated from the layer table.}
 \end{frame}
 
 \begin{frame}{The budgets are independent}
@@ -500,8 +491,6 @@
   \small
   The depthwise step filters the space. The pointwise step mixes the
   channels. The output has the same size in the two cases.
-  \source{Diagram drawn for this course, after the CNN recap deck in this
-    repository.}
 \end{frame}
 
 \begin{frame}{Depthwise separable convolution: the cost}
@@ -566,8 +555,7 @@
           residual block joins the wide tensors. Thus the name
           ``inverted''.
   \end{itemize}
-  \source{Sandler et al., ``MobileNetV2'', 2018. Diagram drawn for this
-    course.}
+  \source{Sandler et al., ``MobileNetV2'', 2018.}
 \end{frame}
 
 \begin{frame}{Inverted residual: cheap in flash, expensive in RAM}
@@ -637,8 +625,8 @@
   \vskip 0.6em
   \keypoint{The design of the blocks decides the cost before you apply
     quantization or pruning.}
-  \source{Parameters and operations: slide deck of \emph{Machine Learning
-    Systems}, Volume I, chapter 6. Sizes with 1 MB = 1024 KB.}
+  \source{Parameters and operations: \emph{Machine Learning Systems}, Volume
+    I, chapter 6. Sizes with 1 MB = 1024 KB.}
 \end{frame}
 
 % ---------------------------------------------------------------------- method

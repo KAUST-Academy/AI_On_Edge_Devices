@@ -1,0 +1,36 @@
+% Common problems of the Day 1 lab and their fix. The rows come from
+% Labs/day01/README.md. Nobody tested the fixes on a board.
+\begin{frame}{Common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix} \\
+    \midrule
+    The Arduino IDE shows no port
+      & Use a data cable. On Linux, do step 9 of \code{Labs/SETUP.md}. \\
+    The upload fails with a connection error
+      & Disconnect the cable. Hold the \code{B} (boot) button of the XIAO.
+        Connect the cable, then release the button. Upload again. \\
+    The Serial Monitor shows nothing or wrong characters
+      & Set 115200 baud. \\
+    \code{imu\_test} prints \code{IMU initialization failed}
+      & Press the XIAO on the expansion board until all pins are in. \\
+    \code{mic\_test} prints nothing
+      & Open the Serial Plotter or the Serial Monitor. The sketch waits for
+        it. \\
+    \code{camera\_test} prints \code{PSRAM is not active}
+      & Set \code{Tools > PSRAM > OPI PSRAM} and upload
+        again. \\
+    \code{WiFiScan} finds no network
+      & Connect the antenna to the small connector on the XIAO. \\
+    The notebook prints \code{No module named 'torch'}
+      & Start Jupyter with \code{.venv/bin/jupyter lab}. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  The README of the lab has the complete list. Ask the instructor when a part
+  takes more than the planned time.
+\end{frame}

@@ -43,8 +43,18 @@ The licence of each repository above was read from its `LICENSE` file on
 
 1. Add one row to Section 3 for each figure, code file, data file, or text
    block that comes from a source.
-2. Name the source on the same frame of the deck, or in the same cell of the
-   notebook, or in the first comment of the sketch.
+2. Name the source in the same cell of the notebook, or in the first comment
+   of the sketch. In a deck, the credits frame names the sources. A frame
+   also has a source line in these three cases:
+   - The frame shows a figure, a photograph, or a table that is a copy from
+     a source.
+   - The frame gives a number that a source measured or reported.
+   - The frame uses a result of a person or a work that the credits frame
+     does not name.
+
+   A frame with rewritten text and a new diagram has no source line. Write
+   only the source and the chapter in the source line. Write the change in
+   Section 3, not on the frame.
 3. Write the path inside the source repository, not a path on your computer.
 4. Write what you changed. "none" means a copy with no change.
 5. Copy the file into this repository. No file here points to a path outside
@@ -92,6 +102,11 @@ Each deck, lab, and module adds its rows here.
 | `Labs/day01/sketches/memory_report/memory_report.ino` | code | This repository | `Labs/hardware/HW-03/sketches/memory_report/memory_report.ino` | GPL-3.0 | none |
 | `Labs/day01/README.md` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the order of the tests and the expected results, rewritten in short sentences |
 | `Labs/day01/model_budgets.ipynb`, `solutions/model_budgets.ipynb` | text | Machine Learning Systems | `books/vol1/02_ml_systems/02_ml_systems.qmd`, `books/vol1/06_nn_architectures/06_nn_architectures.qmd` | CC BY-NC-SA 4.0 | the method: three budgets, the fit check, the models MobileNetV2 and a small depthwise CNN. All code is new. |
+| `LaTeX/images/day01/kit-mounted.png` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/images/png/mounted.png` | CC BY-NC-SA 4.0 | none (new file name) |
+| `LaTeX/images/day01/expansion-board-views.png` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/images/png/exp_board_views.png` | CC BY-NC-SA 4.0 | none (new file name) |
+| `LaTeX/images/day01/imu-directions.png` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/images/png/imu-directions.png` | CC BY-NC-SA 4.0 | none |
+| `LaTeX/images/day01/antenna.jpg` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/images/jpeg/antenna.jpg` | CC BY-NC-SA 4.0 | none |
+| `LaTeX/sections/day01_lab/hardware.tex`, `parts.tex` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the parts of the kit, the order of the tests, the antenna steps, and the expected results, rewritten in short sentences. The steps follow `Labs/day01/README.md`. |
 
 <!-- Example rows. Keep them in this comment.
 | `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |
