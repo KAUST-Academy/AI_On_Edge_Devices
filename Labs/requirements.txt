@@ -1,0 +1,32 @@
+# Python packages for the labs of "AI on Edge Devices".
+#
+# No version is fixed yet. The Day 1 pilot fixes each version and writes it
+# in VERSIONS.md. Each lab task adds the packages that its lab needs.
+#
+# Install:
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+
+# Base. Every lab uses these.
+numpy
+matplotlib
+pandas
+jupyterlab
+
+# Training and profiling of models (Days 1, 3, 4, and 6).
+torch
+torchvision
+
+# Conversion and runtimes (Days 3, 4, and 7).
+onnx
+onnxruntime
+
+# Object detection (Day 8).
+ultralytics
+
+# Camera and video (Days 8 and 11).
+opencv-python
+
+# Messages and telemetry (Days 12 and 13).
+paho-mqtt
+requests

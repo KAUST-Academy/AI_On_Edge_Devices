@@ -1,0 +1,36 @@
+# Labs
+
+This folder holds the lab files of the course "AI on Edge Devices".
+
+## Layout
+
+| Path | Content |
+|---|---|
+| `Labs/dayNN/` | The lab of core day `NN`: `README.md`, notebooks, `sketches/`, `solutions/`, `TEST_NOTES.md` |
+| `Labs/modules/<ID>/` | The lab of backup module `<ID>` |
+| `Labs/hardware/HW-nn/` | Preparation and test steps for one hardware decision |
+| `Labs/templates/` | Skeletons for a lab folder |
+| `Labs/SETUP.md` | Setup guide for the lab computers |
+| `Labs/VERSIONS.md` | The tool versions and the board names of the course |
+| `Labs/requirements.txt` | The Python packages of the labs |
+
+## Index of the labs
+
+Each lab adds one row here.
+
+| Day or module | Title | Board | Folder | Hardware status |
+|---|---|---|---|---|
+
+## Rules for every lab folder
+
+1. The folder has a `README.md` and a `TEST_NOTES.md`. Start both from `Labs/templates/`.
+2. The `README.md` has the line `Hardware status:` near the top. No board was
+   connected when the material was prepared.
+3. The student version marks the places for the student work. The folder
+   `solutions/` holds the complete version.
+4. The first cell of a notebook and the first comment of a sketch give the
+   credits of the source.
+5. Data stays in the folder, or a script downloads it. No file is larger than
+   20 MB.
+6. Each sketch names its board, its libraries, and its library versions in the
+   first comment.
