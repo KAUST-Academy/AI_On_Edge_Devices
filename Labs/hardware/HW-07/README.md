@@ -1,4 +1,4 @@
-# HW-07 — MQTT from the XIAO ESP32S3 to a local broker
+# HW-07: MQTT from the XIAO ESP32S3 to a local broker
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -211,10 +211,10 @@ No board was connected. The test used a broker on the work computer.
 | File | State | Source | Change |
 |---|---|---|---|
 | `sketches/mqtt_imu/mqtt_imu.ino` | changed | Task 2 and Task 3 programs of `chapter_3-5.qmd` | Board ESP32S3. Local broker by IP address. IMU in place of the DHT20 sensor. JSON payload with `seq`. Topic tree `edgeai/<group>/xiao/`. Last will. LED command in place of the buzzer. One connection attempt each 5 seconds with no blocking loop. New function `publishResult()`. |
-| `sketches/mqtt_imu/arduino_secrets.h` | new | — | not tested |
+| `sketches/mqtt_imu/arduino_secrets.h` | new | no source | not tested |
 | `micropython/mqtt_imu.py` | new | Design of the chapter | Logic tested with stand-in modules. Not tested on the board. |
-| `micropython/config.py` | new | — | not tested |
-| `host/mqtt_check.py` | new | — | tested on the work computer |
+| `micropython/config.py` | new | no source | not tested |
+| `host/mqtt_check.py` | new | no source | tested on the work computer |
 | `mosquitto_lab.conf` | new | Mosquitto documentation | not tested (the work computer has no Mosquitto broker) |
 
 Compile check (no board):

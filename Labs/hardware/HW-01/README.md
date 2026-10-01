@@ -1,4 +1,4 @@
-# HW-01 — MicroPython on the XIAOML Kit
+# HW-01: MicroPython on the XIAOML Kit
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -175,10 +175,10 @@ resolution is different: 0.488 mg for each count, not 0.061 mg.
 | File | State | Source | Change |
 |---|---|---|---|
 | `board/lsm6ds3.py` | new | Register values from `LSM6DS3.h` and `LSM6DS3.cpp` | not tested |
-| `board/i2c_scan.py` | new | — | not tested |
+| `board/i2c_scan.py` | new | no source | not tested |
 | `board/imu_stream.py` | new | Method of the kit data collection sketch | not tested |
-| `host/check_rate.py` | new | — | tested on the work computer with four synthetic files (constant rate, slow rate, lost lines, large jitter) |
-| `get_firmware.sh` | new | — | tested on the work computer: the download and the checksum pass |
+| `host/check_rate.py` | new | no source | tested on the work computer with four synthetic files (constant rate, slow rate, lost lines, large jitter) |
+| `get_firmware.sh` | new | no source | tested on the work computer: the download and the checksum pass |
 
 The driver was tested on the work computer with a simulated I2C bus. The
 test confirms the register writes (`0x12 = 0x44`, `0x10 = 0x64`, `0x11 = 0x6C`)

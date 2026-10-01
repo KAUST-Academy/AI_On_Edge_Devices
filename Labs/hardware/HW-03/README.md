@@ -1,4 +1,4 @@
-# HW-03 — Memory budget on the XIAO ESP32S3
+# HW-03: Memory budget on the XIAO ESP32S3
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 

@@ -56,13 +56,13 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 |---|---|---|---|
 | esp32 by Espressif Systems | 3.3.12 | `esp32:esp32:XIAO_ESP32S3` | Days 1 to 5, 11, 12 |
 | Arduino Mbed OS Nano Boards | 4.6.0 | `arduino:mbed_nano:nano33ble` | Nano 33 backup modules |
-| Seeed Arduino LSM6DS3 | 2.0.7 | — | Days 1 to 5 |
-| U8g2 by oliver | 2.36.19 | — | Days 1 to 5 |
-| Harvard_TinyMLx | 1.2.4-Alpha | — | Nano 33 backup modules |
-| Chirale_TensorFlowLite | 2.0.0 | — | Days 3 and 4 (`HW-02`, `HW-03`) |
-| PubSubClient by Nick O'Leary | 2.8 | — | Day 12 (`HW-07`) |
-| Arduino_BMI270_BMM150 | 1.2.4 | — | Nano 33 BLE Sense Rev2 (`HW-10`) |
-| ArduinoBLE | 2.1.0 | — | Nano 33 module NB-4 (`HW-10`) |
+| Seeed Arduino LSM6DS3 | 2.0.7 | no board name | Days 1 to 5 |
+| U8g2 by oliver | 2.36.19 | no board name | Days 1 to 5 |
+| Harvard_TinyMLx | 1.2.4-Alpha | no board name | Nano 33 backup modules |
+| Chirale_TensorFlowLite | 2.0.0 | no board name | Days 3 and 4 (`HW-02`, `HW-03`) |
+| PubSubClient by Nick O'Leary | 2.8 | no board name | Day 12 (`HW-07`) |
+| Arduino_BMI270_BMM150 | 1.2.4 | no board name | Nano 33 BLE Sense Rev2 (`HW-10`) |
+| ArduinoBLE | 2.1.0 | no board name | Nano 33 module NB-4 (`HW-10`) |
 
 Build options of the XIAO ESP32S3 (`HW-03`):
 

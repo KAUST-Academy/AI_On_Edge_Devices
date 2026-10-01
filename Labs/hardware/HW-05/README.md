@@ -1,4 +1,4 @@
-# HW-05 — Small language models on the Raspberry Pi 5
+# HW-05: Small language models on the Raspberry Pi 5
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -9,8 +9,8 @@ Needed by: the Day 10 lab (run and measure, Python integration, application).
 | Topic | Decision |
 |---|---|
 | Runtime | Ollama |
-| Model 1 (small) | `llama3.2:1b` — Llama 3.2, 1.2 billion parameters, Q8_0, 1.32 GB download |
-| Model 2 (large) | `llama3.2:3b` — Llama 3.2, 3.2 billion parameters, Q4_K_M, 2.02 GB download |
+| Model 1 (small) | `llama3.2:1b`: Llama 3.2, 1.2 billion parameters, Q8_0, 1.32 GB download |
+| Model 2 (large) | `llama3.2:3b`: Llama 3.2, 3.2 billion parameters, Q4_K_M, 2.02 GB download |
 | Measurement | `measure_slm.py` of this folder, with the five prompts of `prompts.txt` |
 | Models for Part C (not fixed) | `nomic-embed-text` for retrieval-augmented generation, `llava-phi3:3.8b` for image description. The Day 10 lab task makes the final selection. |
 
@@ -47,10 +47,10 @@ Use these numbers as the reference. They are not measurements of this course.
 | Model | Quantization and size in the source | Prompt eval rate | Eval rate |
 |---|---|---|---|
 | `llama3.2:1b` | Q8_0, 1.3 GB | 19.46 tokens/s | 8.99 tokens/s |
-| `llama3.2:3b` | Q4_0, 2 GB | — | 5.3 tokens/s |
-| `gemma2:2b` | Q4_0, 1.6 GB | — | "around the same performance as Llama 3.2:3B" |
-| `phi3.5:3.8b` | Q4_0, 2.2 GB of RAM | — | 2.25 tokens/s |
-| `llava-phi3:3.8b` (text prompt) | — | — | 3.93 tokens/s |
+| `llama3.2:3b` | Q4_0, 2 GB | not stated | 5.3 tokens/s |
+| `gemma2:2b` | Q4_0, 1.6 GB | not stated | "around the same performance as Llama 3.2:3B" |
+| `phi3.5:3.8b` | Q4_0, 2.2 GB of RAM | not stated | 2.25 tokens/s |
+| `llava-phi3:3.8b` (text prompt) | not stated | not stated | 3.93 tokens/s |
 
 The same lab reports for the Raspberry Pi 5:
 

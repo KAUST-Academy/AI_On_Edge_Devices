@@ -1,4 +1,4 @@
-# HW-02 — TensorFlow Lite Micro on the ESP32-S3
+# HW-02: TensorFlow Lite Micro on the ESP32-S3
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -154,7 +154,7 @@ PSRAM disabled.
 | `sketches/tflm_hello/tflm_hello.ino` | changed | `examples/hello_world/hello_world.ino` of Chirale_TensorFlowLite 2.0.0 | The sketch makes its own input values. One operator in place of `AllOpsResolver`. Prints the arena use and the latency. Serial speed 115200. Waits 3 s for the Serial Monitor, not without limit. |
 | `sketches/tflm_hello/model.h` | changed | `examples/hello_world/model.h` of the same library | The same 2488 bytes. `tflite_to_header.py` made the file again, with an include guard. |
 | `models/hello_world.tflite` | copied with no change | The bytes of `model.h` above | none |
-| `tflite_to_header.py` | new | — | tested on the work computer |
+| `tflite_to_header.py` | new | no source | tested on the work computer |
 
 Compile check (no board):
 

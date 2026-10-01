@@ -1,4 +1,4 @@
-# HW-04 — Raspberry Pi 5 image
+# HW-04: Raspberry Pi 5 image
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -227,8 +227,8 @@ Wait until the green LED is off.
 |---|---|---|---|
 | `setup_pi.sh` | new | Commands from the sources above | not tested on a Raspberry Pi |
 | `check_pi.sh` | new | Camera and temperature commands from the book | Tested on the work computer (x86, no camera): the script runs to the end and reports the missing parts as FAIL. Not tested on a Raspberry Pi. |
-| `prepare_master.sh` | new | — | not tested |
-| `set_hostname.sh` | new | — | The checks of the arguments were tested. The changes of the system were not tested. |
+| `prepare_master.sh` | new | no source | not tested |
+| `set_hostname.sh` | new | no source | The checks of the arguments were tested. The changes of the system were not tested. |
 
 Open points for the test:
 

@@ -1,4 +1,4 @@
-# HW-08 — Dashboard for the monitored application
+# HW-08: Dashboard for the monitored application
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 

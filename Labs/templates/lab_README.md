@@ -1,4 +1,4 @@
-# Day NN lab — TITLE OF THE LAB
+# Day NN lab: TITLE OF THE LAB
 
 Hardware status: not tested on hardware (prepared on YYYY-MM-DD)
 
@@ -38,7 +38,7 @@ python3 -m venv .venv
 
 ## Steps
 
-### Part A — TITLE (MM min)
+### Part A: TITLE (MM min)
 
 1. FIRST STEP.
 2. SECOND STEP. THE COMMAND:
@@ -49,12 +49,12 @@ python3 -m venv .venv
 
    You see: THE EXPECTED OUTPUT.
 
-### Part B — TITLE (MM min)
+### Part B: TITLE (MM min)
 
 1. FIRST STEP.
 2. SECOND STEP.
 
-### Part C — TITLE (MM min)
+### Part C: TITLE (MM min)
 
 1. FIRST STEP.
 2. Write your prediction before you measure. Then measure and explain the

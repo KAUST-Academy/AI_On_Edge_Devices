@@ -1,4 +1,4 @@
-# HW-06 — RTSP from the Raspberry Pi camera
+# HW-06: RTSP from the Raspberry Pi camera
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -204,10 +204,10 @@ through FFmpeg (640 × 480, 30 frames per second, `libx264`).
 
 | File | State | Source | Change |
 |---|---|---|---|
-| `install_mediamtx.sh` | new | — | tested on the work computer (x86). Not tested on a Raspberry Pi. |
+| `install_mediamtx.sh` | new | no source | tested on the work computer (x86). Not tested on a Raspberry Pi. |
 | `mediamtx_cam.yml` | new | Key names from `mediamtx.yml` of the release | The file loads on x86. The camera keys are not tested. |
-| `rtsp_reader.py` | new | — | tested with a synthetic stream. Not tested with the camera, a model, or `--show`. |
-| `latency_clock.py` | new | — | The mode `--no-window` was tested. The window mode was not tested. |
+| `rtsp_reader.py` | new | no source | tested with a synthetic stream. Not tested with the camera, a model, or `--show`. |
+| `latency_clock.py` | new | no source | The mode `--no-window` was tested. The window mode was not tested. |
 
 ## Test steps for the instructor
 

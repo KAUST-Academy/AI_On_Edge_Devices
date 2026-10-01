@@ -1,4 +1,4 @@
-# HW-09 — Lab network
+# HW-09: Lab network
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 

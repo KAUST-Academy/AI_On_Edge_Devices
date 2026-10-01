@@ -1,4 +1,4 @@
-# HW-10 — Arduino Nano 33 BLE Sense Rev2
+# HW-10: Arduino Nano 33 BLE Sense Rev2
 
 Hardware status: not tested on hardware (prepared on 2026-10-01)
 
@@ -67,9 +67,9 @@ where it applies. The sizes are not measured on a board.
 
 | Example | Module | Sensors and outputs | Extra hardware | Tensor arena | Flash (bytes) | Static RAM (bytes) |
 |---|---|---|---|---|---|---|
-| `test_IMU` | NB-1 | IMU: accelerometer, gyroscope, magnetometer | none | — | 116 768 (11%) | 46 600 (17%) |
-| `test_microphone` | NB-1 | PDM microphone. Start with the shield button or with the serial command `click`. | shield optional | — | 94 840 (9%) | 46 696 (17%) |
-| `test_camera` | NB-1 | OV7675 camera, 176 × 144, RGB565 | camera module, shield or wires | — | 96 896 (9%) | 97 664 (37%) |
+| `test_IMU` | NB-1 | IMU: accelerometer, gyroscope, magnetometer | none | no model | 116 768 (11%) | 46 600 (17%) |
+| `test_microphone` | NB-1 | PDM microphone. Start with the shield button or with the serial command `click`. | shield optional | no model | 94 840 (9%) | 46 696 (17%) |
+| `test_camera` | NB-1 | OV7675 camera, 176 × 144, RGB565 | camera module, shield or wires | no model | 96 896 (9%) | 97 664 (37%) |
 | `hello_world` | NB-2 | none. Output: LED brightness. | none | 2 000 | 253 560 (25%) | 53 136 (20%) |
 | `magic_wand` | NB-4 | IMU. Output: Bluetooth Low Energy. | none | 30 × 1024 | 443 936 (45%) | 159 240 (60%) |
 | `micro_speech` | NB-5 | PDM microphone. Output: RGB LED. | none | 10 × 1024 | 180 544 (18%) | 76 800 (29%) |

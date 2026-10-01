@@ -1,4 +1,4 @@
-# Test notes — Day NN lab
+# Test notes: Day NN lab
 
 This file has two parts. Part 1 lists the code that nobody tested on
 hardware. Part 2 is the checklist for the instructor.
@@ -9,7 +9,7 @@ hardware. Part 2 is the checklist for the instructor.
 |---|---|---|---|
 | `FILE` | copied with no change | SOURCE PATH | none |
 | `FILE` | changed | SOURCE PATH | WHICH LINE AND WHY |
-| `FILE` | new | — | not tested |
+| `FILE` | new | no source | not tested |
 
 Compile check (no board):
 
