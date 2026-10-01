@@ -1,0 +1,190 @@
+% Course preamble for "AI on Edge Devices" (KAUST Academy).
+%
+% Load this file in the main file of every new deck:
+%
+%   \documentclass[10pt]{beamer}
+%   \input{preamble/course}
+%
+% Do not load preamble/packages.tex or preamble/commands.tex. Those two files
+% belong to the older CNN recap deck and they report LaTeX errors.
+%
+% This file gives these commands:
+%
+%   \source{...}       small source line at the bottom of the frame
+%   \sourcehere{...}   small source line at the current position
+%   \code{...}         inline code
+%   \cmark, \xmark     check mark and cross mark, for comparison tables
+%   \keypoint{...}     box for the main point of a frame
+%   \exerciseframe{title}{body}   one exercise frame
+%   \answerframe{title}{body}     the answer frame of that exercise
+%   exerciseblock                 environment: the exercise box alone
+%   answerblock                   environment: the answer box alone
+%   \coursecredits                source list of the credits frame
+%
+% Listing styles for code: python, cpp, shell. Example:
+%
+%   \begin{frame}[fragile]{Read the sensor}
+%     \begin{lstlisting}[style=python]
+%   print("hello")
+%     \end{lstlisting}
+%   \end{frame}
+%
+% A frame that contains a listing needs the option [fragile]. A listing also
+% cannot stand in the argument of a command. So write such a frame in full and
+% use the environment exerciseblock in place of \exerciseframe.
+%
+% sections/credits.tex prints the credits frame.
+%
+% Check this preamble after a change:
+%   bash tools/build_deck.sh Preamble_Test.tex
+
+% ---------------------------------------------------------------- packages ---
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{pifont}
+\usepackage{tcolorbox}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric}
+
+% The theme, the logo, and the colours of the template.
+\input{preamble/beamer_settings}
+
+% ------------------------------------------------------------ frame layout ---
+% Captions on a slide carry no number.
+\setbeamertemplate{caption}{\insertcaption}
+\setbeamerfont{caption}{size=\footnotesize}
+\hypersetup{colorlinks=true,linkcolor=cardinalred,urlcolor=darkcyan}
+
+% ------------------------------------------------------------ code listings ---
+% beamercolorthemestanford.sty gives cardinalred, coolgray, treegreen,
+% darkcyan, boxgray, and footergray.
+\definecolor{codebg}{RGB}{246,245,243}
+
+\lstdefinestyle{coursebase}{
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{cardinalred}\bfseries,
+  commentstyle=\color{coolgray}\itshape,
+  stringstyle=\color{darkcyan},
+  numberstyle=\ttfamily\tiny\color{coolgray},
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{footergray},
+  framesep=3pt,
+  xleftmargin=2pt,
+  xrightmargin=2pt,
+  aboveskip=0.6em,
+  belowskip=0.4em,
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  columns=fullflexible,
+  keepspaces=true,
+  upquote=true,
+  tabsize=2,
+}
+
+\lstdefinestyle{python}{
+  style=coursebase,
+  language=Python,
+  morekeywords={as,with,assert,None,True,False,self,async,await},
+}
+
+\lstdefinestyle{cpp}{
+  style=coursebase,
+  language=C++,
+  morekeywords={int8_t,uint8_t,int16_t,uint16_t,int32_t,uint32_t,size_t,
+                constexpr,nullptr,alignas,PROGMEM},
+}
+
+\lstdefinestyle{shell}{
+  style=coursebase,
+  language=sh,
+  morekeywords={python3,pip,pip3,arduino-cli,mpremote,esptool.py,ollama,
+                mosquitto_pub,mosquitto_sub,ffmpeg,systemctl,raspi-config},
+}
+
+% Plain \begin{lstlisting} uses the base style.
+\lstset{style=coursebase}
+
+% ---------------------------------------------------------------- commands ---
+% Inline code.
+\newcommand{\code}[1]{\texttt{\small #1}}
+
+% Check mark and cross mark.
+\newcommand{\cmark}{{\color{treegreen}\ding{51}}}
+\newcommand{\xmark}{{\color{cardinalred}\ding{55}}}
+
+% Source line for a figure, a table, or text from a source.
+% \sourcehere prints the line at the current position, for example under a
+% figure in one column. \source pushes the line to the bottom of the frame.
+\newcommand{\sourcehere}[1]{{\par\scriptsize\color{coolgray}Source: #1\par}}
+\newcommand{\source}[1]{\vfill\sourcehere{#1}}
+
+% The main point of a frame.
+\newcommand{\keypoint}[1]{%
+  \begin{tcolorbox}[colframe=cardinalred,colback=boxgray,boxrule=0.6pt,
+      arc=2pt,left=4pt,right=4pt,top=3pt,bottom=3pt]
+    \textbf{Key point:} #1
+  \end{tcolorbox}%
+}
+
+% ------------------------------------------------------ exercise and answer ---
+% \exerciseframe and \answerframe make the complete frame. They read the body
+% as a macro argument, so the body must contain no listing.
+% The environments exerciseblock and answerblock hold the content alone. Use
+% them inside a frame with the option [fragile] when the body has a listing.
+\newtcolorbox{exerciseblock}{colframe=darkcyan,colback=boxgray,boxrule=0.8pt,
+  arc=2pt,left=5pt,right=5pt,top=4pt,bottom=4pt}
+
+\newtcolorbox{answerblock}{colframe=treegreen,colback=boxgray,boxrule=0.8pt,
+  arc=2pt,left=5pt,right=5pt,top=4pt,bottom=4pt}
+
+\newcommand{\exerciseframe}[2]{%
+  \begin{frame}{Exercise: #1}
+    \begin{exerciseblock}#2\end{exerciseblock}
+  \end{frame}%
+}
+
+\newcommand{\answerframe}[2]{%
+  \begin{frame}{Answer: #1}
+    \begin{answerblock}#2\end{answerblock}
+  \end{frame}%
+}
+
+% ----------------------------------------------------------------- credits ---
+% One command for each source. Section 10 of the syllabus gives this text.
+\newcommand{\creditmlsys}{\item \emph{Machine Learning Systems} by Vijay
+  Janapa Reddi and contributors, Harvard University. mlsysbook.ai,
+  CC BY-NC-SA 4.0.}
+\newcommand{\creditraspi}{\item \emph{Edge AI Engineering: Raspberry Pi} by
+  Marcelo Rovai. github.com/Mjrovai/EdgeML\_Made\_Ease\_ebook and
+  github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0.}
+\newcommand{\creditxiao}{\item \emph{TinyML Made Easy: XIAO ESP32S3} by
+  Marcelo Rovai. github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0.}
+\newcommand{\creditbigpower}{\item \emph{XIAO: Big Power, Small Board} by Lei
+  Feng and Marcelo Rovai.
+  github.com/Mjrovai/XIAO\_Big\_Power\_Small\_Board-ebook, GPL-3.0.}
+\newcommand{\credittinymlx}{\item \emph{HarvardX TinyML courseware} by the
+  TinyMLx team. github.com/tinyMLx/courseware, CC BY-NC-SA 4.0.}
+\newcommand{\credittflm}{\item \emph{TensorFlow Lite Micro Arduino examples}
+  by The TensorFlow Authors.
+  github.com/tensorflow/tflite-micro-arduino-examples, Apache-2.0.}
+
+% The source list of the credits frame. The default names the main textbook
+% and the three companion books. A deck changes the list, so that the frame
+% names only the sources that the deck uses:
+%   \renewcommand{\coursecredits}{\creditmlsys\creditxiao}
+\newcommand{\coursecredits}{%
+  \creditmlsys
+  \creditraspi
+  \creditxiao
+  \creditbigpower
+}
