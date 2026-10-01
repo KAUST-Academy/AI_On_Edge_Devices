@@ -63,6 +63,22 @@
 \setbeamerfont{caption}{size=\footnotesize}
 \hypersetup{colorlinks=true,linkcolor=cardinalred,urlcolor=darkcyan}
 
+% The cover frame (sections/cover.tex) has room for a title of one line. A
+% longer title moves the date into the footer. This hook counts the lines of
+% the title and moves the cover up by the height of each extra line.
+\newcount\covertitlelines
+\newlength{\covertitleskip}
+\addtobeamertemplate{title page}{%
+  \setbox0=\vbox{%
+    \hsize=\dimexpr\textwidth-16pt\relax
+    \usebeamerfont{title}\centering\inserttitle\par
+    \global\covertitlelines=\prevgraf
+    \global\covertitleskip=\baselineskip}%
+  \ifnum\covertitlelines>1
+    \vskip-\dimexpr\covertitleskip*\numexpr\covertitlelines-1\relax\relax
+  \fi
+}{}
+
 % ------------------------------------------------------------ code listings ---
 % beamercolorthemestanford.sty gives cardinalred, coolgray, treegreen,
 % darkcyan, boxgray, and footergray.

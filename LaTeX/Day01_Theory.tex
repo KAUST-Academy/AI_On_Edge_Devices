@@ -1,0 +1,32 @@
+% Theory deck of Day 1. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day01_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 1]{Day 1 --- Edge AI landscape and system constraints}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditxiao
+  \creditbigpower
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day01/toc}
+\input{sections/day01/outcomes}
+\input{sections/day01/block1}
+\input{sections/day01/block2}
+\input{sections/day01/block3}
+\input{sections/day01/recap}
+\input{sections/day01/further_reading}
+\input{sections/credits}
+
+\end{document}
