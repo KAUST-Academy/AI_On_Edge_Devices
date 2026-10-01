@@ -3,6 +3,554 @@
 % Topics of the syllabus: statistical features and spectral features; why
 % signal processing before the network reduces the model size. Exercise:
 % compare the input size of raw windows and of spectral features.
+%
+% The window of the motion lab has 2 s at 50 Hz with 3 axes: 100 samples for
+% each axis. The feature block of the kit lab gives 21 features for each
+% axis with an FFT length of 32: 63 features in total.
 
 \theorypart{Features for time series}%
   {compare the input size of raw windows and of spectral features}
+
+% --------------------------------------------------------------- two inputs
+\begin{frame}{Two ways to give a window to a model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.1cm, minimum height=0.9cm, align=center}]
+    \node[anchor=west, text=coolgray] at (-1.05,0.9) {\textbf{Raw window}};
+    \node[b] (a1) at (0,0)   {Window\\300 values};
+    \node[b, minimum width=3.4cm] (a3) at (5.9,0) {Network with\\300 inputs};
+    \node[b] (a4) at (8.9,0) [minimum width=1.4cm] {Class};
+    \draw[->] (a1) -- (a3); \draw[->] (a3) -- (a4);
+    \node[anchor=west, text=coolgray] at (-1.05,-1.2) {\textbf{Features}};
+    \node[b] (b1) at (0,-2.1)   {Window\\300 values};
+    \node[b, draw=cardinalred] (b2) at (2.9,-2.1) {Signal\\processing};
+    \node[b] (b3) at (5.9,-2.1) {Network with\\63 inputs};
+    \node[b] (b4) at (8.9,-2.1) [minimum width=1.4cm] {Class};
+    \draw[->] (b1) -- (b2);
+    \draw[->] (b2) -- (b3);
+    \draw[->] (b3) -- (b4);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item A feature is one number that describes a property of the window:
+          how strong the motion is, how fast it is.
+    \item Signal processing calculates the features with fixed formulas. It
+          has no trained weights.
+    \item The network then learns only the step from the features to the
+          class.
+  \end{itemize}
+  \keypoint{The question of this part: which input gives the smaller model
+    and the smaller arena for the same task?}
+\end{frame}
+
+% ------------------------------------------------------- statistical features
+\begin{frame}{Statistical features in the time domain}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.34\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Feature} & \textbf{What it measures}
+    & \textbf{In the motion classes} \\
+    \midrule
+    Mean      & The constant part of the signal
+              & Gravity: the angle of the kit \\
+    RMS       & The energy of the signal
+              & Near 0 for ``idle'', large for a strong motion \\
+    Minimum, maximum & The range of the values & The size of the motion \\
+    Skewness  & If the values are symmetric around the mean
+              & A motion with a fast and a slow direction \\
+    Kurtosis  & If the signal has short, large peaks & A shock \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item Each feature is one number for each axis. The order of the
+          samples in the window has no effect on these five features.
+    \item You calculate them with one loop over the samples.
+  \end{itemize}
+  \source{Feature list: \emph{Machine Learning Systems}, hardware kits,
+    ``DSP Spectral Features''.}
+\end{frame}
+
+\begin{frame}{RMS: the energy of the motion}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \[
+        x_{\text{RMS}} = \sqrt{\frac{1}{n}\left(x_1^2 + x_2^2 + \dots +
+          x_n^2\right)}
+      \]
+      \begin{itemize}
+        \item RMS: root mean square.
+        \item Subtract the mean of the window first. If not, gravity
+              decides the value of the z axis.
+        \item After this step, the RMS is equal to the standard
+              deviation.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=1.85cm, y=0.9cm]
+        \draw[->, coolgray] (0,0) -- (2.1,0) node[right] {s};
+        \draw[->, coolgray] (0,-1.3) -- (0,1.4);
+        \draw[darkcyan, line width=0.9pt]
+          plot[domain=0:2, samples=100, smooth] (\x,{sin(360*1.5*\x)});
+        \draw[cardinalred, dashed] (0,0.707) -- (2,0.707);
+        \draw[cardinalred, dashed] (0,-0.707) -- (2,-0.707);
+        \node[cardinalred, anchor=south east] at (2,0.707) {RMS};
+        \node[anchor=east] at (0,1) {1};
+        \node[anchor=east] at (0,-1) {$-1$};
+      \end{tikzpicture}
+      \vskip 0.2em
+      {\footnotesize A sine wave with the amplitude 1 has an RMS of
+       $1 / \sqrt{2} = 0.707$.\par}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{The RMS of three axes gives three numbers. They separate
+    ``idle'' from motion, and a horizontal motion from a vertical motion.}
+\end{frame}
+
+\begin{frame}{Skewness and kurtosis: the form of the distribution}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.55cm, y=1.6cm]
+    % three distributions of the sample values of a window
+    \foreach \o/\t in {0/symmetric, 6.5/skewed, 13/peaks} {
+      \draw[->, coolgray] (\o-2.6,0) -- (\o+2.8,0);
+      \node[anchor=north] at (\o,-0.08) {\textbf{\t}};
+    }
+    \draw[darkcyan, line width=0.9pt]
+      plot[domain=-2.5:2.5, samples=60, smooth] (\x,{exp(-\x*\x)});
+    \draw[cardinalred, line width=0.9pt]
+      plot[domain=0:5, samples=60, smooth]
+      (\x+4.0,{2.72*0.9*\x*exp(-1.8*\x) + 0.0});
+    \draw[treegreen, line width=0.9pt]
+      plot[domain=-2.5:2.5, samples=80, smooth]
+      (\x+13,{0.8*exp(-12*\x*\x) + 0.2*exp(-0.5*\x*\x)});
+    \node at (0,-0.45) {skewness 0};
+    \node at (6.5,-0.45) {skewness above 0};
+    \node at (13,-0.45) {high kurtosis};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item Each curve shows how often each value occurs in a window.
+    \item \textbf{Skewness} measures the symmetry. A motion that goes fast
+          in one direction and slowly back gives a skewed distribution.
+    \item \textbf{Kurtosis} measures the weight of the rare, large values. A
+          signal that is quiet with some shocks has a high kurtosis.
+    \item The RMS says how large the signal is. These two features say
+          which form it has.
+  \end{itemize}
+  \source{The curves are drawings. Definitions: \emph{Machine Learning
+    Systems}, hardware kits, ``DSP Spectral Features''.}
+\end{frame}
+
+\begin{frame}{The statistics do not see the speed}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=4.4cm, y=0.8cm]
+    \foreach \o/\f/\t in {0/1/slow motion: 1 Hz, 1.2/4/fast motion: 4 Hz} {
+      \draw[->, coolgray] (\o,0) -- (\o+1.08,0);
+      \draw[->, coolgray] (\o,-1.2) -- (\o,1.3);
+      \draw[darkcyan, line width=0.9pt]
+        plot[domain=0:1, samples=120, smooth] (\x+\o,{sin(360*\f*\x)});
+      \node[anchor=south] at (\o+0.5,1.25) {\textbf{\t}};
+      \node at (\o+0.5,-1.6) {mean 0, RMS 0.707};
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The two signals have the same mean, the same RMS, the same
+          minimum, and the same maximum.
+    \item The statistical features are equal. A model with these features
+          cannot separate the two motions.
+    \item The difference is the frequency. You need a feature that
+          measures it.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The time domain says how large the signal is. The frequency
+    domain says how fast it changes.}
+\end{frame}
+
+% ---------------------------------------------------------- frequency domain
+\begin{frame}{The frequency domain}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=4.6cm, y=0.75cm]
+        \draw[->, coolgray] (0,0) -- (1.08,0) node[right] {s};
+        \draw[->, coolgray] (0,-1.7) -- (0,1.8);
+        \draw[darkcyan, line width=0.9pt]
+          plot[domain=0:1, samples=160, smooth]
+          (\x,{sin(360*2*\x) + 0.5*sin(360*6*\x)});
+        \node at (0.5,-2.1) {time domain};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.42cm, y=1.5cm]
+        \draw[->, coolgray] (0,0) -- (9.4,0) node[right] {Hz};
+        \draw[->, coolgray] (0,0) -- (0,1.3);
+        \foreach \f in {0,2,4,6,8} { \node[below, coolgray] at (\f,0) {\f}; }
+        \draw[cardinalred, line width=3pt] (2,0) -- (2,1);
+        \draw[cardinalred, line width=3pt] (6,0) -- (6,0.5);
+        \node[anchor=west] at (2.3,1.0) {amplitude 1};
+        \node[anchor=west] at (6.3,0.5) {0.5};
+        \node at (4.5,-0.52) {frequency domain};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \begin{itemize}
+    \item Each signal is a sum of sine waves with different frequencies.
+    \item The signal on the left is the sum of two sine waves: 2 Hz with
+          the amplitude 1, and 6 Hz with the amplitude 0.5.
+    \item The spectrum on the right shows the same signal: one bar for each
+          frequency.
+    \item The Fourier transform calculates the spectrum from the samples.
+          The FFT is a fast method for it.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The FFT of a window}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item The FFT takes $N$ samples. $N$ is the FFT length, a power
+              of two.
+        \item It gives $N / 2 + 1$ values. Each value is one frequency bin.
+        \item The width of one bin is $f_s / N$.
+        \item The last bin is at $f_s / 2$, the Nyquist frequency of Day 2.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{The motion lab}
+        $f_s = 50$ Hz and $N = 32$:
+        \begin{itemize}
+          \item 17 bins, from 0 to 25 Hz
+          \item bin width $50 / 32 = 1.56$ Hz
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lrrl@{}}
+    \toprule
+    \textbf{FFT length} & \textbf{Bins} & \textbf{Bin width at 50 Hz}
+    & \textbf{Effect} \\
+    \midrule
+    16 & 9  & 3.13 Hz & Few features, low resolution \\
+    32 & 17 & 1.56 Hz & The setting of the kit lab \\
+    64 & 33 & 0.78 Hz & Many features, high resolution \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \keypoint{The FFT length is a design decision: more bins separate
+    frequencies better, and they make the model input larger.}
+\end{frame}
+
+\begin{frame}{Spectral power features}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.078cm, y=0.8cm]
+    % A window of 100 samples and four frames of 32 samples.
+    \draw[coolgray, fill=boxgray] (0,1.6) rectangle (100,2.2);
+    \node at (50,1.9) {window: 100 samples of one axis};
+    \foreach \a/\b in {0/32, 32/64, 64/96} {
+      \draw[darkcyan, fill=darkcyan!20] (\a,0.6) rectangle (\b,1.2);
+    }
+    \draw[darkcyan, fill=darkcyan!20] (96,0.6) rectangle (100,1.2);
+    \draw[darkcyan, dashed] (100,0.6) rectangle (128,1.2);
+    \node at (16,0.9) {frame 1};
+    \node at (48,0.9) {frame 2};
+    \node at (80,0.9) {frame 3};
+    \node at (114,0.9) {zeros};
+    \node[anchor=west] at (0,0.15) {FFT of each frame, power of each bin,
+      then the maximum of each bin over the frames};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The window has 100 samples. The FFT length is 32. So the block
+          cuts the window into frames of 32 samples.
+    \item The power of a bin is the square of its FFT value, divided by the
+          FFT length.
+    \item For each bin, the block keeps the largest power over the frames.
+    \item The bin at 0 Hz is not a feature: the block removed the mean
+          before. The result is 16 power values for each axis.
+  \end{itemize}
+  \source{Method of the spectral analysis block of Edge Impulse:
+    \emph{Machine Learning Systems}, hardware kits, ``DSP Spectral
+    Features''.}
+\end{frame}
+
+\begin{frame}{The feature block of the kit lab}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.36\textwidth}L{0.38\textwidth}r@{}}
+    \toprule
+    \textbf{Group} & \textbf{Features for each axis} & \textbf{Number} \\
+    \midrule
+    Statistics in the time domain & RMS, skewness, kurtosis & 3 \\
+    Statistics of the spectrum & Skewness and kurtosis of the power values
+        & 2 \\
+    Spectral power & One value for each bin from 1 to 16 & 16 \\
+    \midrule
+    Sum for one axis & & 21 \\
+    Sum for three axes & & \textbf{63} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item The block first removes the mean of each axis in the window.
+    \item The 63 features are the input of the classifier: 63 neurons in
+          the input layer, then 20, 10, and 4.
+    \item Edge Impulse Studio calculates the same features. You compare
+          the two paths in Part D of the lab.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, XIAOML Kit, ``Motion
+    Classification and Anomaly Detection'', and ``DSP Spectral Features''.}
+\end{frame}
+
+\begin{frame}[fragile]{The features of one axis in Python}
+\begin{lstlisting}[style=python]
+import numpy as np
+
+def spectral_power(x, nfft=32):
+    """Largest power of each frequency bin over the frames of the window."""
+    power = np.zeros(nfft // 2 + 1)
+    for start in range(0, len(x), nfft):
+        frame = x[start:start + nfft]              # the last frame is short
+        spectrum = np.abs(np.fft.rfft(frame, nfft))  # rfft adds zeros
+        power = np.maximum(power, spectrum ** 2 / nfft)
+    return power[1:]                               # no bin at 0 Hz
+
+x = window[:, 0]                # 100 samples of the x axis
+x = x - x.mean()                # remove gravity and the offset
+rms = np.sqrt(np.mean(x ** 2))
+power = spectral_power(x)       # 16 values
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The training notebook calculates the features of each window with
+          this code.
+    \item The sketch on the board calculates the same features in C++. The
+          two results must be equal for the same window.
+  \end{itemize}
+  \source{The function follows \texttt{welch\_max\_hold} of ``DSP Spectral
+    Features'' in \emph{Machine Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------- smaller model
+\begin{frame}{The model becomes smaller}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.38\textwidth}rr@{}}
+    \toprule
+    & \textbf{Raw window} & \textbf{Features} \\
+    \midrule
+    Input values                        & 300   & 63 \\
+    Parameters of the first layer (20 neurons) & 6020 & 1280 \\
+    Parameters of the complete model    & 6274  & 1534 \\
+    Weights in \code{float32}, in bytes & 25\,096 & 6136 \\
+    Peak of the activations, in bytes   & 1280  & 332 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item The two models have the same hidden layers: 20 and 10 neurons,
+          and 4 outputs.
+    \item In a fully connected network, the first layer holds almost all
+          parameters. Its size is the number of inputs times the number of
+          neurons.
+    \item The signal processing is not free. It needs code in the flash
+          and time on the processor. You measure the two in the lab.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Why features need less model: invariance}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=3.0cm, y=0.6cm]
+    \foreach \o/\p/\t in {0/0/window 1, 1.25/110/window 2: 0.15 s later} {
+      \draw[->, coolgray] (\o,0) -- (\o+1.08,0);
+      \draw[darkcyan, line width=0.9pt]
+        plot[domain=0:1, samples=100, smooth] (\x+\o,{sin(360*2*\x+\p)});
+      \node[anchor=south] at (\o+0.5,1.2) {\t};
+    }
+    \node[align=center, anchor=west] at (2.55,0.3)
+      {300 different\\numbers};
+    \node[cardinalred, align=center, anchor=west] at (2.55,-1.3)
+      {the same RMS,\\the same spectrum};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The two windows hold the same motion. The second window starts
+          later.
+    \item As raw input, the two windows are two different vectors. The
+          network must learn that they are the same class, for each
+          possible shift.
+    \item The RMS and the spectral power do not change with the shift. The
+          features hold what the network must learn if not.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{A feature that removes a variation saves the parameters and
+    the training data that the network needs to learn that variation.}
+\end{frame}
+
+\begin{frame}{The cost moves to the signal processing}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.34\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    & \textbf{Raw window} & \textbf{Features} \\
+    \midrule
+    Flash   & A larger model & A smaller model, and the code of the
+                               features \\
+    RAM     & A larger arena & A smaller arena, and buffers for the FFT \\
+    Latency & The inference only & The features, then a shorter inference \\
+    Design  & No knowledge of the signal is necessary
+            & You must select the features \\
+    Data    & More training data is necessary & Less training data is
+                                                 necessary \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item The pre-processing is a part of the latency. Measure the time of
+          the features and the time of \code{Invoke()} separately.
+    \item An FFT of 32 points is a small calculation. For a microphone at
+          16 kHz, the signal processing can need more time than the model.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The same features in training and on the device}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.4cm, minimum height=0.9cm, align=center}]
+    \node[b] (w) at (0,-0.75) {One test\\window};
+    \node[b] (p) at (3.6,0)    {Features in\\Python};
+    \node[b] (c) at (3.6,-1.5) {Features in\\C++, on the board};
+    \node[b, draw=cardinalred] (d) at (7.6,-0.75) {Compare the\\63 numbers};
+    \draw[->] (w.east) -- (p.west);
+    \draw[->] (w.east) -- (c.west);
+    \draw[->] (p.east) -- (d.west);
+    \draw[->] (c.east) -- (d.west);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item The network learned from the features of the Python code. On the
+          board, C++ code calculates the features.
+    \item A small difference changes the input of the model: a different
+          FFT length, no mean removal, a different unit.
+    \item This is the training-serving skew of Day 2. It gives no error
+          message.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Test the feature code of the board with a window that has a
+    known result. Do this before you test the model.}
+\end{frame}
+
+\begin{frame}{Features by hand, or learned features}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.36\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    \textbf{Sensor} & \textbf{Usual input of the model} & \textbf{Reason} \\
+    \midrule
+    IMU        & Statistical and spectral features, with a small fully
+                 connected network
+               & The physics of the motion is known. The model is very
+                 small. \\
+    Microphone & A spectrogram or MFCC features, with a small convolutional
+                 network (Day 5)
+               & A raw second of audio has 16\,000 values. The spectrum
+                 has much less. \\
+    Camera     & The pixels, with a convolutional network (Day 5)
+               & No simple formula describes an object. The network learns
+                 its filters. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item A convolution layer on a raw time series is a set of filters that
+          the training finds. It can replace the FFT, with more
+          parameters and more data.
+    \item When you know which property of the signal separates the classes,
+          calculate that property directly.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ lab brief
+\begin{frame}{The lab: two paths to the same classifier}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.95cm, minimum height=0.9cm, align=center}]
+    \node[b] (d) at (0,-0.8) {Dataset of\\Day 2};
+    \node[b] (a1) at (2.9,0)  {Notebook:\\features, Keras};
+    \node[b] (a2) at (5.6,0)  {LiteRT file,\\C array};
+    \node[b, draw=cardinalred] (a3) at (8.3,0) {Your sketch\\with TFLM};
+    \node[b] (b1) at (2.9,-1.6) {Edge Impulse\\Studio};
+    \node[b] (b2) at (5.6,-1.6) {Arduino\\library};
+    \node[b, draw=cardinalred] (b3) at (8.3,-1.6) {Sketch of\\the kit lab};
+    \draw[->] (d.east) -- (a1.west); \draw[->] (d.east) -- (b1.west);
+    \draw[->] (a1) -- (a2); \draw[->] (a2) -- (a3);
+    \draw[->] (b1) -- (b2); \draw[->] (b2) -- (b3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item \textbf{Part A:} calculate the features of your windows and train
+          a small classifier.
+    \item \textbf{Part B:} convert the model, write the inference code, and
+          show the class on the display.
+    \item \textbf{Part C:} measure the arena, the flash, and the latency,
+          with PSRAM and with no PSRAM.
+    \item \textbf{Part D:} train the same task in Edge Impulse Studio, and
+          compare the two results in one table.
+  \end{itemize}
+  \keypoint{The two paths use the same data and the same type of features.
+    The difference is who writes the code, and which kernels run.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{raw windows and spectral features}{%
+  A motion classifier uses a window of 2 s with 3 axes. The first layer of
+  the network has 20 neurons. The feature block gives 21 features for each
+  axis.
+  \begin{enumerate}
+    \item The sampling rate is 50 Hz. How many values has the raw window?
+          How many features has the feature block?
+    \item Calculate the parameters of the first layer for the two inputs.
+    \item The team changes the sampling rate to 100 Hz. The window stays at
+          2 s, and the FFT length stays at 32. Calculate the two input
+          sizes and the parameters of the first layer again.
+    \item At 100 Hz with an FFT length of 32, what is the width of one
+          frequency bin? What is the highest frequency of the spectrum?
+    \item Which input do you select for a device with 2 KB of free RAM?
+          Give the reason.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{raw windows and spectral features}{%
+  \small
+  \begin{enumerate}
+    \item Raw window: $2 \times 50 \times 3 = 300$ values. Features:
+          $21 \times 3 = 63$.
+    \item Raw window: $300 \times 20 + 20 = 6020$. Features:
+          $63 \times 20 + 20 = 1280$.
+    \item Raw window: $2 \times 100 \times 3 = 600$ values and
+          $600 \times 20 + 20 = 12\,020$ parameters. Features: 63 values
+          and 1280 parameters, with no change. The number of features
+          depends on the FFT length, not on the sampling rate.
+    \item Bin width: $100 / 32 = 3.13$ Hz. Highest frequency: 50 Hz. The
+          same number of bins now covers two times the frequency range, so
+          each bin is two times as wide.
+    \item The features. With \code{float32}, the raw window at 50 Hz needs
+          1200 bytes for the input and 80 bytes for the first output: 1280
+          bytes of the 2 KB, with no space for the data of the
+          interpreter. The features need $63 \times 4 + 80 = 332$ bytes.
+  \end{enumerate}
+}
