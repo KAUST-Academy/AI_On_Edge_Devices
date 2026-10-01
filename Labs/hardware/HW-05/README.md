@@ -24,7 +24,7 @@ The tag, the quantization, and the download size come from the Ollama library
 - The two models are from one family. The size is the main difference. A
   student can then explain the speed difference with the size.
 - The two models have different quantization levels (Q8_0 and Q4_K_M). This
-  gives an example for Block 1 of the Day 10 theory: disk size is parameters
+  gives an example for Part 1 of the Day 10 theory: disk size is parameters
   times bits per weight.
 - The guide gives 8 to 10 tokens per second as the limit for a chat that
   feels fluent. The published speed of the small model is near this limit,

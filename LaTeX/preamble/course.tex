@@ -17,6 +17,7 @@
 %   \keypoint{...}     box for the main point of a frame
 %   \exerciseframe{title}{body}   one exercise frame
 %   \answerframe{title}{body}     the answer frame of that exercise
+%   \theorypart{title}{exercise}  start of one part of a theory deck
 %   exerciseblock                 environment: the exercise box alone
 %   answerblock                   environment: the answer box alone
 %   L{width}                      table column: paragraph, ragged right
@@ -181,6 +182,30 @@
     \begin{answerblock}#2\end{answerblock}
   \end{frame}%
 }
+
+% ------------------------------------------------------------ theory parts ---
+% A theory deck has three parts. Each part file starts with
+%   \theorypart{TITLE}{EXERCISE}
+% The command starts a section of the deck. The contents frame
+% (sections/dayNN/toc.tex) lists the title and the exercise of each part.
+% Before part 2 and before part 3 the contents frame comes again, with the
+% current part highlighted. Part 1 has no such frame, because the contents
+% frame of the deck stands immediately before it.
+\DeclareRobustCommand{\partexercise}[1]{\\{\footnotesize Exercise: #1}}
+\newcommand{\theorypart}[2]{%
+  \section[#1]{#1\texorpdfstring{\partexercise{#2}}{}}}
+
+\setbeamertemplate{section in toc}{%
+  \makebox[3.8em][l]{\textbf{Part \inserttocsectionnumber}}%
+  \parbox[t]{\dimexpr\linewidth-3.8em\relax}{\raggedright\inserttocsection}}
+\setbeamertemplate{section in toc shaded}[default][45]
+
+\AtBeginSection{%
+  \ifnum\value{section}>1
+    \begin{frame}{Contents}
+      \tableofcontents[currentsection]
+    \end{frame}
+  \fi}
 
 % ----------------------------------------------------------------- credits ---
 % One command for each source. Section 10 of the syllabus gives this text.

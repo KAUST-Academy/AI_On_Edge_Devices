@@ -22,7 +22,7 @@ Needed by: the Day 2 lab (MicroPython start, sensor input, dataset).
   on the XIAO ESP32S3. No generic firmware is necessary.
 - The sources give Arduino code only for the IMU. No source has a MicroPython
   driver. A driver of about 130 lines is small enough for the students to read on
-  Day 2. It shows the registers that the theory block explains.
+  Day 2. It shows the registers that Part 1 of the Day 2 theory explains.
 - The driver uses the default values of the Arduino library "Seeed Arduino
   LSM6DS3". The Day 3 sketch uses that library. The training data of Day 2 and
   the inference of Day 3 then use the same sensor configuration.

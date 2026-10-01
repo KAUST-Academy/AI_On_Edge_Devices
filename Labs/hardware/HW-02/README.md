@@ -43,7 +43,7 @@ Options that were compared on 2026-10-01:
 (`cmsis_nn`) but none for the ESP32-S3. On the XIAO it runs the reference
 kernels. Path A can then be slower than a build with the ESP-NN kernels of
 Espressif. The instructor measures path A and path B in the test below. The
-Day 3 theory block can use the result as an example for optimized kernels.
+Part 2 of the Day 3 theory can use the result as an example for optimized kernels.
 
 ## Sources
 

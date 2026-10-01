@@ -1,14 +1,17 @@
-% Block 2 of Day 1: Deep learning recap from a cost view.
+% Part 2 of Day 1: Deep learning recap from a cost view.
 %
 % Topics of the syllabus: cost of each layer type; parameters, operations,
 % and activation memory are three different budgets; efficient blocks:
 % depthwise separable convolution and inverted residual. Exercise: calculate
 % the parameters and the output size of three layers by hand.
 %
-% All sizes use 1 KB = 1024 bytes. The example network of this block is:
+% All sizes use 1 KB = 1024 bytes. The example network of this part is:
 % input 96 x 96 x 3, three convolutions 3 x 3 with stride 2 and padding 1
 % (16, 32, and 64 filters), global average pooling, one fully connected
 % layer with 10 outputs.
+
+\theorypart{Deep learning recap from a cost view}%
+  {calculate the parameters and the output size of three layers}
 
 % \cellgrid{x}{y}{cells}{cell size}{fill colour} draws a square grid with its
 % lower left corner at (x,y). A frame cannot define a command with
@@ -618,7 +621,7 @@
         \item 14 times fewer operations.
         \item The cause is the block design, not a smaller input image.
         \item MobileNetV2 still does not fit a microcontroller with 256 KB
-              of RAM. Block 3 shows why.
+              of RAM. Part 3 shows why.
       \end{itemize}
     \end{column}
   \end{columns}

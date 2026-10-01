@@ -25,10 +25,20 @@ cp -r LaTeX/templates/sections/theory LaTeX/sections/day01
 sed -i 's/NN/01/g' LaTeX/Day01_Theory.tex LaTeX/sections/day01/*.tex
 ```
 
-The deck has a cover, a contents frame, a motivation frame, a learning
-outcomes frame, three blocks, a recap frame, a further reading frame, and the
-credits frame. The three block files hold only comments, so the deck builds
-from the first minute. Write one block in each file.
+The deck has a cover, a motivation frame, a learning outcomes frame, a
+contents frame, three parts, a recap frame, a further reading frame, and the
+credits frame. Write one part in each of the files `part1.tex`, `part2.tex`,
+and `part3.tex`. The deck builds from the first minute.
+
+Each part file starts with `\theorypart{TITLE}{EXERCISE}`. The contents frame
+takes the title and the exercise of each part from this command. The contents
+frame comes again before part 2 and before part 3, with the current part
+highlighted.
+
+A theory part has a number: Part 1, Part 2, Part 3. A lab part has a letter:
+Part A to Part D. In a lab file, name the theory with the part: "Part 2 of the
+lecture". Do not use the word "block" for a part of the theory. "Block" is a
+technical term in this course: a residual block, a block of memory.
 
 ## Start the lab deck of a day
 

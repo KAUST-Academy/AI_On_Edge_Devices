@@ -1,4 +1,4 @@
-% Block 3 of Day 1: The edge AI workflow.
+% Part 3 of Day 1: The edge AI workflow.
 %
 % Topics of the syllabus: data, training, optimization, conversion,
 % deployment, monitoring; hybrid architectures; course map; live
@@ -10,6 +10,9 @@
 % the result on the display. The kit chapter "Keyword Spotting (KWS)" of
 % "Machine Learning Systems" gives the steps. Build the sketch with the
 % option "OPI PSRAM".
+
+\theorypart{The edge AI workflow}%
+  {predict which of three models fits in 256 KB of RAM}
 
 % ------------------------------------------------------------------ workflow
 \begin{frame}{The edge AI workflow}
@@ -142,7 +145,7 @@
               backward pass and many passes through the data.
         \item The device does only the forward pass.
         \item Select a model that can meet the three budgets of the device
-              (block 2). A model that is too large stays too large.
+              (Part~2). A model that is too large stays too large.
         \item Keep the pre-processing identical in training and on the
               device.
       \end{itemize}
@@ -174,7 +177,7 @@
     Pruning      & It removes weights or channels. & Day 6 \\
     Knowledge distillation & A small model learns from a large model.
                  & Day 6 \\
-    Efficient design & Blocks with a lower cost (block 2). & Days 1 and 6 \\
+    Efficient design & Blocks with a lower cost (Part~2). & Days 1 and 6 \\
     \bottomrule
   \end{tabular}
   \vskip 0.8em
@@ -504,7 +507,7 @@
       & \textbf{Peak (values)} \\
     \midrule
     A. Fully connected, 784-128-64-10 & \code{float32} & 109\,386 & 912 \\
-    B. Example CNN of block 2 & \code{float32} & 24\,234 & 64\,512 \\
+    B. Example CNN of Part 2 & \code{float32} & 24\,234 & 64\,512 \\
     C. MobileNetV2, image $224 \times 224$ & \code{int8} & 3.5 million
       & 1.5 million \\
     \bottomrule
