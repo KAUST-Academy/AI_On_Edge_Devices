@@ -1,0 +1,16 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A microcontroller has flash for the program, RAM for the data,
+          and buses for the sensors: I2C, SPI, I2S, and UART.
+    \item The sampling rate must be more than two times the highest
+          frequency of the signal. A lower rate gives aliasing.
+    \item A window is the input of the model. Its length and its overlap
+          are design decisions.
+    \item Overlapping windows of one recording are almost equal. Split the
+          data by recording session, not by window.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Fix the sampling rate, the labels, and the split before you
+            train. A model cannot repair an error in its data.}
+\end{frame}

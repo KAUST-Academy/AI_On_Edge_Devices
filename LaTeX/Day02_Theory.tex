@@ -1,0 +1,32 @@
+% Theory deck of Day 2. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day02_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 2]{Day 2: Embedded systems, MicroPython, and sensor data collection}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditxiao
+  \creditbigpower
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day02/outcomes}
+\input{sections/day02/toc}
+\input{sections/day02/part1}
+\input{sections/day02/part2}
+\input{sections/day02/part3}
+\input{sections/day02/recap}
+\input{sections/day02/further_reading}
+\input{sections/credits}
+
+\end{document}
