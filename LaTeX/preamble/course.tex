@@ -19,6 +19,7 @@
 %   \answerframe{title}{body}     the answer frame of that exercise
 %   exerciseblock                 environment: the exercise box alone
 %   answerblock                   environment: the answer box alone
+%   L{width}                      table column: paragraph, ragged right
 %   \coursecredits                source list of the credits frame
 %
 % Listing styles for code: python, cpp, shell. Example:
@@ -45,6 +46,7 @@
 \usepackage{graphicx}
 \usepackage{caption}
 \usepackage{subcaption}
+\usepackage{array}
 \usepackage{booktabs}
 \usepackage{multicol}
 \usepackage{multirow}
@@ -78,6 +80,11 @@
     \vskip-\dimexpr\covertitleskip*\numexpr\covertitlelines-1\relax\relax
   \fi
 }{}
+
+% Table column L{width}: a paragraph column with a ragged right margin. A
+% plain p{width} column justifies the text and breaks words in a narrow
+% column.
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 % ------------------------------------------------------------ code listings ---
 % beamercolorthemestanford.sty gives cardinalred, coolgray, treegreen,
