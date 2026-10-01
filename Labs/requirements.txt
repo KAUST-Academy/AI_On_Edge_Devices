@@ -21,6 +21,10 @@ torch
 torchvision
 
 # Conversion and runtimes (Days 3, 4, and 7).
+# tensorflow-cpu has Keras and the converter to the LiteRT format.
+# ai-edge-litert runs a LiteRT file on the laptop.
+tensorflow-cpu
+ai-edge-litert
 onnx
 onnxruntime
 

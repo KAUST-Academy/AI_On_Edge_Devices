@@ -54,6 +54,9 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `torchvision` | 0.29.1 (CPU version) | `day01` |
 | `matplotlib` | 3.10.9 | `day01`, `day02` (`dataset.ipynb`, `logger.py --plot`) |
 | `nbconvert` | 7.17.1 | Run of the notebooks with no browser |
+| `tensorflow-cpu` | 2.21.0 | `day03` (`motion_classifier.ipynb`: training and conversion) |
+| `keras` | 3.12.4 | `day03` (installed with `tensorflow-cpu`) |
+| `onnx`, `onnxruntime` | 1.23.1, 1.23.2 | Day 3 lecture (export from PyTorch) |
 
 ## Arduino board cores and libraries
 
@@ -123,6 +126,13 @@ Sketches of `Labs/day01/` (2026-10-01, XIAO ESP32S3, PSRAM disabled):
 
 `Labs/day01/TEST_NOTES.md` gives the sizes for the two PSRAM options and for
 the two examples of the core that the lab uses.
+
+Sketches of `Labs/day03/` (2026-10-02, XIAO ESP32S3, PSRAM disabled):
+
+| Sketch | Flash | RAM |
+|---|---|---|
+| `motion_classifier` (student version, tasks not complete) | 311 297 bytes | 26 616 bytes |
+| `motion_classifier` (solution) | 364 005 bytes | 26 952 bytes |
 
 Sketch of `Labs/day02/` (2026-10-02, XIAO ESP32S3, PSRAM disabled):
 
