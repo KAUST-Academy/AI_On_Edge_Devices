@@ -120,7 +120,8 @@ Day 2 runs MicroPython on the XIAO ESP32S3.
 
 ## 6. Edge Impulse CLI and account
 
-Days 3 and 5 collect data and train a model with Edge Impulse.
+Days 2, 3, and 5 use Edge Impulse. Day 2 uploads a dataset. Days 3 and 5
+collect data and train a model.
 
 1. Install Node.js (the LTS version) from `nodejs.org`.
 2. Install the CLI:
