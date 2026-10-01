@@ -1,0 +1,39 @@
+% Fallbacks and common problems of the Day 3 lab. The rows come from
+% Labs/day03/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    Your group has no dataset of Day 2
+      & Copy the folder \code{data/} of a different group into
+        \code{Labs/day02/}. Write this in the report. \\
+    The inference code is not complete in time
+      & Use the sketch of \code{solutions/} with your three files of the
+        notebook. Continue with Part C. \\
+    The upload fails after Day 2
+      & MicroPython is on the board. Start bootloader mode, then upload. \\
+    \code{Didn't find op for builtin opcode}
+      & The resolver does not name an operator of the model (task B1). \\
+    \code{AllocateTensors() failed}
+      & The arena is too small. Increase \code{kTensorArenaSize}. \\
+    The self-test prints \code{FAIL}
+      & Check the normalization in task B3. Run section 8 of the notebook
+        again. \\
+    The board shows \code{uncertain}
+      & The largest probability is below 0.6. Make the motion as in your
+        Day 2 recordings. \\
+    The board shows the wrong class for all motions
+      & The model learned from the fallback dataset. Train with your own
+        recordings. \\
+    The library of Edge Impulse does not build
+      & Use the estimates of the Studio, and write ``estimate''. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}
