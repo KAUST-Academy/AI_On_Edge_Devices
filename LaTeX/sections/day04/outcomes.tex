@@ -1,0 +1,27 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 4 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item The model of Day 3 uses 32 bits for each weight and each activation.
+          A microcontroller pays for each bit with flash, RAM, time, and
+          energy.
+    \item Quantization stores the same model with 8 bits for each value. The
+          model becomes four times smaller, and integer kernels run faster.
+    \item The cost is a rounding error. You must know where the error comes
+          from and how to keep it small.
+    \item In the lab you quantize tensors by hand, quantize a small CNN, and
+          compare the float model and the int8 model on the XIAOML Kit.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Derive the scale and the zero point of an affine quantizer.
+    \item Apply post-training quantization with a representative dataset.
+    \item Apply quantization-aware training.
+    \item Explain per-tensor and per-channel quantization.
+    \item Measure the effect of int8 quantization on size, accuracy, and
+          latency.
+  \end{itemize}
+\end{frame}

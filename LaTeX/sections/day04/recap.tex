@@ -1,0 +1,19 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item An affine quantizer maps a real range to integers with two numbers:
+          the scale and the zero point. The rounding error is at most half of
+          the scale.
+    \item Post-training quantization needs no training. Full integer
+          quantization needs a representative dataset to find the range of
+          each activation.
+    \item Quantization-aware training simulates the rounding in the forward
+          pass, so the weights adapt to it.
+    \item When the accuracy decreases, find the layer that causes the error
+          before you change the method.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{With int8, a model needs one quarter of the memory. Measure the
+            accuracy, the size, and the latency of the float model and of the
+            int8 model on the same test set and on the same board.}
+\end{frame}
