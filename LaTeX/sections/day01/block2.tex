@@ -317,7 +317,7 @@
         \midrule
         Example network  & 24\,234     & 95 KB \\
         Keyword spotting & 26\,000     & $<$ 100 KB \\
-        MobileNetV2      & 3.5 million & 14 MB \\
+        MobileNetV2      & 3.5 million & 13.4 MB \\
         ResNet-50        & 25.6 million & 98 MB \\
         \bottomrule
       \end{tabular}
@@ -326,8 +326,8 @@
   \vskip 0.6em
   On a microcontroller, the flash holds the program and the model. The
   weights stay in the flash. The device does not copy them to the RAM.
-  \source{Keyword spotting, MobileNetV2, and ResNet-50: slide decks of
-    \emph{Machine Learning Systems}, Volume I, chapters 2 and 6.}
+  \source{Parameters of the three models: slide decks of \emph{Machine
+    Learning Systems}, Volume I, chapters 2 and 6. Sizes with 1 MB = 1024 KB.}
 \end{frame}
 
 % -------------------------------------------------------------------- budget 2
@@ -617,7 +617,7 @@
         \midrule
         Parameters      & 25.6 M & 3.5 M \\
         Operations      & 4.1 G  & 300 M \\
-        Size, float32   & 98 MB  & 14 MB \\
+        Size, float32   & 98 MB  & 13.4 MB \\
         \bottomrule
       \end{tabular}
       \vskip 0.6em
@@ -637,8 +637,8 @@
   \vskip 0.6em
   \keypoint{The design of the blocks decides the cost before you apply
     quantization or pruning.}
-  \source{Table: slide deck of \emph{Machine Learning Systems}, Volume I,
-    chapter 6.}
+  \source{Parameters and operations: slide deck of \emph{Machine Learning
+    Systems}, Volume I, chapter 6. Sizes with 1 MB = 1024 KB.}
 \end{frame}
 
 % ---------------------------------------------------------------------- method
