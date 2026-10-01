@@ -112,3 +112,4 @@ Each deck, lab, and module adds its rows here.
 | `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |
 | `Labs/day03/sketches/imu_test/imu_test.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/imu_test/imu_test.ino` | Apache-2.0 | sampling rate changed to 50 Hz |
 -->
+| `LaTeX/sections/day02/part1.tex` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the parts of the kit, the memory sizes, the I2C addresses, and the pin numbers of the microphone, rewritten in short sentences. All diagrams are new. The current values of the power modes come from the Seeed Studio wiki, and the frame names it. |

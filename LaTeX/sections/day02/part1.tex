@@ -6,3 +6,815 @@
 
 \theorypart{Microcontroller anatomy}%
   {find the RAM, the flash, and the sensor buses in a data sheet extract}
+
+% ------------------------------------------------------------------ one chip
+\begin{frame}{A microcontroller is a computer on one chip}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=2pt, fill=white,
+                minimum width=1.6cm, minimum height=0.8cm, align=center},
+      o/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=1.6cm, minimum height=0.8cm, align=center}]
+    \draw[draw=cardinalred, line width=0.9pt, rounded corners=4pt,
+          fill=boxgray] (0.05,0.45) rectangle (7.6,3.75);
+    \node[text=cardinalred, anchor=north] at (3.82,3.72)
+      {\textbf{Microcontroller: one chip}};
+    \node[b] (cpu) at (1.05,2.55) {CPU};
+    \node[b] (fl)  at (2.9,2.55)  {Flash\\{\scriptsize program}};
+    \node[b] (ram) at (4.75,2.55) {RAM\\{\scriptsize data}};
+    \node[b] (clk) at (6.6,2.55)  {Clock};
+    \node[b] (tim) at (1.05,1.2)  {Timers};
+    \node[b] (gp)  at (2.9,1.2)   {GPIO};
+    \node[b] (adc) at (4.75,1.2)  {ADC};
+    \node[b] (bus) at (6.6,1.2)   {Buses};
+    \node[o] (s3) at (2.9,-0.55)  {LED,\\button};
+    \node[o] (s2) at (4.75,-0.55) {Analog\\sensor};
+    \node[o] (s1) at (6.6,-0.55)  {Digital\\sensor};
+    \draw[<->] (gp) -- (s3);
+    \draw[<-]  (adc) -- (s2);
+    \draw[<->] (bus) -- (s1);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The processor, the memory, and the peripherals are in one package.
+    \item A peripheral is a circuit of the chip that connects the processor
+          to the outside: a pin, a converter, a bus.
+    \item The chip runs one program, the firmware. The program starts when
+          the power comes on.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------- comparison with a SBC
+\begin{frame}{A microcontroller is not a small Raspberry Pi}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.14\textwidth}L{0.38\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    & \textbf{XIAO ESP32S3 (microcontroller)}
+    & \textbf{Raspberry Pi 5 (single-board computer)} \\
+    \midrule
+    Software & One program, the firmware
+             & Linux and many processes \\
+    RAM      & 512 KB, and 8 MB of PSRAM & 8 GB \\
+    Storage  & 8 MB of flash & microSD card \\
+    Timing   & The program controls each microsecond
+             & The operating system can pause a program \\
+    Pins     & Direct access to GPIO, ADC, and buses
+             & GPIO and buses through Linux. No ADC. \\
+    Sleep    & Modes that use microamperes
+             & No such mode in normal use \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \keypoint{Use a microcontroller when the timing of a sensor and the
+    energy decide. Use a single-board computer when the model needs
+    gigabytes of memory.}
+  \source{Kit pages of \emph{Machine Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------- the XIAOML kit
+\begin{frame}{The parts of the XIAOML Kit and their buses}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      p/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=2.2cm, minimum height=0.8cm, align=center},
+      lab/.style={font=\scriptsize, text=darkcyan, above, inner sep=1.5pt}]
+    \node[draw=cardinalred, line width=0.9pt, rounded corners=3pt,
+          fill=white, minimum width=2.9cm, minimum height=2.7cm,
+          align=center] (mcu) at (0,0)
+      {\textbf{ESP32-S3}\\2 cores, 240 MHz\\512 KB of RAM\\[0.3em]
+       8 MB of flash\\8 MB of PSRAM};
+    \node[p] (cam) at (-4.0,1.0)  {Camera};
+    \node[p] (mic) at (-4.0,0)    {Microphone};
+    \node[p] (sd)  at (-4.0,-1.0) {microSD card};
+    \node[p] (imu) at (4.0,0.55)  {IMU\\{\scriptsize address 0x6A}};
+    \node[p] (dis) at (4.0,-0.55) {Display\\{\scriptsize address 0x3C}};
+    \node[p, minimum width=2.9cm, minimum height=0.6cm] (usb) at (0,2.0)
+      {USB-C: serial port};
+    \node[p, minimum width=2.9cm, minimum height=0.6cm] (ant) at (0,-2.0)
+      {Wi-Fi and Bluetooth};
+    \draw[->]  (cam.east) -- node[lab]{parallel} (cam.east -| mcu.west);
+    \draw[->]  (mic.east) -- node[lab]{I2S (PDM)} (mic.east -| mcu.west);
+    \draw[<->] (sd.east)  -- node[lab]{SPI} (sd.east -| mcu.west);
+    \draw[<->] (imu.west) -- node[lab]{I2C} (imu.west -| mcu.east);
+    \draw[<->] (dis.west) -- node[lab]{I2C} (dis.west -| mcu.east);
+    \draw[<->] (usb) -- (mcu);
+    \draw[<->] (ant) -- (mcu);
+    \draw[dashed, coolgray, rounded corners=3pt] (2.75,-1.25) rectangle (5.25,1.6);
+    \node[coolgray, font=\scriptsize, anchor=north] at (4.0,1.6)
+      {expansion board};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The camera, the microphone, and the card slot are on the XIAO.
+          The IMU and the display are on the expansion board.
+    \item Each part uses the bus that fits its data rate. This part of the
+          lecture explains each bus.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, XIAOML Kit, ``Setup''.}
+\end{frame}
+
+% ---------------------------------------------------------------- memory types
+\begin{frame}{Three types of memory}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.22\textwidth}L{0.24\textwidth}L{0.25\textwidth}@{}}
+    \toprule
+    & \textbf{Flash} & \textbf{RAM} & \textbf{PSRAM} \\
+    \midrule
+    Holds & The program, the constants, the weights of the model
+          & The variables, the stack, the heap, the tensor arena
+          & Large buffers: an image, a long audio clip \\
+    With no power & Keeps its content & Loses its content
+          & Loses its content \\
+    Write & Slow, in blocks & Fast & Slower than RAM \\
+    On the XIAO & 8 MB & 512 KB & 8 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \begin{itemize}
+    \item A model uses two memories. The weights are constants in flash.
+          The activations are in RAM.
+    \item Day 1 gave the two checks: the model size against the flash, and
+          the peak activation memory against the RAM.
+  \end{itemize}
+  \source{Sizes: \emph{Machine Learning Systems}, XIAOML Kit, ``Setup'';
+    \emph{ESP32-S3 Series Datasheet}, Espressif Systems.}
+\end{frame}
+
+\begin{frame}{Where the program and the data are}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1.27cm, y=1cm]
+    % flash: 8 MB = 8 units
+    \node[anchor=west, font=\footnotesize] at (0,1.45)
+      {\textbf{Flash of the XIAO: 8 MB}};
+    \fill[coolgray!35]    (0,0.4) rectangle (0.06,1.2);
+    \fill[cardinalred!35] (0.06,0.4) rectangle (3.25,1.2);
+    \fill[coolgray!18]    (3.25,0.4) rectangle (6.44,1.2);
+    \fill[treegreen!30]   (6.44,0.4) rectangle (7.94,1.2);
+    \fill[coolgray!35]    (7.94,0.4) rectangle (8,1.2);
+    \draw[coolgray] (0,0.4) rectangle (8,1.2);
+    \draw[coolgray] (0.06,0.4) -- (0.06,1.2) (3.25,0.4) -- (3.25,1.2)
+                    (6.44,0.4) -- (6.44,1.2) (7.94,0.4) -- (7.94,1.2);
+    \node[align=center] at (1.65,0.8) {application:\\program and model};
+    \node[align=center] at (4.85,0.8) {second application\\(for an update)};
+    \node[align=center] at (7.19,0.8) {file\\system};
+    \draw[<->, coolgray] (0.06,0.22) -- node[below, text=black]
+      {3\,342\,336 bytes} (3.25,0.22);
+    % RAM
+    \node[anchor=west, font=\footnotesize] at (0,-0.75)
+      {\textbf{RAM of the program}};
+    \fill[cardinalred!35] (0,-1.8) rectangle (2.2,-1.0);
+    \fill[darkcyan!30]    (2.2,-1.8) rectangle (4.6,-1.0);
+    \fill[white]          (4.6,-1.8) rectangle (6.6,-1.0);
+    \fill[treegreen!30]   (6.6,-1.8) rectangle (8,-1.0);
+    \draw[coolgray] (0,-1.8) rectangle (8,-1.0);
+    \draw[coolgray] (2.2,-1.8) -- (2.2,-1.0) (4.6,-1.8) -- (4.6,-1.0)
+                    (6.6,-1.8) -- (6.6,-1.0);
+    \node[align=center] at (1.1,-1.4) {static data:\\global variables};
+    \node[align=center] at (3.4,-1.4) {heap:\\memory on request};
+    \node[align=center] at (5.6,-1.4) {free};
+    \node[align=center] at (7.3,-1.4) {stack};
+    \draw[->, coolgray] (4.65,-1.95) -- (5.5,-1.95);
+    \draw[->, coolgray] (6.55,-1.95) -- (5.7,-1.95);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The build gives the application one part of the flash. A model
+          that is larger than this part does not fit.
+    \item The heap and the stack grow into the free RAM. If they meet, the
+          program stops with an error.
+  \end{itemize}
+  \source{Partition table \texttt{default\_8MB} of the Arduino core for the
+    ESP32. The RAM bar shows the principle, not measured sizes.}
+\end{frame}
+
+% ----------------------------------------------------------------------- PSRAM
+\begin{frame}{PSRAM: more memory, slower access}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item PSRAM is pseudo-static RAM: dynamic memory cells with a
+              controller that refreshes them.
+        \item It connects to the processor through a serial bus. An
+              access needs more time than an access to the internal RAM.
+        \item The program must ask for PSRAM. In Arduino, the function
+              \code{ps\_malloc()} takes memory from it.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{block}{Use the PSRAM for}
+        \begin{itemize}
+          \item an image buffer of the camera
+          \item a tensor arena that does not fit the internal RAM
+        \end{itemize}
+      \end{block}
+      \begin{block}{Use the internal RAM for}
+        \begin{itemize}
+          \item data that the program reads often
+          \item a model that must be fast
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{The build option \code{Tools > PSRAM > OPI PSRAM} of Day 1
+    makes the 8 MB available. With the option off, the program has only the
+    internal RAM.}
+\end{frame}
+
+% ----------------------------------------------------------------------- clock
+\begin{frame}{The clock sets the speed and the power}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=0.8cm, align=center}]
+    \node[b] (x)   at (0,0)      {Crystal\\40 MHz};
+    \node[b] (pll) at (2.7,0)    {Multiplier};
+    \node[b, draw=cardinalred] (cpu) at (5.5,0.6)
+      {CPU clock\\80, 160, or 240 MHz};
+    \node[b] (apb) at (5.5,-0.6) {Bus clock\\80 MHz};
+    \node[b] (c1)  at (8.5,0.6)  {Processor};
+    \node[b] (c2)  at (8.5,-0.6) {Timers, buses};
+    \node[b] (rtc) at (2.7,-1.8) {Slow clock};
+    \node[b] (c3)  at (5.5,-1.8) {Sleep timer};
+    \draw[->] (x) -- (pll);
+    \draw[->] (pll.east) -- ++(0.3,0) |- (cpu.west);
+    \draw[->] (pll.east) -- ++(0.3,0) |- (apb.west);
+    \draw[->] (cpu) -- (c1);
+    \draw[->] (apb) -- (c2);
+    \draw[->] (rtc) -- (c3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item The processor does one step at each clock cycle. A higher
+          frequency gives more steps each second.
+    \item A higher frequency also uses more power. A program that waits
+          for a sensor can use a lower frequency.
+    \item The timers count clock cycles. A constant sampling rate comes
+          from a timer, not from the speed of the program.
+  \end{itemize}
+  \source{Clock values: \emph{ESP32-S3 Series Datasheet}, Espressif
+    Systems.}
+\end{frame}
+
+% ------------------------------------------------------------------------ GPIO
+\begin{frame}[fragile]{GPIO: general-purpose input and output}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \begin{itemize}
+        \item A GPIO pin has two states: 0 V (low) and 3.3 V (high).
+        \item As an output, the program sets the state: an LED, a relay.
+        \item As an input, the program reads the state: a button, a
+              motion detector.
+        \item An open input has no defined state. A pull-up resistor
+              holds it at high.
+        \item The pins of the XIAO accept 3.3 V. A signal of 5 V damages
+              a pin.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+\begin{lstlisting}[style=python]
+from machine import Pin
+
+# The LED of the XIAO is on GPIO21.
+# It is on when the pin is low.
+led = Pin(21, Pin.OUT)
+led.value(0)      # LED on
+led.value(1)      # LED off
+
+# The boot button is on GPIO0.
+# It connects the pin to 0 V.
+button = Pin(0, Pin.IN, Pin.PULL_UP)
+print(button.value())   # 0 = pressed
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{Read the pin number and the active level in the board
+    documentation. The LED of the XIAO has inverted logic.}
+\end{frame}
+
+% ------------------------------------------------------------------- pin map
+\begin{frame}{The pins of the XIAO}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, y=0.5cm]
+    \draw[draw=coolgray, line width=0.8pt, rounded corners=4pt, fill=boxgray]
+      (-1.1,0.9) rectangle (1.1,-6.9);
+    \draw[draw=coolgray, fill=white] (-0.45,1.1) rectangle (0.45,0.3);
+    \node[coolgray] at (0,0.7) {USB-C};
+    \node[align=center, font=\footnotesize] at (0,-3) {XIAO\\ESP32S3};
+    \foreach \y/\n/\g/\f/\c in {0/D0/GPIO1/analog input/coolgray,
+        1/D1/GPIO2/analog input/coolgray, 2/D2/GPIO3/analog input/coolgray,
+        3/D3/GPIO4/analog input/coolgray, 4/D4/GPIO5/I2C data (SDA)/darkcyan,
+        5/D5/GPIO6/I2C clock (SCL)/darkcyan,
+        6/D6/GPIO43/UART send (TX)/cardinalred} {
+      \fill[\c] (-1.1,-\y) circle (2.2pt);
+      \node[anchor=east] at (-1.25,-\y) {\textbf{\n}};
+      \node[anchor=east] at (-1.85,-\y) {\g};
+      \node[anchor=east, text=\c] at (-2.9,-\y) {\f};
+    }
+    \foreach \y/\n/\g/\f/\c in {0/5V/ /power from USB/black,
+        1/GND/ /ground/black, 2/3V3/ /3.3 V output/black,
+        3/D10/GPIO9/SPI out (MOSI)/treegreen,
+        4/D9/GPIO8/SPI in (MISO)/treegreen,
+        5/D8/GPIO7/SPI clock (SCK)/treegreen,
+        6/D7/GPIO44/UART receive (RX)/cardinalred} {
+      \fill[\c] (1.1,-\y) circle (2.2pt);
+      \node[anchor=west] at (1.25,-\y) {\textbf{\n}};
+      \node[anchor=west] at (1.85,-\y) {\g};
+      \node[anchor=west, text=\c] at (2.9,-\y) {\f};
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item One pin can have more than one function. The program selects the
+          function.
+    \item The board uses other pins inside: GPIO21 for the LED, GPIO41 and
+          GPIO42 for the microphone, and 14 pins for the camera.
+    \item The expansion board connects the IMU and the display to D4 and
+          D5.
+  \end{itemize}
+  \source{Pin numbers: file \texttt{pins\_arduino.h} of the Arduino core
+    for the ESP32, board \texttt{XIAO\_ESP32S3}.}
+\end{frame}
+
+% ------------------------------------------------------------------------- ADC
+\begin{frame}{ADC: from a voltage to a number}
+  \begin{columns}[c]
+    \begin{column}{0.44\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.44cm, y=0.36cm]
+        \draw[->, coolgray] (0,0) -- (8.8,0) node[below left, text=black]
+          {input voltage};
+        \draw[->, coolgray] (0,0) -- (0,8.9);
+        \node[rotate=90, anchor=south] at (-0.8,4.2) {output number};
+        \draw[coolgray, dashed] (0,0) -- (8,8);
+        \foreach \k in {0,...,7} {
+          \draw[cardinalred, line width=1pt] (\k,\k) -- (\k+1,\k);
+          \node[anchor=east, coolgray] at (-0.05,\k) {\k};
+        }
+        \foreach \k in {1,...,7} {
+          \draw[cardinalred, line width=1pt] (\k,\k-1) -- (\k,\k);
+        }
+        \node[anchor=west] at (3.2,1.4) {3 bits: 8 levels};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \small
+      \begin{itemize}
+        \item An analog-to-digital converter (ADC) measures a voltage and
+              gives an integer.
+        \item With $n$ bits, the ADC has $2^n$ levels.
+              \[ \text{step} = \frac{V_{\text{range}}}{2^n} \]
+        \item The ADC of the ESP32-S3 has 12 bits: 4096 levels. For a
+              range of 3.3 V, one step is 0.8 mV.
+        \item A change that is smaller than one step is not visible.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{The IMU and the microphone of the kit have their own ADC. They
+    send numbers on a bus. The ADC of the XIAO is for analog sensors, for
+    example a light sensor.}
+\end{frame}
+
+% ---------------------------------------------------------------- bus overview
+\begin{frame}{Four serial buses}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.10\textwidth}L{0.20\textwidth}L{0.20\textwidth}L{0.19\textwidth}L{0.20\textwidth}@{}}
+    \toprule
+    & \textbf{Signal wires} & \textbf{Devices} & \textbf{Speed}
+    & \textbf{On the kit} \\
+    \midrule
+    UART & 2: transmit, receive & 2, point to point
+         & Low: 115\,200 bit/s is typical & Serial port to the laptop \\
+    I2C  & 2: data, clock & Many, each with an address
+         & Low: 100 or 400 kbit/s & IMU, display \\
+    SPI  & 4: clock, 2 data, select & Many, each with a select wire
+         & High: megabits each second & microSD card \\
+    I2S  & 2 or 3: clocks, data & 1 audio device
+         & Fixed by the audio rate & Microphone \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \begin{itemize}
+    \item ``Serial'' means that the bits go one after the other on one
+          wire.
+    \item More wires and a clock wire give more speed. Fewer wires use
+          fewer pins.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------------ UART
+\begin{frame}{UART: two wires and no clock}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.82cm, y=0.8cm]
+    % the letter A = 0x41 = 0100 0001, least significant bit first
+    \draw[cardinalred, line width=1pt]
+      (0,1) -- (1,1) -- (1,0) -- (2,0) -- (2,1) -- (3,1) -- (3,0) -- (8,0)
+      -- (8,1) -- (9,1) -- (9,0) -- (10,0) -- (10,1) -- (12,1);
+    \foreach \x in {1,...,11} { \draw[coolgray!60, dashed] (\x,-0.15) -- (\x,1.3); }
+    \node at (0.5,1.5) {idle};
+    \node at (1.5,1.5) {start};
+    \foreach \x/\b in {2/1,3/0,4/0,5/0,6/0,7/0,8/1,9/0} {
+      \node at (\x+0.5,1.5) {\b};
+    }
+    \node at (10.5,1.5) {stop};
+    \node at (11.5,1.5) {idle};
+    \draw[<->, coolgray] (2,-0.4) -- node[below, text=black]
+      {8 data bits: the letter ``A'' (0x41), lowest bit first} (10,-0.4);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item One wire for each direction: TX of one device goes to RX of the
+          other device.
+    \item No clock wire. The two devices must use the same bit rate, the
+          baud rate.
+    \item One byte needs 10 bits on the wire. At 115\,200 baud the limit
+          is 11\,520 bytes each second.
+    \item The XIAO gives a serial port over USB. The MicroPython prompt
+          and \code{print()} use this port.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------------- I2C
+\begin{frame}{I2C: two wires and many devices}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      d/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=2.4cm, minimum height=0.9cm, align=center}]
+    \node[d, draw=cardinalred] (c) at (0,0) {XIAO\\controller};
+    \node[d] (t1) at (4.4,0) {IMU\\address 0x6A};
+    \node[d] (t2) at (8.0,0) {Display\\address 0x3C};
+    \draw[darkcyan, line width=1pt] (-1.2,-1.3) -- (9.4,-1.3);
+    \draw[treegreen, line width=1pt] (-1.2,-1.9) -- (9.4,-1.9);
+    \node[darkcyan, font=\scriptsize, anchor=south] at (2.2,-1.3)
+      {SDA: data (GPIO5)};
+    \node[treegreen, font=\scriptsize, anchor=north] at (2.2,-1.9)
+      {SCL: clock (GPIO6)};
+    \foreach \n in {c,t1,t2} {
+      \draw[darkcyan]  ([xshift=-0.4cm]\n.south) -- ([xshift=-0.4cm]\n.south |- 0,-1.3);
+      \fill[darkcyan]  ([xshift=-0.4cm]\n.south |- 0,-1.3) circle (1.6pt);
+      \draw[treegreen] ([xshift=0.4cm]\n.south) -- ([xshift=0.4cm]\n.south |- 0,-1.9);
+      \fill[treegreen] ([xshift=0.4cm]\n.south |- 0,-1.9) circle (1.6pt);
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The controller makes the clock and starts each transfer.
+    \item Each target device has an address of 7 bits. The controller
+          sends the address first. Only that device answers.
+    \item Resistors pull the two wires to 3.3 V. A device can only pull a
+          wire to 0 V.
+    \item Typical speeds: 100 kbit/s and 400 kbit/s. This is enough for an
+          IMU. It is too slow for audio or images.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{I2C: read one register of the IMU}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, node distance=0pt,
+      c/.style={draw=coolgray, fill=white, minimum height=0.6cm,
+                inner sep=1pt, align=center},
+      t/.style={c, fill=treegreen!30}]
+    \node[c, minimum width=0.5cm] (a) {S};
+    \node[c, minimum width=1.6cm, right=of a] (b) {0x6A, write};
+    \node[t, minimum width=0.5cm, right=of b] (cc) {A};
+    \node[c, minimum width=1.4cm, right=of cc] (d) {0x0F};
+    \node[t, minimum width=0.5cm, right=of d] (e) {A};
+    \node[c, minimum width=0.5cm, right=of e] (f) {S};
+    \node[c, minimum width=1.6cm, right=of f] (g) {0x6A, read};
+    \node[t, minimum width=0.5cm, right=of g] (h) {A};
+    \node[t, minimum width=1.5cm, right=of h] (i) {0x6A};
+    \node[c, minimum width=0.5cm, right=of i] (j) {N};
+    \node[c, minimum width=0.5cm, right=of j] (k) {P};
+    \node[below=2pt of b] {address};
+    \node[below=2pt of d] {register};
+    \node[below=2pt of g] {address};
+    \node[below=2pt of i] {the value};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  {\scriptsize S = start, P = stop, A = acknowledge, N = no acknowledge.
+   White: the controller sends. Green: the IMU sends.\par}
+  \vskip 0.3em
+  \begin{itemize}
+    \item A sensor is a list of registers. Each register has a number and
+          holds one byte.
+    \item The register 0x0F of the IMU holds its identity. The value is
+          0x6A for the LSM6DS3TR-C.
+  \end{itemize}
+\begin{lstlisting}[style=python]
+from machine import I2C, Pin
+i2c = I2C(0, sda=Pin(5), scl=Pin(6), freq=400000)
+print([hex(a) for a in i2c.scan()])        # ['0x3c', '0x6a']
+print(hex(i2c.readfrom_mem(0x6A, 0x0F, 1)[0]))   # 0x6a
+\end{lstlisting}
+  \source{Register values: library ``Seeed Arduino LSM6DS3''. The output is
+    the expected output. Nobody measured it on the kit.}
+\end{frame}
+
+% ------------------------------------------------------------------------- SPI
+\begin{frame}{SPI: four wires and more speed}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+          d/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                    minimum width=1.7cm, minimum height=3.0cm, align=center}]
+        \node[d, draw=cardinalred] (c) at (0,0) {XIAO};
+        \node[d] (t) at (3.7,0) {microSD\\card};
+        \draw[->] (0.85,1.05) -- node[above, font=\scriptsize]{SCK: clock} (2.85,1.05);
+        \draw[->] (0.85,0.35) -- node[above, font=\scriptsize]{MOSI: data out} (2.85,0.35);
+        \draw[<-] (0.85,-0.35) -- node[above, font=\scriptsize]{MISO: data in} (2.85,-0.35);
+        \draw[->] (0.85,-1.05) -- node[above, font=\scriptsize]{CS: select} (2.85,-1.05);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item One clock wire and one data wire for each direction.
+        \item No address. Each device has its own select wire (CS).
+        \item Data goes in the two directions at the same time.
+        \item The speed is megabits each second.
+        \item Cost: one more pin for each device.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{I2C saves pins. SPI gives speed. A sensor with a low data rate
+    usually has I2C. A memory card or a fast display has SPI.}
+\end{frame}
+
+% ------------------------------------------------------------------------- I2S
+\begin{frame}{I2S, PDM, and the camera bus}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Audio: I2S and PDM}
+        \begin{itemize}
+          \item I2S sends audio samples at an exact rate. It has clock
+                wires and one data wire.
+          \item The microphone of the kit uses PDM: a stream of single
+                bits at a high rate.
+          \item A filter in the ESP32-S3 makes samples of 16 bits.
+          \item Pins: clock GPIO42, data GPIO41.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Images: a parallel bus}
+        \begin{itemize}
+          \item The camera sends 8 bits at the same time on 8 data pins.
+          \item More signals mark each pixel, each line, and each image.
+          \item The bus uses 14 pins. They are on the camera connector
+                of the XIAO.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{The hardware clocks the audio and the image data. The program
+    reads complete buffers. It does not read single samples.}
+  \source{Pin numbers: \emph{Machine Learning Systems}, XIAOML Kit,
+    ``Setup''.}
+\end{frame}
+
+% ------------------------------------------------------------------ data rates
+\begin{frame}{The data rate selects the bus}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1.45cm, y=0.75cm]
+    % x = log10(bytes each second) - 2
+    \foreach \e/\l in {0/100, 1/1\,000, 2/10\,000, 3/100\,000, 4/1\,000\,000} {
+      \draw[coolgray!50] (\e,-0.2) -- (\e,3.1);
+      \node[below, coolgray] at (\e,-0.2) {\l};
+    }
+    \draw[->, coolgray] (0,-0.2) -- (4.7,-0.2);
+    \node[coolgray, anchor=west] at (4.75,-0.2) {bytes each second};
+    \fill[darkcyan!55]    (0,2.2) rectangle (0.778,2.8);
+    \fill[treegreen!55]   (0,1.2) rectangle (2.505,1.8);
+    \fill[cardinalred!55] (0,0.2) rectangle (3.885,0.8);
+    \node[anchor=west, fill=white, inner sep=1.5pt] at (0.85,2.5) {IMU, 50 Hz: 600 (I2C)};
+    \node[anchor=west, fill=white, inner sep=1.5pt] at (2.58,1.5) {Microphone, 16 kHz: 32\,000 (I2S)};
+    \node[anchor=west, text=white] at (0.05,0.5) {Camera: 768\,000 (parallel)};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item IMU: 6 values $\times$ 2 bytes $\times$ 50 samples each second
+          $= 600$ bytes each second.
+    \item Microphone: 16\,000 samples $\times$ 2 bytes $= 32\,000$ bytes
+          each second.
+    \item Camera: $320 \times 240$ pixels $\times$ 1 byte $\times$ 10
+          images each second $= 768\,000$ bytes each second.
+  \end{itemize}
+  \keypoint{From the IMU to the camera, the data rate grows by a factor of
+    1280. The bus, the buffer, and the model must follow.}
+  \source{The scale is logarithmic. The rates are the settings of the
+    course labs. The camera rate of 10 images each second is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ interrupts
+\begin{frame}[fragile]{Interrupts: react to an event}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.9cm, y=1cm, >={Stealth[length=5pt]}]
+    \node[anchor=east] at (-0.1,0.3) {main program};
+    \node[anchor=east] at (-0.1,-0.5) {handler};
+    \fill[coolgray!35] (0,0.1) rectangle (3.6,0.5);
+    \fill[cardinalred!55] (3.6,-0.7) rectangle (4.5,-0.3);
+    \fill[coolgray!35] (4.5,0.1) rectangle (8.6,0.5);
+    \draw[->] (3.6,1.1) node[above] {event: the pin goes low} -- (3.6,0.55);
+    \draw[->, coolgray] (3.6,0.1) -- (3.6,-0.25);
+    \draw[->, coolgray] (4.5,-0.3) -- (4.5,0.05);
+    \draw[->, coolgray] (0,-1.0) -- (8.8,-1.0) node[right] {time};
+  \end{tikzpicture}\par\endgroup
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \begin{itemize}
+        \item Polling: the program reads the pin again and again. It can
+              miss a short event.
+        \item Interrupt: the hardware stops the main program and starts
+              a handler function.
+        \item Keep the handler short. Set a flag. Do the work in the main
+              program.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+\begin{lstlisting}[style=python]
+from machine import Pin
+pressed = False
+
+def on_press(pin):
+    global pressed
+    pressed = True   # set a flag only
+
+button = Pin(0, Pin.IN, Pin.PULL_UP)
+button.irq(trigger=Pin.IRQ_FALLING,
+           handler=on_press)
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------- timers
+\begin{frame}{Timers: a constant sampling rate}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.078cm, y=1cm]
+    % 1 unit = 1 ms. The read needs 4 ms in this example.
+    \foreach \t in {0,20,...,120} {
+      \draw[coolgray!60, dashed] (\t,-0.3) -- (\t,1.9);
+      \node[below, coolgray] at (\t,-0.3) {\t};
+    }
+    \node[anchor=west, font=\footnotesize, inner sep=1pt] at (0,2.3)
+      {\textbf{Read, then wait 20 ms:} the period is 24 ms};
+    \foreach \k in {0,...,4} {
+      \fill[cardinalred!55] (\k*24,1.3) rectangle (\k*24+4,1.8);
+    }
+    \node[anchor=west, font=\footnotesize, fill=white, inner sep=1pt]
+      at (0,0.78) {\textbf{Wait for the next deadline:} the period is 20 ms};
+    \foreach \k in {0,...,5} {
+      \fill[treegreen!60] (\k*20,-0.1) rectangle (\k*20+4,0.4);
+    }
+    \draw[->, coolgray] (0,-0.3) -- (126,-0.3) node[right] {ms};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The target is 50 Hz: one sample each 20 ms.
+    \item A fixed wait after each read adds the read time to each period.
+          With a read time of 4 ms, the rate is 41.7 Hz, not 50 Hz.
+    \item A timer gives deadlines at 0, 20, 40 ms. The program waits for
+          the next deadline. The read time does not change the rate.
+  \end{itemize}
+  \keypoint{The model of Day 3 expects 50 Hz. Data at a different rate is
+    a different signal. Measure the rate in the lab.}
+  \source{The read time of 4 ms is an example, not a measured value.}
+\end{frame}
+
+% ----------------------------------------------------------------- power modes
+\begin{frame}{Power modes}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.33\textwidth}L{0.24\textwidth}r@{}}
+    \toprule
+    \textbf{Mode} & \textbf{State} & \textbf{After wake-up}
+    & \textbf{Current} \\
+    \midrule
+    Active & The processor and the Wi-Fi radio operate & not applicable
+        & 100 mA \\
+    Modem sleep & The processor operates. The radio is off.
+        & not applicable & 27 mA \\
+    Light sleep & The processor stops. The RAM keeps its content.
+        & The program continues & 2 mA \\
+    Deep sleep  & Only a slow clock and a timer operate. The RAM loses its
+                  content.
+        & The program starts again & 14 $\mu$A \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item A timer or a pin wakes the board. In MicroPython:
+          \code{machine.lightsleep(ms)} and \code{machine.deepsleep(ms)}.
+    \item The values are for the XIAO ESP32S3 with no camera board, at
+          3.8 V. The board with the camera needs more.
+  \end{itemize}
+  \source{Current values: Seeed Studio wiki, ``Getting Started with Seeed
+    Studio XIAO ESP32S3 Series''. Modes: ESP-IDF Programming Guide, ``Sleep
+    Modes''.}
+\end{frame}
+
+\begin{frame}{The duty cycle decides the battery life}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.135cm, y=0.85cm]
+    \fill[cardinalred!55] (0,0) rectangle (1,1.2);
+    \fill[treegreen!45]   (1,0) rectangle (60,0.12);
+    \fill[cardinalred!55] (60,0) rectangle (61,1.2);
+    \fill[treegreen!45]   (61,0) rectangle (66,0.12);
+    \draw[->, coolgray] (0,0) -- (68,0) node[right] {s};
+    \draw[->, coolgray] (0,0) -- (0,1.5) node[above] {current};
+    \node[anchor=west] at (1.5,1.0) {active: 1 s at 100 mA};
+    \node[anchor=south] at (30,0.15) {deep sleep: 59 s at 0.014 mA};
+    \node[below, coolgray] at (0,0) {0};
+    \node[below, coolgray] at (60,0) {60};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \[
+    I_{\text{mean}} = \frac{1 \times 100\ \text{mA} + 59 \times
+      0.014\ \text{mA}}{60} = 1.68\ \text{mA}
+  \]
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Always active}
+        Battery of 500 mAh: $500 / 100 = 5$ hours.
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Active for 1 s each minute}
+        $500 / 1.68 = 298$ hours, about 12 days.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{The time in sleep decides the energy of an always-on sensor.
+    Day 9 measures the energy of one inference.}
+  \source{A calculation with the currents of the frame before. The battery
+    size is an example. A real battery gives less.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{read a data sheet extract}{%
+  \small
+  An extract from the data sheet of a different TinyML board:
+  \vskip 0.3em
+  {\footnotesize
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
+    \toprule
+    Microcontroller & nRF52840: Cortex-M4F, 64 MHz, 1 MB of flash, 256 KB
+                      of RAM \\
+    IMU             & BMI270 and BMM150 (9 axes), I2C \\
+    Microphone      & MP34DT06JTR, PDM output \\
+    Pressure        & LPS22HB, I2C \\
+    Humidity        & HS3003 (temperature and humidity), I2C \\
+    Light, gesture  & APDS-9960, I2C \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item How much flash and how much RAM does the board have?
+    \item Which bus does each sensor use?
+    \item Four sensors use the same two wires. How does the
+          microcontroller select one of them?
+    \item A model has 300 KB of weights and a tensor arena of 100 KB. The
+          program needs 300 KB of flash. Does the model fit? Which number
+          do you need in addition?
+  \end{enumerate}
+  Work with your neighbour for 5 minutes.
+  \sourcehere{Data sheet of the Arduino Nano 33 BLE Sense Rev2
+    (ABX00069).}
+}
+
+\answerframe{read a data sheet extract}{%
+  \begin{enumerate}
+    \item 1 MB of flash and 256 KB of RAM. The board has no PSRAM.
+    \item The IMU, the pressure sensor, the temperature and humidity
+          sensor, and the light sensor use I2C. The microphone uses PDM,
+          which the microcontroller reads with its audio interface.
+    \item Each I2C device has its own address. The controller sends the
+          address at the start of a transfer. Only that device answers.
+    \item \textbf{Flash:} $300 + 300 = 600$ KB. This is less than 1 MB, so
+          the weights fit.\\
+          \textbf{RAM:} the arena needs 100 KB of the 256 KB. You also
+          need the RAM that the program uses for its own data. The model
+          fits if the program uses less than 156 KB.
+  \end{enumerate}
+  \vskip 0.3em
+  The same four questions apply to each new board: the flash, the RAM, the
+  sensors, and the bus of each sensor.
+}
