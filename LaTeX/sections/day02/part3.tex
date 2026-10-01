@@ -6,3 +6,656 @@
 
 \theorypart{Sensor data engineering}%
   {find the leakage error in a dataset split}
+
+% ------------------------------------------------------------ data as source
+\begin{frame}{Data is the source code of the model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.3cm, minimum height=0.85cm, align=center},
+      h/.style={font=\footnotesize\bfseries, text=coolgray, anchor=east,
+                align=right}]
+    \node[h] at (-1.4,0)    {Software};
+    \node[h] at (-1.4,-1.4) {Machine\\learning};
+    \node[b] (a1) at (0,0)   {Source code};
+    \node[b] (a2) at (3.1,0) {Compiler};
+    \node[b] (a3) at (6.2,0) {Program};
+    \node[b, draw=cardinalred] (b1) at (0,-1.4)   {Recordings\\and labels};
+    \node[b, draw=cardinalred] (b2) at (3.1,-1.4) {Data pipeline\\and training};
+    \node[b, draw=cardinalred] (b3) at (6.2,-1.4) {Model};
+    \draw[->] (a1) -- (a2); \draw[->] (a2) -- (a3);
+    \draw[->] (b1) -- (b2); \draw[->] (b2) -- (b3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item A change of the data changes the model, as a change of the source
+          code changes the program.
+    \item So the data needs the same methods as code: a written
+          procedure, tests, versions, and a review.
+    \item On an edge device you make the data with the sensor. No public
+          dataset has the signals of your device in your application.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{To remove one recording is to remove one line of code. To
+    train again is to compile again.}
+\end{frame}
+
+\begin{frame}{A data error gives no error message}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item A code error stops the program. A data error does not.
+        \item The error moves through each later stage: the features, the
+              training, the test, the deployment.
+        \item The model trains. The accuracy looks correct. The device
+              fails in use.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.3}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Code error} & \textbf{Data error} \\
+        \midrule
+        Compiler message & No message \\
+        Program stops    & Model is worse \\
+        You debug code   & You debug data \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{block}{Examples for a motion sensor}
+    The sampling rate was 42 Hz, not 50 Hz. One class has the wrong label.
+    One person recorded all data of one class.
+  \end{block}
+  \source{The effect has the name ``data cascade'': Sambasivan et al.,
+    ``Everyone wants to do the model work, not the data work'', CHI 2021.}
+\end{frame}
+
+% --------------------------------------------------------------- the pipeline
+\begin{frame}{The data pipeline of today}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.8cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (k) at (0,0)    {XIAOML\\Kit};
+    \node[b] (l) at (2.15,0) {Logger on\\the laptop};
+    \node[b] (f) at (4.3,0)  {CSV files\\with labels};
+    \node[b, draw=cardinalred] (s) at (6.45,0) {Split by\\session};
+    \node[b] (w) at (8.6,0)  {Windows};
+    \foreach \a/\b in {k/l, l/f, f/s, s/w} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {IMU at\\50 Hz};
+    \node[lab] at (2.15,-0.95) {serial port\\or Wi-Fi};
+    \node[lab] at (4.3,-0.95)  {one file for\\each recording};
+    \node[lab] at (6.45,-0.95) {training, test};
+    \node[lab] at (8.6,-0.95)  {Day 3};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item The board sends samples. A Python program on the laptop stores
+          them in files.
+    \item Each file is one recording of one class.
+    \item You split the files into a training set and a test set. Day 3
+          cuts the windows and trains the model.
+    \item You also upload the same files to Edge Impulse Studio and
+          inspect them there.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- protocol
+\begin{frame}{The collection protocol}
+  A collection protocol is a written procedure. You write it before the
+  first recording, and each person follows it.
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.66\textwidth}@{}}
+    \toprule
+    \textbf{Item} & \textbf{The protocol of the lab} \\
+    \midrule
+    Classes          & idle, terrestrial, lift, maritime \\
+    Definition of each class & One sentence for each motion: the axis and
+                       the speed \\
+    Sensor settings  & 50 Hz, range 16 $g$, three accelerometer axes and
+                       three gyroscope axes \\
+    Position of the kit & In the hand, with the display up \\
+    One recording    & 10 s of one motion with no pause \\
+    Quantity         & About 2 minutes for each class: 12 recordings \\
+    Sessions         & A minimum of three sessions for each class \\
+    File name        & label, session, number: \code{lift.s2.07.csv} \\
+    \bottomrule
+  \end{tabular}
+  \source{Classes, rate, recording length, and quantity:
+    \emph{Machine Learning Systems}, XIAOML Kit, ``Motion Classification and
+    Anomaly Detection''.}
+\end{frame}
+
+\begin{frame}{Collect the variation that the device will see}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.3}
+      \begin{tabular}{@{}L{0.36\textwidth}L{0.56\textwidth}@{}}
+        \toprule
+        \textbf{Factor} & \textbf{Change it between sessions} \\
+        \midrule
+        Person      & Each student of the group records \\
+        Speed       & Slow, medium, and fast motion \\
+        Amplitude   & Small and large motion \\
+        Orientation & Small changes of the angle of the kit \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{itemize}
+        \item A model learns each difference between the classes,
+              including the differences that you did not intend.
+        \item If one person records all ``lift'' data, the model can
+              learn the person, not the motion.
+        \item If the kit is flat only in the class ``idle'', the model
+              can learn the orientation.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{Change in the data all factors that change in the use of the
+    device. Keep constant only what stays constant in use.}
+\end{frame}
+
+% ---------------------------------------------------------------------- labels
+\begin{frame}{Labels}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Rules}
+        \begin{itemize}
+          \item Give the label when you record, not later.
+          \item One recording has one label.
+          \item Write the definition of each class. Two persons must give
+                the same label to the same motion.
+          \item Store the label in the file name and in the file.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Typical label errors}
+        \begin{itemize}
+          \item The first second of a recording holds the start of the
+                motion, or no motion.
+          \item A recording has the label of the recording before it.
+          \item Two classes have no clear limit: a slow ``maritime'' motion
+                and a ``terrestrial'' motion.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item Start the motion first. Then start the recording.
+    \item A label error in the training set makes the model worse. A label
+          error in the test set makes the result wrong.
+  \end{itemize}
+\end{frame}
+
+% --------------------------------------------------------------- look at data
+\begin{frame}{Look at each recording}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.52cm, y=0.5cm]
+    % four small plots, 4 s each: x axis red, y axis green, z axis blue
+    \foreach \o/\t in {0/idle, 5.3/terrestrial, 10.6/lift, 15.9/maritime} {
+      \draw[coolgray] (\o,-1.6) rectangle (\o+4.6,2.6);
+      \node[anchor=south] at (\o+2.3,2.6) {\textbf{\t}};
+    }
+    % idle
+    \draw[cardinalred] (0.2,0) -- (4.4,0);
+    \draw[treegreen]   (0.2,0.12) -- (4.4,0.12);
+    \draw[darkcyan]    (0.2,1.6) -- (4.4,1.6);
+    % terrestrial: the y axis moves
+    \draw[cardinalred] (5.5,0) -- (9.7,0);
+    \draw[treegreen] plot[domain=0:4.2, samples=60, smooth]
+      (\x+5.5,{1.2*sin(360*\x)});
+    \draw[darkcyan]    (5.5,1.6) -- (9.7,1.6);
+    % lift: the z axis moves
+    \draw[cardinalred] (10.8,0) -- (15.0,0);
+    \draw[treegreen]   (10.8,0.12) -- (15.0,0.12);
+    \draw[darkcyan] plot[domain=0:4.2, samples=60, smooth]
+      (\x+10.8,{1.6+0.9*sin(360*0.8*\x)});
+    % maritime: all axes move
+    \draw[cardinalred] plot[domain=0:4.2, samples=60, smooth]
+      (\x+16.1,{0.8*sin(360*0.5*\x)});
+    \draw[treegreen] plot[domain=0:4.2, samples=60, smooth]
+      (\x+16.1,{0.7*sin(360*0.4*\x+70)});
+    \draw[darkcyan] plot[domain=0:4.2, samples=60, smooth]
+      (\x+16.1,{1.6+0.6*sin(360*0.6*\x+140)});
+  \end{tikzpicture}\par\endgroup
+  {\scriptsize\centering
+   {\color{cardinalred}x axis}\quad{\color{treegreen}y axis}\quad
+   {\color{darkcyan}z axis, with gravity}\par}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Make a plot of each recording immediately after you record it.
+    \item Check that the plot agrees with the label: the correct axis
+          moves, and the motion fills the complete recording.
+    \item Delete a wrong recording and record it again. This costs
+          10 seconds now. It costs hours after the training.
+  \end{itemize}
+  \source{The curves are drawings of the expected form, not recordings.}
+\end{frame}
+
+% --------------------------------------------------------------- class balance
+\begin{frame}{Class balance}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.9cm, y=0.0042cm]
+        \draw[->, coolgray] (0,0) -- (4.6,0);
+        \draw[->, coolgray] (0,0) -- (0,1000);
+        \node[coolgray, anchor=south] at (0.4,1000) {windows};
+        \fill[coolgray!60]    (0.3,0) rectangle (1.1,900);
+        \fill[cardinalred!60] (1.3,0) rectangle (2.1,40);
+        \fill[cardinalred!60] (2.3,0) rectangle (3.1,30);
+        \fill[cardinalred!60] (3.3,0) rectangle (4.1,30);
+        \node[above] at (0.7,900) {900};
+        \node[above] at (1.7,40) {40};
+        \node[above] at (2.7,30) {30};
+        \node[above] at (3.7,30) {30};
+        \node[below] at (0.7,0) {idle};
+        \node[below] at (1.7,0) {terr.};
+        \node[below] at (2.7,0) {lift};
+        \node[below] at (3.7,0) {mar.};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item A package is at rest most of the time. A log of real use has
+              almost only ``idle''.
+        \item A model that always answers ``idle'' is correct for 900 of
+              1000 windows: an accuracy of 90 percent.
+        \item This model finds no motion. The accuracy hides that.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Record the same duration for each class.
+    \item Report the result for each class, not only the total accuracy.
+          Day 3 uses a confusion matrix.
+  \end{itemize}
+  \source{The numbers are an example for the calculation.}
+\end{frame}
+
+% ----------------------------------------------------------------------- split
+\begin{frame}{Training set, validation set, and test set}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1.0cm, y=1cm]
+    \fill[darkcyan!35]    (0,0) rectangle (6,0.9);
+    \fill[treegreen!40]   (6,0) rectangle (8,0.9);
+    \fill[cardinalred!40] (8,0) rectangle (10,0.9);
+    \draw[coolgray] (0,0) rectangle (10,0.9);
+    \node at (3,0.45) {training: 60 percent};
+    \node at (7,0.45) {validation: 20};
+    \node at (9,0.45) {test: 20};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.16\textwidth}L{0.38\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Set} & \textbf{Use} & \textbf{Rule} \\
+    \midrule
+    Training   & The optimizer fits the weights to this data.
+               & The largest set \\
+    Validation & You select the model and its settings with this data.
+               & Not used to fit the weights \\
+    Test       & You estimate the accuracy on new data.
+               & Used one time, at the end \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \keypoint{The test set must be independent of the training set. If it is
+    not, the test accuracy says nothing about the device in use.}
+  \source{The percentages are a typical example.}
+\end{frame}
+
+% --------------------------------------------------------------------- leakage
+\begin{frame}{Data leakage}
+  \begin{block}{Definition}
+    Data leakage: information from the test data reaches the training. The
+    test result is then better than the result on new data.
+  \end{block}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Type} & \textbf{How it occurs} \\
+    \midrule
+    Overlapping windows & Two windows share samples. One is in the
+                          training set, the other in the test set. \\
+    The same recording  & Windows of one recording are in the two sets. \\
+    The same session    & Recordings of one person in one position are in
+                          the two sets. \\
+    Preprocessing       & The mean and the standard deviation for the
+                          normalization come from all data. \\
+    Copies              & The same file is in the dataset two times. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \keypoint{Leakage gives no error. The only sign is a test accuracy that
+    is much better than the accuracy on the device.}
+\end{frame}
+
+\begin{frame}{Leakage between overlapping windows}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.88cm, y=0.72cm]
+    \draw[coolgray, line width=0.7pt]
+      plot[domain=0:10, samples=240, smooth]
+      (\x,{2.4+0.5*sin(360*0.9*\x) + 0.2*sin(360*2.3*\x)});
+    \draw[->, coolgray] (0,1.6) -- (10.3,1.6) node[right] {s};
+    \foreach \t in {0,2,4,6,8,10} { \node[below, coolgray] at (\t,1.6) {\t}; }
+    % windows of 2 s with a stride of 0.2 s
+    \fill[darkcyan!45]    (3.0,0.55) rectangle (5.0,0.95);
+    \fill[cardinalred!55] (3.2,0.05) rectangle (5.2,0.45);
+    \fill[darkcyan!45]    (3.4,-0.45) rectangle (5.4,-0.05);
+    \node[anchor=east] at (2.9,0.75)  {window 16: training};
+    \node[anchor=east] at (2.9,0.25)  {window 17: test};
+    \node[anchor=east] at (2.9,-0.25) {window 18: training};
+    \draw[dashed, coolgray] (3.2,-0.6) -- (3.2,1.1);
+    \draw[dashed, coolgray] (5.0,-0.6) -- (5.0,1.1);
+    \node[anchor=west] at (5.6,0.25) {1.8 s of 2 s are equal};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item Window length 2 s, stride 0.2 s: adjacent windows share 90
+          percent of their samples.
+    \item A random split of the windows puts window 17 in the test set and
+          its neighbours in the training set.
+    \item The model saw almost all samples of the test window during the
+          training. The test measures memory.
+  \end{itemize}
+  \keypoint{Do not split windows at random. Split the recordings first.
+    Then cut the windows.}
+\end{frame}
+
+\begin{frame}{Split by recording session}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1cm, y=1cm]
+    \node[anchor=east, coolgray] at (-0.2,1.6) {session};
+    \node[anchor=east, coolgray] at (-0.2,0.85) {recordings};
+    \foreach \k/\c/\n in {0/darkcyan/s1, 1/darkcyan/s2, 2/darkcyan/s3,
+        3/treegreen/s4, 4/cardinalred/s5} {
+      \fill[\c!35] (\k*1.75,0.5) rectangle (\k*1.75+1.56,1.2);
+      \draw[coolgray] (\k*1.75,0.5) rectangle (\k*1.75+1.56,1.2);
+      \foreach \j in {1,2,3} {
+        \draw[coolgray] (\k*1.75+\j*0.39,0.5) -- (\k*1.75+\j*0.39,1.2);
+      }
+      \node at (\k*1.75+0.78,1.6) {\n};
+    }
+    \draw[darkcyan, line width=1pt] (0,0.3) -- (5.06,0.3);
+    \node[darkcyan] at (2.53,0) {training};
+    \draw[treegreen, line width=1pt] (5.25,0.3) -- (6.81,0.3);
+    \node[treegreen] at (6.03,0) {validation};
+    \draw[cardinalred, line width=1pt] (7.0,0.3) -- (8.56,0.3);
+    \node[cardinalred] at (7.78,0) {test};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item A session is one period of recording with one person, one
+          position of the kit, and no long pause.
+    \item Recordings of one session are similar: the same hand, the same
+          speed, the same angle.
+    \item All recordings of one session go to the same set.
+    \item A stronger test: the test session comes from a person who has no
+          recording in the training set.
+  \end{itemize}
+  \keypoint{The check of the lab: no session is in the training set and
+    also in the test set.}
+\end{frame}
+
+\begin{frame}{The correct order of the steps}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center}]
+    \node[b] (a) at (0,0)    {Record\\sessions};
+    \node[b, draw=cardinalred] (b) at (2.15,0) {Split by\\session};
+    \node[b] (c) at (4.3,0)  {Cut\\windows};
+    \node[b] (d) at (6.45,0) {Normalize};
+    \node[b] (e) at (8.6,0)  {Train};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[font=\scriptsize, text=coolgray, align=center] at (6.45,-0.95)
+      {statistics from the\\training set only};
+    \node[font=\scriptsize, text=cardinalred, align=center] at (2.15,-0.95)
+      {before all\\other steps};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item \textbf{Split first.} Each later step then sees only its own
+          set.
+    \item \textbf{Cut the windows in each set.} An overlap inside the
+          training set is not leakage. It gives more training examples.
+    \item \textbf{Normalize with the training set.} Calculate the mean and
+          the standard deviation from the training set. Apply the same two
+          numbers to the validation set, to the test set, and on the
+          device.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{A wrong order is the usual cause of leakage: first windows,
+    then a random split.}
+\end{frame}
+
+% -------------------------------------------------------------------- versions
+\begin{frame}{Dataset versions}
+  A dataset changes: new recordings, corrected labels, a new split. Each
+  change gives a different model.
+  \vskip 0.4em
+  \begin{columns}[T]
+    \begin{column}{0.44\textwidth}
+      \begin{block}{One version holds}
+        \begin{itemize}
+          \item the files
+          \item the protocol and the data card
+          \item the list of the sessions in each set
+          \item a hash value of each file
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \begin{block}{Rules}
+        \begin{itemize}
+          \item Give each version a number: v1, v2.
+          \item Do not change a version after a model used it. Make a new
+                version.
+          \item Write the dataset version next to each trained model.
+          \item Keep the raw recordings. Make the windows with a script.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{A small dataset can be in git. For a large dataset, git holds
+    only the list of the files and their hash values.}
+\end{frame}
+
+% ------------------------------------------------------------------- data card
+\begin{frame}{The data card}
+  A data card is a short document that describes a dataset. It is the
+  deliverable of the lab.
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
+    \toprule
+    \textbf{Field} & \textbf{Example} \\
+    \midrule
+    Name and version & Motion of a package, group 7, v1 \\
+    Classes          & idle, terrestrial, lift, maritime, with one sentence
+                       for each \\
+    Sensor           & LSM6DS3TR-C, 50 Hz, range 16 $g$ and 2000 dps \\
+    Duration         & 120 s for each class, 480 s in total \\
+    Sessions         & 3 sessions, 2 persons \\
+    Split            & Training: s1 and s2. Test: s3. \\
+    Checks           & Mean rate, lost samples, clipped samples \\
+    Known limits     & Two persons only. The kit was always in the hand. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The field ``known limits'' says where the model can fail.
+  \end{itemize}
+  \source{The idea of a document for each dataset: Gebru et al.,
+    ``Datasheets for Datasets'', 2021. The values are an example.}
+\end{frame}
+
+% --------------------------------------------------------------------- quality
+\begin{frame}{Data quality: two types of check}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Structure checks}
+        Does each file have the correct form?
+        \begin{itemize}
+          \item the correct columns
+          \item numbers in each cell
+          \item the expected number of rows: 500 for 10 s at 50 Hz
+          \item a sample counter with no gap
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Statistical checks}
+        Do the values make sense?
+        \begin{itemize}
+          \item the mean rate and the jitter
+          \item no value at the limit of the range (clipping)
+          \item no constant signal in a motion class
+          \item at rest, the length of the acceleration vector is near
+                1 $g$
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A file can pass each structure check and still hold wrong data.
+          A recording in m/s$^2$ in a dataset in $g$ has the correct form.
+    \item Run the checks with a script after each session, not at the end.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The structure check finds a broken file. The statistical check
+    finds a wrong measurement.}
+\end{frame}
+
+\begin{frame}{The same settings for training and for the device}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Setting} & \textbf{Data collection (Day 2)}
+    & \textbf{Risk on the device (Day 3)} \\
+    \midrule
+    Sampling rate & 50 Hz & A loop with a different period \\
+    Sensor range  & 16 $g$, 2000 dps & A library with a different default
+                    value \\
+    Unit          & $g$ & m/s$^2$: a factor of 9.81 \\
+    Axes          & x, y, z of the kit & A kit in a different position \\
+    Window        & 2 s & A buffer of a different length \\
+    Normalization & Statistics of the training set
+                  & Different numbers, or none \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item A difference between the training data and the device data has
+          the name training-serving skew. The accuracy decreases, and no
+          error appears.
+  \end{itemize}
+  \keypoint{Write the settings in the data card. Day 3 reads them from
+    there.}
+\end{frame}
+
+% ---------------------------------------------------------------- Edge Impulse
+\begin{frame}{The same data in Edge Impulse Studio}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item Edge Impulse Studio is a cloud tool for TinyML projects:
+              data, features, training, and a library for the device.
+        \item In Part D of the lab you upload the CSV files of your
+              dataset.
+        \item The Studio reads the label from the file name: the text
+              before the first full stop.
+        \item You inspect each recording as a plot, and you see the
+              duration of each class.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{block}{Check the split}
+        \begin{itemize}
+          \item The Studio can split the files into training and test data
+                automatically.
+          \item This split works on files. It does not know your
+                sessions.
+          \item Upload the test session as test data yourself.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{A tool makes the collection fast. The protocol, the labels,
+    and the split stay your decisions.}
+  \source{\emph{Machine Learning Systems}, XIAOML Kit, ``Motion
+    Classification and Anomaly Detection''; Edge Impulse documentation.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{find the leakage error}{%
+  \small
+  A team builds a motion classifier with four classes.
+  \begin{itemize}
+    \item Three persons (A, B, C) record each class one time for 60 s.
+    \item The team cuts windows of 2 s with a stride of 0.2 s. It
+          normalizes with the mean and the standard deviation of all
+          windows.
+    \item The team mixes all windows: 80 percent for the training set,
+          20 percent for the test set.
+    \item The test accuracy is 99 percent. On the device, with person D,
+          the model is correct for 7 of 10 motions.
+  \end{itemize}
+  \begin{enumerate}
+    \item Find two leakage errors.
+    \item How many windows does one recording give? Which part of a test
+          window is also in a training window?
+    \item Write a correct procedure with the same recordings.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes. The scenario and its numbers are
+  an example.
+}
+
+\answerframe{find the leakage error}{%
+  \small
+  \begin{enumerate}
+    \item \textbf{Error 1:} the team split the windows at random.
+          Overlapping windows of one recording are in the two sets.\\
+          \textbf{Error 2:} the normalization uses the mean and the
+          standard deviation of all windows, with the test windows.
+    \item One recording gives $(60 - 2) / 0.2 + 1 = 291$ windows. A test
+          window shares 1.8 s of its 2 s with an adjacent window: 90
+          percent. With 80 percent of the windows in the training set, an
+          adjacent window is almost always there.
+    \item A correct procedure:
+          \begin{itemize}
+            \item Split by person: A and B for the training, C for the
+                  test.
+            \item Cut the windows in each set.
+            \item Calculate the mean and the standard deviation from the
+                  windows of A and B. Apply them to C and on the device.
+          \end{itemize}
+  \end{enumerate}
+  The test accuracy then decreases. It is nearer to the result with person
+  D, because C is also a new person for the model.
+}
