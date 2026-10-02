@@ -27,6 +27,7 @@ Each lab adds one row here.
 | Day 5 | Audio and vision on the microcontroller | XIAOML Kit | `day05/` | not tested on hardware. The two sketches need the library of an Edge Impulse project. They compile with a replacement for that library. The post-processing code and the download script run on a laptop. |
 | Day 6 | Pruning, distillation, and model selection | none | `day06/` | no board is necessary. The notebook runs on a laptop. |
 | Day 7 | Inference runtimes on the Raspberry Pi | Raspberry Pi 5 | `day07/` | not tested on hardware. The notebook runs on a laptop. The three scripts for the board ran on an x86 computer, the camera script with a replacement for the camera package. |
+| Day 8 | Object detection on the Raspberry Pi | Raspberry Pi 5 with the camera | `day08/` | not tested on hardware. The notebook and the training script run on a laptop. The scripts for the board ran on an x86 computer with image files, the camera path with a replacement for the camera package. |
 
 ## Rules for every lab folder
 

@@ -138,7 +138,7 @@ check_import() {
 }
 
 check_import tflite_env numpy PIL cv2 picamera2 ai_edge_litert onnxruntime
-check_import yolo numpy torch ultralytics cv2 picamera2 paho.mqtt psutil prometheus_client
+check_import yolo numpy torch ultralytics ncnn ai_edge_litert flask cv2 picamera2 paho.mqtt psutil prometheus_client
 check_import ollama ollama pydantic
 
 # --- Tools --------------------------------------------------------------------

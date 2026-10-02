@@ -32,6 +32,9 @@ onnx
 onnxruntime
 
 # Object detection (Day 8).
+# The notebook of the Day 8 lab exports to LiteRT with the package
+# litert-torch, as the Day 7 lab does. That lab has its own environment and
+# its own file: day08/requirements.txt.
 ultralytics
 
 # Camera and video (Days 8 and 11).

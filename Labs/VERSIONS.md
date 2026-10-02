@@ -67,6 +67,15 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `ipykernel`, `jupyter-client` | 6.31.0, 8.6.3 | `day07`: the newest versions that `litert-torch` 0.9.4 accepts |
 | `notebook`, `netron` | 7.6.3, 9.3.0 | `day07` (the notebook, and the viewer for model files) |
 | `ncnn`, `pnnx` | 1.0.20260526, 20260526 | Day 7 lecture. The lab does not need them. |
+| `ultralytics` | 8.4.171 (fixed in `Labs/day08/requirements.txt` and in `Labs/hardware/HW-04/setup_pi.sh`) | `day08` (training, export, and all scripts of `pi/`). The export arguments `format=litert` and `quantize=8` are the arguments of this version. |
+| `torch`, `torchvision` in the environment of the Day 8 lab | 2.13.0, 0.28.0 (CPU versions) | `day08` (`train_detector.py`, `custom_detector.ipynb`). The package `litert-torch` selects these versions, so this lab has its own environment and its own file `Labs/day08/requirements.txt`. |
+| `litert-torch`, `ai-edge-quantizer`, `ai-edge-litert` | 0.9.4, 0.9.0, 2.2.0 | `day08` (export of the detector to LiteRT in `float32` and in `int8`, and the validation of the files) |
+| `ncnn`, `pnnx` | 1.0.20260526, 20260526 | `day08` (export of the detector to NCNN, and `pi/detect_yolo.py`, `pi/live_detect.py`, `pi/bench_detect.py` with an NCNN folder) |
+| `onnx`, `onnxslim` | 1.23.1, 0.1.97 | `day08` (the export of the package uses them) |
+| `opencv-python`, `pillow`, `numpy` | 5.0.0.93, 12.3.0, 2.2.6 | `day08` (installed with `ultralytics`) |
+| `notebook`, `ipykernel`, `jupyter-client` | 7.6.3, 6.31.0, 8.6.3 | `day08`: the same limits as in the Day 7 lab |
+| `flask` | 3.1.3 | `day08` (`pi/live_detect.py`: the web page of the live image) |
+| `torch`, `torchvision` in the test of the scripts of `pi/` | 2.14.1, 0.29.1 (CPU versions) | `day08`: the scripts for the board ran on the work computer in a second environment, with the files that the notebook exported |
 
 ## Arduino board cores and libraries
 

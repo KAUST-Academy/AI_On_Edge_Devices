@@ -82,7 +82,9 @@ if want yolo; then
     make_venv "$HOME/yolo"
     "$HOME/yolo/bin/pip" install torch torchvision \
         --index-url https://download.pytorch.org/whl/cpu
-    "$HOME/yolo/bin/pip" install ultralytics
+    # The Day 8 lab exports its models on the laptop with this version of
+    # the package. ncnn and ai-edge-litert run the exported files.
+    "$HOME/yolo/bin/pip" install "ultralytics==8.4.171" ncnn ai-edge-litert
     "$HOME/yolo/bin/pip" install paho-mqtt psutil prometheus-client flask
     "$HOME/yolo/bin/pip" install jupyter jupyterlab notebook
 fi

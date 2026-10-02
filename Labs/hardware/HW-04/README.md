@@ -108,7 +108,7 @@ The script writes its output to `~/setup_pi.log`. It installs these parts:
 |---|---|---|
 | `base` | System update, `python3-picamera2`, camera tools, `git`, `htop`, `ffmpeg` | all days |
 | `litert` | `~/tflite_env`: `numpy`, `pillow`, `matplotlib`, `opencv-python`, `ai-edge-litert`, `onnx`, `onnxruntime`, Jupyter | Days 7 and 9 |
-| `yolo` | `~/yolo`: `torch`, `torchvision`, `ultralytics`, `paho-mqtt`, `psutil`, `prometheus-client`, `flask`, Jupyter | Days 8, 11, 13 |
+| `yolo` | `~/yolo`: `torch`, `torchvision`, `ultralytics` 8.4.171, `ncnn`, `ai-edge-litert`, `paho-mqtt`, `psutil`, `prometheus-client`, `flask`, Jupyter | Days 8, 11, 13 |
 | `slm` | Ollama, and `~/ollama`: `ollama`, `requests`, `pydantic`, Jupyter | Day 10 |
 | `network` | `iperf3`, `mosquitto`, `mosquitto-clients`, `avahi-utils` | Days 11 to 13 |
 
