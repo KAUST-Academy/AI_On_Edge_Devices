@@ -2,6 +2,783 @@
 %
 % Topics of the syllabus: IoU, precision and recall, mAP; labelling rules and
 % label quality. Exercise: calculate the IoU of two box pairs.
+%
+% The measured numbers of this part are results of an experiment of this
+% course: YOLO11n of Ultralytics on images of the validation set of COCO,
+% with the validation of the Ultralytics package. "500 images" are the first
+% 500 images of that set by their number. Each frame with such a number says
+% so in its source line. The numbers of the dataset "box and wheel" are
+% numbers that the author of the kit lab published.
 
 \theorypart{Metrics and data}%
   {calculate the IoU of two box pairs}
+
+% ---------------------------------------------------------------- question
+\begin{frame}{Is this detection correct?}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize,
+      lab/.style={treegreen, dashed, thick},
+      pre/.style={cardinalred, thick}]
+    \foreach \k/\t in {0/{1: a tight box}, 1/{2: a loose box},
+                       2/{3: a wrong class}, 3/{4: no box},
+                       4/{5: a box on the\\background},
+                       5/{6: two boxes}} {
+      \fill[boxgray] (\k*1.75,0) rectangle (\k*1.75+1.5,1.5);
+      \node[below, align=center] at (\k*1.75+0.75,0) {\t};
+    }
+    \foreach \k in {0,1,2,3,5} {
+      \draw[lab] (\k*1.75+0.35,0.35) rectangle (\k*1.75+1.15,1.1);
+    }
+    \draw[pre] (0.38,0.33) rectangle (1.17,1.12);
+    \draw[pre] (1.75+0.1,0.12) rectangle (1.75+1.4,1.35);
+    \draw[pre] (3.5+0.37,0.33) rectangle (3.5+1.17,1.12);
+    \node[treegreen!70!black, font=\tiny] at (3.5+0.75,1.28) {dog};
+    \node[cardinalred, font=\tiny] at (3.5+0.75,0.72) {cat};
+    \draw[pre] (7.0+0.45,0.5) rectangle (7.0+1.1,1.05);
+    \draw[pre] (8.75+0.37,0.33) rectangle (8.75+1.17,1.12);
+    \draw[pre] (8.75+0.5,0.22) rectangle (8.75+1.3,0.98);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item Dashed and green: the label, which a person made. Solid and red:
+          the prediction of the model.
+    \item A classifier is correct or wrong for one image. A detector can
+          make each of these errors for each object.
+    \item To count the errors, you need three rules:
+          \begin{itemize}
+            \item How much must the two boxes overlap?
+            \item Must the class be the same? Yes.
+            \item How many predictions can one label make correct? One.
+          \end{itemize}
+  \end{itemize}
+  \keypoint{All metrics of a detector start with one decision for each
+    prediction: correct or not correct.}
+\end{frame}
+
+% ---------------------------------------------------------------------- IoU
+\begin{frame}{IoU: the measure for the place of a box}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize,
+      lab/.style={treegreen, dashed, thick},
+      pre/.style={cardinalred, thick}]
+    \foreach \k/\s/\v in {0/0.068/0.9, 1/0.229/0.7, 2/0.433/0.5,
+                          3/0.700/0.3} {
+      \fill[treegreen!12] (\k*2.6,0) rectangle (\k*2.6+1.3,1.3);
+      \draw[lab] (\k*2.6,0) rectangle (\k*2.6+1.3,1.3);
+      \draw[pre] (\k*2.6+\s,0) rectangle (\k*2.6+1.3+\s,1.3);
+      \node[below] at (\k*2.6+0.65+0.5*\s,0) {IoU \v};
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Part 1 used the IoU for two candidates. The metrics use it for a
+          prediction and a label.
+    \item A prediction is in the correct place when its IoU with the label
+          is at or above a threshold.
+    \item The usual threshold is 0.5. In the drawing, a box with the IoU
+          0.5 does not look good: one third of the label is not in the
+          box.
+    \item A second, more strict rule uses ten thresholds from 0.5 to 0.95.
+  \end{itemize}
+  \keypoint{The IoU threshold of a metric is not the IoU threshold of the
+    suppression. Name the threshold with each result.}
+\end{frame}
+
+\begin{frame}{A small object needs an exact box}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.2}
+      \begin{tabular}{@{}rrr@{}}
+        \toprule
+        \textbf{Side of the box} & \textbf{Error} & \textbf{IoU} \\
+        \midrule
+        100 pixels & 4 pixels & 0.92 \\
+        40 pixels  & 4 pixels & 0.82 \\
+        20 pixels  & 4 pixels & 0.67 \\
+        10 pixels  & 4 pixels & 0.43 \\
+        \bottomrule
+      \end{tabular}
+      \[
+        \text{IoU} = \frac{L - s}{L + s}
+      \]
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item A square box with the side $L$ moves by $s$ pixels to the
+              right.
+        \item The same error of 4 pixels is small for a large object. For
+              an object of 10 pixels, the prediction is not correct at the
+              threshold 0.5.
+        \item The same rule applies to the label. A label that is 4 pixels
+              wrong makes a correct prediction look wrong.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{The metrics are strict for small objects. A larger input
+    resolution gives each object more pixels (Part 3).}
+\end{frame}
+
+% ------------------------------------------------------------------ matching
+\begin{frame}{True positive, false positive, false negative}
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.42cm, y=0.42cm,
+          lab/.style={treegreen, dashed, thick},
+          pre/.style={cardinalred, thick}]
+        \fill[boxgray] (0,0) rectangle (10,8);
+        \draw[lab] (0.7,4.0) rectangle (3.3,7.2);
+        \draw[pre] (0.8,3.9) rectangle (3.4,7.1);
+        \draw[pre] (1.5,3.4) rectangle (4.2,6.6);
+        \draw[lab] (5.8,4.6) rectangle (9.3,7.2);
+        \draw[pre] (6.0,4.5) rectangle (9.4,7.0);
+        \draw[lab] (0.7,0.4) rectangle (3.1,2.4);
+        \draw[pre] (6.2,0.5) rectangle (8.8,2.5);
+        \node[cardinalred] at (2.0,7.6) {0.9: TP};
+        \node[cardinalred, anchor=west] at (4.25,3.7) {0.8: FP};
+        \node[cardinalred] at (7.6,7.6) {0.7: TP};
+        \node[cardinalred] at (7.5,1.5) {0.6: FP};
+        \node[treegreen!60!black] at (1.9,1.4) {FN};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \small
+      \begin{enumerate}
+        \item Sort the predictions by their score.
+        \item Take the next prediction. Find the label of the same class
+              with the largest IoU that is still free.
+        \item If this IoU is at or above the threshold, the prediction is
+              a \textbf{true positive} (TP). The label is not free now.
+        \item If not, the prediction is a \textbf{false positive} (FP).
+        \item A label with no prediction is a \textbf{false negative}
+              (FN).
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A second box for one object is a false positive. A detector with
+          no suppression gets a bad result.
+    \item A detector has no true negatives: the number of places with no
+          object has no limit. So nobody reports the accuracy of a detector.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------- precision, recall
+\begin{frame}{Precision and recall}
+  \begin{columns}[c]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Precision}
+        \[
+          \frac{TP}{TP + FP} = \frac{713}{713 + 213} = 0.77
+        \]
+        \small
+        Of the boxes that the model gives, the part that is correct.
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Recall}
+        \[
+          \frac{TP}{TP + FN} = \frac{713}{713 + 356} = 0.67
+        \]
+        \small
+        Of the objects in the images, the part that the model finds.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The example: YOLO11n and the class ``person'' in 500 images, with
+          the score threshold 0.25 and the IoU threshold 0.5. The images
+          have 1069 labels of this class.
+    \item The model gives 926 boxes. 713 are correct, and 213 are false
+          alarms. It does not find 356 persons.
+    \item Low precision: the product reports objects that are not there.
+          Low recall: the product does not see objects.
+  \end{itemize}
+  \source{An experiment of this course with 500 images of COCO.}
+\end{frame}
+
+\begin{frame}{The score threshold: precision against recall}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}rrrrrr@{}}
+    \toprule
+    \textbf{Score threshold} & \textbf{TP} & \textbf{FP} & \textbf{FN}
+    & \textbf{Precision} & \textbf{Recall} \\
+    \midrule
+    0.10 & 819 & 677 & 250 & 0.55 & 0.77 \\
+    0.25 & 713 & 213 & 356 & 0.77 & 0.67 \\
+    0.50 & 560 & 45  & 509 & 0.93 & 0.52 \\
+    0.75 & 337 & 13  & 732 & 0.96 & 0.32 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The same model, the same images, the class ``person''. Only the
+          score threshold changes.
+    \item A higher threshold removes false positives: the precision goes
+          up. It also removes true positives: the recall goes down.
+    \item With the threshold 0.001, the model gives 13\,032 boxes for 1069
+          persons. The recall is 0.90: no threshold finds each person.
+  \end{itemize}
+  \keypoint{One value of the precision or of the recall says nothing with
+    no score threshold. Report the two values and the threshold together.}
+  \source{An experiment of this course with 500 images of COCO.}
+\end{frame}
+
+% ---------------------------------------------------------------- PR curve
+\begin{frame}{The precision-recall curve}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=4.2cm, y=3.3cm,
+          >={Stealth[length=4pt]}]
+        \draw[->, coolgray] (0,0) -- (1.1,0) node[right] {recall};
+        \draw[->, coolgray] (0,0) -- (0,1.16);
+        \node[coolgray, anchor=west] at (0.02,1.13) {precision};
+        \foreach \v in {0.2,0.4,0.6,0.8,1.0} {
+          \draw[coolgray] (\v,0) -- (\v,-0.02) node[below] {\v};
+          \draw[coolgray] (0,\v) -- (-0.015,\v) node[left] {\v};
+          \draw[coolgray!30, dotted] (0,\v) -- (1,\v);
+        }
+        \draw[darkcyan, thick]
+          (0.000,1.0000) -- (0.025,1.0000) -- (0.050,1.0000) --
+          (0.075,1.0000) -- (0.100,1.0000) -- (0.125,1.0000) --
+          (0.150,1.0000) -- (0.175,1.0000) -- (0.200,0.9919) --
+          (0.225,0.9919) -- (0.250,0.9891) -- (0.275,0.9834) --
+          (0.300,0.9788) -- (0.325,0.9694) -- (0.350,0.9618) --
+          (0.375,0.9556) -- (0.400,0.9523) -- (0.425,0.9474) --
+          (0.450,0.9474) -- (0.475,0.9411) -- (0.501,0.9339) --
+          (0.526,0.9201) -- (0.551,0.8967) -- (0.576,0.8803) --
+          (0.601,0.8598) -- (0.626,0.8199) -- (0.651,0.7873) --
+          (0.676,0.7539) -- (0.701,0.6881) -- (0.726,0.6408) --
+          (0.751,0.5937) -- (0.776,0.5310) -- (0.801,0.4836) --
+          (0.826,0.4052) -- (0.851,0.3227) -- (0.876,0.2048) --
+          (0.901,0.0926) -- (0.926,0.0000);
+        \foreach \r/\p/\t/\a in {0.766/0.547/0.10/west,
+                                 0.667/0.770/0.25/west,
+                                 0.524/0.926/0.50/south west,
+                                 0.315/0.963/0.75/north} {
+          \fill[cardinalred] (\r,\p) circle (1.8pt);
+          \node[cardinalred, anchor=\a, inner sep=3pt] at (\r,\p) {\t};
+        }
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item Each score threshold gives one point: a recall and a
+              precision.
+        \item All thresholds together give the curve.
+        \item The red points are the four thresholds of the table.
+        \item A better model has a curve nearer to the top right corner.
+        \item You select the point of your product on this curve.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{YOLO11n, class ``person'', IoU threshold 0.5, 500 images of the
+    validation set of COCO. An experiment of this course.}
+\end{frame}
+
+\begin{frame}{AP: one number for the curve}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=3.6cm, y=2.9cm,
+          >={Stealth[length=4pt]}]
+        \fill[darkcyan!22]
+          (0,0) -- (0.000,1.0000) -- (0.175,1.0000) -- (0.200,0.9919) --
+          (0.250,0.9891) -- (0.300,0.9788) -- (0.350,0.9618) --
+          (0.400,0.9523) -- (0.450,0.9474) -- (0.501,0.9339) --
+          (0.551,0.8967) -- (0.601,0.8598) -- (0.651,0.7873) --
+          (0.701,0.6881) -- (0.751,0.5937) -- (0.801,0.4836) --
+          (0.851,0.3227) -- (0.901,0.0926) -- (0.926,0.0000) -- cycle;
+        \draw[darkcyan, thick]
+          (0.000,1.0000) -- (0.175,1.0000) -- (0.200,0.9919) --
+          (0.250,0.9891) -- (0.300,0.9788) -- (0.350,0.9618) --
+          (0.400,0.9523) -- (0.450,0.9474) -- (0.501,0.9339) --
+          (0.551,0.8967) -- (0.601,0.8598) -- (0.651,0.7873) --
+          (0.701,0.6881) -- (0.751,0.5937) -- (0.801,0.4836) --
+          (0.851,0.3227) -- (0.901,0.0926) -- (0.926,0.0000);
+        \draw[->, coolgray] (0,0) -- (1.1,0) node[right] {recall};
+        \draw[->, coolgray] (0,0) -- (0,1.16);
+        \node[coolgray, anchor=west] at (0.02,1.13) {precision};
+        \foreach \v in {0.5,1.0} {
+          \draw[coolgray] (\v,0) -- (\v,-0.02) node[below] {\v};
+          \draw[coolgray] (0,\v) -- (-0.015,\v) node[left] {\v};
+        }
+        \node[darkcyan!60!black, font=\footnotesize] at (0.4,0.45)
+          {area = AP = 0.748};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item AP: ``average precision''. It is the area below the
+              precision-recall curve of one class.
+        \item It is the mean of the precision for all values of the
+              recall.
+        \item The AP uses no score threshold. It measures how well the
+              scores sort the correct boxes before the false boxes.
+        \item The largest value is 1.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{The AP describes the model. The precision and the recall at one
+    threshold describe the product.}
+  \source{The same curve as before. An experiment of this course.}
+\end{frame}
+
+% --------------------------------------------------------------------- mAP
+\begin{frame}{mAP: the mean over the classes}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=5.2cm, y=0.44cm]
+    \draw[cardinalred, dashed, thick] (0.574,1.0) -- (0.574,-6.3);
+    \foreach \k/\v/\l/\n in {0/0.92/zebra/31, 1/0.81/motorcycle/45,
+                             2/0.75/person/1069, 3/0.58/car/167,
+                             4/0.48/chair/197, 5/0.28/bottle/116,
+                             6/0.23/backpack/46} {
+      \fill[darkcyan!60] (0,-\k) rectangle (\v,-\k+0.72);
+      \node[anchor=east] at (-0.02,-\k+0.36) {\l};
+      \node[anchor=west, fill=white, inner sep=1.5pt] at (\v+0.015,-\k+0.36)
+        {\v};
+      \node[anchor=east, coolgray] at (1.5,-\k+0.36) {\n\ labels};
+    }
+    \draw[coolgray] (0,1.0) -- (0,-6.3);
+    \node[cardinalred, anchor=west] at (0.585,-5.64) {mAP50 = 0.574};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item mAP: ``mean average precision''. It is the mean of the AP of all
+          classes. The 500 images have labels of 78 classes.
+    \item Each class has the same weight: the 31 zebras count as much as
+          the 1069 persons.
+    \item The mAP can hide a class that the model does not find. Read the
+          AP of each class of your product.
+  \end{itemize}
+  \source{YOLO11n, AP at the IoU threshold 0.5 for 7 of the 78 classes. An
+    experiment of this course.}
+\end{frame}
+
+\begin{frame}{mAP50 and mAP50-95}
+  \begin{columns}[c]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.52cm, y=4.6cm]
+        \foreach \k/\v/\l in {0/0.57/0.50, 1/0.56/0.55, 2/0.54/0.60,
+                              3/0.52/0.65, 4/0.49/0.70, 5/0.46/0.75,
+                              6/0.40/0.80, 7/0.32/0.85, 8/0.23/0.90,
+                              9/0.08/0.95} {
+          \fill[darkcyan!60] (\k,0) rectangle (\k+0.78,\v);
+          \node[below, rotate=90, anchor=east] at (\k+0.39,-0.01) {\l};
+          \node[above, font=\tiny] at (\k+0.39,\v) {\v};
+        }
+        \draw[coolgray] (-0.2,0) -- (10,0);
+        \draw[cardinalred, dashed, thick] (-0.2,0.417) -- (10,0.417);
+        \node[cardinalred, anchor=south east] at (10.1,0.42) {mean: 0.417};
+        \node[coolgray] at (4.9,-0.23) {IoU threshold of the metric};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{itemize}
+        \item \textbf{mAP50:} the mAP with the IoU threshold 0.5. A loose
+              box is correct.
+        \item \textbf{mAP50-95:} the mean of the mAP for ten thresholds
+              from 0.5 to 0.95. It is the main metric of the dataset COCO.
+        \item A strict threshold gives a lower mAP: fewer boxes are exact
+              enough.
+        \item mAP50-95 is always the lower value. Here: 0.417 against
+              0.574.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{mAP50 asks: does the model find the object? mAP50-95 asks also:
+    is the box exact?}
+  \source{An experiment of this course with 500 images of COCO.}
+\end{frame}
+
+% ----------------------------------------------------------------- read val
+\begin{frame}[fragile]{Read the output of a validation run}
+\begin{lstlisting}[style=shell]
+yolo val model=yolo11n.pt data=val500.yaml imgsz=640
+
+YOLO11n summary (fused): 100 layers, 2,616,248 parameters, 6.5 GFLOPs
+        Class     Images  Instances      Box(P          R      mAP50  mAP50-95)
+          all        500       3504      0.674       0.53      0.574      0.417
+       person        282       1069      0.781      0.655      0.748      0.515
+          car         50        167      0.682      0.539      0.584      0.357
+     backpack         32         46      0.525      0.196      0.232      0.111
+Speed: 0.7ms preprocess, 22.3ms inference, 0.0ms loss, 2.0ms postprocess
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{Images}: the images with a label of the class.
+          \code{Instances}: the labels.
+    \item \code{P} and \code{R}: the precision and the recall at the score
+          threshold with the best balance of the two. They are not the
+          values at your threshold.
+    \item The run uses the score threshold 0.001, so that the curve is
+          complete.
+    \item The line \code{Speed} is the time for one image on the computer of
+          the run. Here it is an x86 computer with 24 cores.
+  \end{itemize}
+  \source{An experiment of this course. The listing shows 4 of the 79 rows
+    and a shorter first line.}
+\end{frame}
+
+% ------------------------------------------------------------- test images
+\begin{frame}{The result depends on the test images}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.52\textwidth}rr@{}}
+    \toprule
+    \textbf{Images for the test of YOLO11n} & \textbf{mAP50}
+    & \textbf{mAP50-95} \\
+    \midrule
+    128 images of its training set              & 0.670 & 0.502 \\
+    500 images of the validation set            & 0.574 & 0.417 \\
+    All 5000 images of the validation set       & 0.546 & 0.389 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The model saw the training images many times. A test with these
+          images gives a result that is too good.
+    \item 500 images are a sample. Their mAP50-95 is 0.028 above the value
+          of all 5000 images.
+    \item Ultralytics publishes 0.395 for this model on the 5000 images,
+          with the tool of COCO. The validation of the package gives
+          0.389.
+  \end{itemize}
+  \keypoint{Test with images that the model did not see, from the camera
+    and the place of the product. Report the number of images.}
+  \source{An experiment of this course.\\
+    Published value: the documentation of Ultralytics.}
+\end{frame}
+
+% ------------------------------------------------------------- which metric
+\begin{frame}{Which number for which decision}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.36\textwidth}L{0.56\textwidth}@{}}
+    \toprule
+    \textbf{Decision} & \textbf{Number} \\
+    \midrule
+    Compare two models, or \code{float32} with \code{int8}
+        & mAP50-95 and mAP50 on the same test images \\
+    Set the score threshold of the product
+        & The precision and the recall at each threshold \\
+    A product that counts objects
+        & The precision and the recall together: each error changes the
+          count \\
+    A product that must not miss an object
+        & The recall, with a limit for the false alarms each hour \\
+    A product that sends alerts to a person
+        & The precision: too many false alerts, and nobody reads them \\
+    Can the device run the model?
+        & The frames each second of the complete pipeline (Part 3) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \keypoint{The mAP selects the model. The precision and the recall at your
+    threshold tell you what the user sees.}
+\end{frame}
+
+% ----------------------------------------------------------------- dataset
+\begin{frame}[fragile]{The dataset of a detector}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+\begin{lstlisting}
+dataset/
+  data.yaml
+  train/images/img_001.jpg
+  train/labels/img_001.txt
+  valid/images/...
+  valid/labels/...
+  test/images/...
+  test/labels/...
+\end{lstlisting}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+\begin{lstlisting}
+# train/labels/img_001.txt
+0 0.512 0.431 0.220 0.305
+1 0.250 0.700 0.180 0.240
+
+# data.yaml
+train: train/images
+val: valid/images
+names: ['box', 'wheel']
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \small
+  \begin{itemize}
+    \item One text file for each image, with the same name. One line for
+          each object: the class, then $c_x, c_y, w, h$ as parts of the
+          image from 0 to 1.
+    \item An image with no object has an empty file or no file. Such
+          images teach the model the background.
+    \item \code{data.yaml} names the folders and the classes. The class 0
+          is the first name.
+    \item Three sets: train, validation for the decisions during the work,
+          test for the final result.
+  \end{itemize}
+  \source{Format: kit lab ``Object Detection''. The four numbers of each
+    line are example values.}
+\end{frame}
+
+\begin{frame}{The dataset of the kit lab: box and wheel}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[b] (a) at (0,0)    {Capture\\about 60 photos};
+    \node[b] (b) at (2.2,0)  {Label\\each object};
+    \node[b] (c) at (4.4,0)  {Split: train,\\valid, test};
+    \node[b] (d) at (6.6,0)  {Resize to\\$320 \times 320$};
+    \node[b, draw=darkcyan] (e) at (8.8,0)  {Augment:\\153 images};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The goal: sort and count wheels and boxes. Two classes, and
+          images with only the background.
+    \item The photos come from the camera of the Raspberry Pi or from a
+          phone, with different angles, backgrounds, and light.
+    \item The augmentation makes new images from each photo: a rotation up
+          to 15 degrees, a crop, a change of the brightness.
+    \item Published result: mAP50 of 0.995 after 25 epochs with YOLOv8n.
+    \item A test set from the same photo session is similar to the
+          training set. The value says little about a different place.
+  \end{itemize}
+  \keypoint{Split first, then augment the training set only. Two copies of
+    one photo in two sets make the test too easy.}
+  \source{Kit lab ``Object Detection'' of \emph{Machine Learning
+    Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------------- rules
+\begin{frame}{Labelling rules: write them first}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.34\textwidth}L{0.58\textwidth}@{}}
+    \toprule
+    \textbf{Question} & \textbf{Example of a rule} \\
+    \midrule
+    Which objects get a label?
+        & Each object of each class, in each image. No exception. \\
+    How tight is the box?
+        & The box touches the visible object on its four sides. \\
+    An object that is partly hidden
+        & Label the visible part, if you can name the class. \\
+    An object at the border of the image
+        & Label it, if more than one half is in the image. \\
+    A very small object
+        & Label it from 10 pixels. Below that, no label. \\
+    Two classes that look similar
+        & One sentence and two example images for each class. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  The rules are examples. Your product decides each rule. The same rules
+  apply to the training set and to the test set.
+  \keypoint{Write one page of rules before the first label. Two persons
+    with the rules must draw the same boxes.}
+\end{frame}
+
+\begin{frame}{Four types of label error}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize,
+      lab/.style={treegreen, dashed, thick}]
+    \foreach \k/\t in {0/{Missing label}, 1/{Loose box},
+                       2/{Wrong class}, 3/{Extra label}} {
+      \fill[boxgray] (\k*2.6,0) rectangle (\k*2.6+2.1,1.5);
+      \node[below] at (\k*2.6+1.05,0) {\textbf{\t}};
+      \fill[darkcyan!45] (\k*2.6+0.35,0.35) rectangle (\k*2.6+0.95,1.05);
+    }
+    \foreach \k in {0,1,2} {
+      \fill[darkorange!55] (\k*2.6+1.5,0.75) circle (0.3);
+    }
+    \draw[lab] (0.35,0.35) rectangle (0.95,1.05);
+    \draw[lab] (2.6+0.15,0.15) rectangle (2.6+1.15,1.3);
+    \draw[lab] (2.6+1.2,0.45) rectangle (2.6+1.8,1.05);
+    \draw[lab] (5.2+0.35,0.35) rectangle (5.2+0.95,1.05);
+    \draw[lab] (5.2+1.2,0.45) rectangle (5.2+1.8,1.05);
+    \node[treegreen!60!black] at (5.2+0.65,1.24) {box};
+    \node[treegreen!60!black] at (5.2+1.5,1.24) {box};
+    \draw[lab] (7.8+0.35,0.35) rectangle (7.8+0.95,1.05);
+    \draw[lab] (7.8+1.2,0.4) rectangle (7.8+1.85,1.1);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Error} & \textbf{In the training set} & \textbf{In the test
+      set} \\
+    \midrule
+    Missing label & The model learns: this object is background.
+                  & A correct prediction counts as a false positive. \\
+    Loose box     & The model learns loose boxes.
+                  & A correct prediction has a low IoU. \\
+    Wrong class   & The model mixes two classes.
+                  & One false positive and one false negative. \\
+    Extra label   & The model learns to see objects in the background.
+                  & A false negative that no model can avoid. \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Measured: label errors change the result}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.42\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Labels of the 500 test images} & \textbf{Precision}
+    & \textbf{Recall} & \textbf{mAP50} & \textbf{mAP50-95} \\
+    \midrule
+    The labels of COCO                 & 0.674 & 0.530 & 0.574 & 0.417 \\
+    Sides moved by up to 5 percent     & 0.669 & 0.528 & 0.570 & 0.379 \\
+    Sides moved by up to 10 percent    & 0.666 & 0.522 & 0.562 & 0.315 \\
+    Sides moved by up to 20 percent    & 0.645 & 0.499 & 0.530 & 0.184 \\
+    10 percent of the labels removed   & 0.609 & 0.525 & 0.530 & 0.386 \\
+    30 percent of the labels removed   & 0.473 & 0.516 & 0.434 & 0.312 \\
+    10 percent with a wrong class      & 0.618 & 0.414 & 0.425 & 0.310 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The model and the images are the same in each row. Only the
+          labels change. A side moves by a random part of the size of its
+          box.
+    \item Loose boxes change mAP50 little. They cut mAP50-95 by more than
+          one half.
+    \item Missing labels cut the precision: the model finds objects that
+          have no label.
+  \end{itemize}
+  \keypoint{With bad test labels, you cannot measure a good model.}
+  \source{An experiment of this course with YOLO11n.}
+\end{frame}
+
+\begin{frame}{How to check the labels}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.42\textwidth}L{0.50\textwidth}@{}}
+    \toprule
+    \textbf{Check} & \textbf{It finds} \\
+    \midrule
+    Draw the labels on the images. Look at a sample of each class.
+        & Loose boxes, wrong classes \\
+    Count the labels of each class, and the images with no label.
+        & A class with too few examples, a typing error in a class name \\
+    Plot the widths and the heights of all boxes.
+        & Boxes with a size of zero, boxes as large as the image \\
+    Train a first model. Look at its false positives with the highest
+    score.
+        & Missing labels: the model is correct, and the label is not
+          there \\
+    Two persons label the same 20 images. Calculate the IoU of their
+    boxes.
+        & Rules that are not clear \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \keypoint{The labels are a part of the model. Review them as you review
+    code. After a correction, train again and measure again.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{the IoU of two box pairs}{%
+  \small
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.2cm, y=-0.2cm,
+          lab/.style={treegreen, dashed, thick},
+          pre/.style={cardinalred, thick}]
+        \foreach \i in {0,2,...,22} { \draw[coolgray!30] (\i,0) -- (\i,12); }
+        \foreach \i in {0,2,...,12} { \draw[coolgray!30] (0,\i) -- (22,\i); }
+        \draw[lab] (1,1) rectangle (11,11);
+        \draw[pre] (3,1.15) rectangle (13,11.15);
+        \draw[lab] (15,1) rectangle (19,5);
+        \draw[pre] (17,1.15) rectangle (21,5.15);
+        \node at (7,-0.9) {Pair 1};
+        \node at (18,-0.9) {Pair 2};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.1}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lll@{}}
+        \toprule
+        & \textbf{Label} & \textbf{Prediction} \\
+        \midrule
+        Pair 1 & 0, 0, 10, 10 & 2, 0, 12, 10 \\
+        Pair 2 & 0, 0, 4, 4   & 2, 0, 6, 4 \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.3em
+      The numbers are $x_1, y_1, x_2, y_2$ in pixels. The drawing shows
+      the two pairs at two places, with the same scale.
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item Calculate the IoU of each pair.
+    \item Is each prediction a true positive with the IoU threshold 0.5?
+          With the threshold 0.75?
+    \item The two predictions have the same error: 2 pixels to the right.
+          Why are the two results different?
+    \item The model gives a second box for the label of pair 1:
+          1, 0, 11, 10, with a lower score. Is it a true positive with the
+          threshold 0.5?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{the IoU of two box pairs}{%
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lrrrll@{}}
+    \toprule
+    & \textbf{Intersection} & \textbf{Union} & \textbf{IoU}
+    & \textbf{At 0.5} & \textbf{At 0.75} \\
+    \midrule
+    Pair 1 & $8 \times 10 = 80$ & $100 + 100 - 80 = 120$ & 0.67
+           & TP & FP \\
+    Pair 2 & $2 \times 4 = 8$   & $16 + 16 - 8 = 24$     & 0.33
+           & FP & FP \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{enumerate}
+    \item The IoU is 0.67 and 0.33.
+    \item Pair 1 is a true positive at 0.5 only. Pair 2 is a false
+          positive at the two thresholds. The label of pair 2 is then a
+          false negative also: one error of the place gives two errors of
+          the count.
+    \item The error is 20 percent of the side of the first box, and 50
+          percent of the side of the second box. The IoU measures the
+          error as a part of the size of the object.
+    \item No. Its IoU is $90 / 110 = 0.82$, which is better than the first
+          box. But the first box has the higher score and takes the label.
+          The second box is a false positive. The suppression of Part 1
+          must remove it.
+  \end{enumerate}
+}
