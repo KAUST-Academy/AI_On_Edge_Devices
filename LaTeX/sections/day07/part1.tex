@@ -3,6 +3,860 @@
 % Topics of the syllabus: CPU SIMD, GPU, NPU; compute-bound and memory-bound
 % workloads; the Roofline model. Exercise: place three workloads on a Roofline
 % plot.
+%
+% The measured numbers of this part are results of an experiment of this
+% course on the work computer: an x86 processor with 12 cores and AVX2 (8
+% values of float32 in one register). They say nothing about a board. Each
+% frame with such a number says so in its source line. For a rate, 1 GB is
+% 10^9 bytes, as 1 GFLOP is 10^9 operations.
 
 \theorypart{Acceleration fundamentals}%
   {place three workloads on a Roofline plot}
+
+% ------------------------------------------------------------- a new device
+\begin{frame}{A new device, a new question}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.13\textwidth}L{0.38\textwidth}L{0.40\textwidth}@{}}
+    \toprule
+    & \textbf{XIAO ESP32S3} & \textbf{Raspberry Pi 5} \\
+    \midrule
+    Used on   & Days 1 to 5 & From today \\
+    Processor & Xtensa LX7, 2 cores, 240 MHz
+              & Cortex-A76, 4 cores, 2.4 GHz \\
+    RAM       & 512 KB, and 8 MB of PSRAM & 8 GB \\
+    Software  & One program in the flash & Linux, Python, many programs \\
+    Runtime   & TensorFlow Lite Micro & LiteRT, ONNX Runtime, and more \\
+    Question  & Does the model fit? & How fast does the model run? \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item MobileNetV2 in \code{int8} did not fit the flash of the XIAO on
+          Day 1. On the Raspberry Pi, its \code{float32} file of 13.4 MB is
+          a small file.
+    \item The new budget is the time for one inference.
+  \end{itemize}
+  \keypoint{On the Raspberry Pi, the model fits. The work of today is to
+    make it fast.}
+\end{frame}
+
+\begin{frame}[fragile]{An inference is a long list of multiply-accumulates}
+\begin{lstlisting}[style=cpp]
+// One convolution of 3 x 3. Each line "acc +=" is one multiply-accumulate (MAC).
+for (int oc = 0; oc < C_out; oc++)
+  for (int y = 0; y < H; y++)
+    for (int x = 0; x < W; x++) {
+      float acc = bias[oc];
+      for (int ic = 0; ic < C_in; ic++)
+        for (int ky = 0; ky < 3; ky++)
+          for (int kx = 0; kx < 3; kx++)
+            acc += in[ic][y + ky][x + kx] * w[oc][ic][ky][kx];
+      out[oc][y][x] = acc;
+    }
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item MobileNetV2 for an image of $224 \times 224$ needs 300.8 million
+          MACs.
+    \item With one MAC in each clock cycle, the Raspberry Pi 5 needs
+          $300.8 \times 10^6 / (2.4 \times 10^9)$ seconds: 125 ms.
+    \item A good runtime is much faster than this. You measure the real
+          value in the lab. This part explains where the gain comes from.
+  \end{itemize}
+  \source{A calculation with one MAC in each clock cycle of 2.4 GHz. Number
+    of MACs: the notebook of Day 1.}
+\end{frame}
+
+\begin{frame}{Three ways to more MACs in one second}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize,
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=3.1cm, minimum height=1.5cm, align=center}]
+    \node[b, draw=darkcyan]    at (0,0)
+      {\textbf{SIMD}\\more values in\\one instruction};
+    \node[b, draw=cardinalred] at (3.6,0)
+      {\textbf{Threads}\\more cores work\\at the same time};
+    \node[b, draw=treegreen]   at (7.2,0)
+      {\textbf{Accelerator}\\a special unit:\\a GPU or an NPU};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item The three ways do the same MACs in less time. They do not change
+          the model.
+    \item The methods of Days 4 and 6 are the fourth way: fewer MACs, or
+          cheaper MACs.
+    \item Each way has a limit. The arithmetic units need their data at the
+          right time, and the memory must deliver it.
+  \end{itemize}
+  \keypoint{Hardware acceleration is parallel arithmetic. Its limit is
+    often the memory, not the arithmetic.}
+\end{frame}
+
+% --------------------------------------------------------------------- SIMD
+\begin{frame}{SIMD: one instruction, many values}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+    % Left: four scalar instructions.
+    \node[anchor=west] at (-0.3,0.75) {\textbf{Scalar: 4 instructions}};
+    \foreach \i in {0,1,2,3} {
+      \draw[coolgray, fill=boxgray] (0,-0.5*\i) rectangle (0.8,-0.5*\i+0.38);
+      \node at (0.4,-0.5*\i+0.19) {$a_{\i}$};
+      \node at (1.05,-0.5*\i+0.19) {$+$};
+      \draw[coolgray, fill=boxgray] (1.3,-0.5*\i) rectangle (2.1,-0.5*\i+0.38);
+      \node at (1.7,-0.5*\i+0.19) {$b_{\i}$};
+      \node at (2.35,-0.5*\i+0.19) {$=$};
+      \draw[coolgray, fill=cardinalred!25] (2.6,-0.5*\i)
+        rectangle (3.4,-0.5*\i+0.38);
+      \node at (3.0,-0.5*\i+0.19) {$c_{\i}$};
+    }
+    % Right: one instruction on a register with four values.
+    \node[anchor=west] at (4.6,0.75) {\textbf{SIMD: 1 instruction}};
+    \foreach \i in {0,1,2,3} {
+      \draw[coolgray, fill=boxgray] (5.3+0.8*\i,0) rectangle (6.1+0.8*\i,0.38);
+      \node at (5.7+0.8*\i,0.19) {$a_{\i}$};
+      \draw[coolgray, fill=boxgray] (5.3+0.8*\i,-0.6)
+        rectangle (6.1+0.8*\i,-0.22);
+      \node at (5.7+0.8*\i,-0.41) {$b_{\i}$};
+      \draw[coolgray, fill=darkcyan!30] (5.3+0.8*\i,-1.5)
+        rectangle (6.1+0.8*\i,-1.12);
+      \node at (5.7+0.8*\i,-1.31) {$c_{\i}$};
+    }
+    \node at (5.0,-0.41) {$+$};
+    \node at (5.0,-1.31) {$=$};
+    \draw[coolgray] (5.3,-0.86) -- (8.5,-0.86);
+    \node[coolgray, anchor=west] at (8.6,0.19) {one register};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item SIMD: single instruction, multiple data. A wide register holds
+          some values, and one instruction works on all of them.
+    \item NEON of the Raspberry Pi: 128 bits. One register holds 4 values
+          of \code{float32}, or 16 values of \code{int8}.
+    \item AVX2 of a laptop processor: 256 bits. 8 values of \code{float32},
+          or 32 values of \code{int8}.
+    \item The processor reads and decodes one instruction in place of 4.
+          The loop has one quarter of the steps.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Measured: the same loop with and without SIMD}
+  \begin{columns}[c]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.88cm, y=0.2cm]
+        \draw[->, coolgray] (0,0) -- (5.4,0);
+        \draw[->, coolgray] (0,0) -- (0,18.2);
+        \node[anchor=west, coolgray] at (0.1,18)
+          {$10^9$ elements in one second};
+        \foreach \y in {5,10} {
+          \draw[coolgray] (0,\y) -- (-0.08,\y) node[left] {\y};
+          \draw[coolgray!40, dotted] (0,\y) -- (5.3,\y);
+        }
+        \foreach \k/\s/\v/\l in {0.9/1.71/11.18/{$y \mathrel{+}= a\,x$},
+                                 2.6/2.23/13.56/{ReLU},
+                                 4.3/1.83/7.48/{\code{int8} product}} {
+          \fill[coolgray!55]   (\k-0.55,0) rectangle (\k-0.05,\s);
+          \fill[darkcyan!65]   (\k+0.05,0) rectangle (\k+0.55,\v);
+          \node[above] at (\k-0.3,\s) {\s};
+          \node[above] at (\k+0.3,\v) {\v};
+          \node[below] at (\k,0) {\l};
+        }
+        \node[coolgray, anchor=west] at (3.5,15.4) {gray: scalar};
+        \node[darkcyan!80!black, anchor=west] at (3.5,13.8) {cyan: SIMD};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{itemize}
+        \item The same C code, compiled two times: with and without SIMD
+              instructions.
+        \item The gain is a factor of 6.5, 6.1, and 4.1.
+        \item The register holds 8 values of \code{float32}. The gain is
+              below 8: the loads and the stores of the data also need
+              time.
+        \item The arrays have 8 KB. They stay in the first cache.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{You do not write this code. The kernel library of the runtime
+    has a SIMD version of each operator. Part 2 shows the libraries.}
+  \source{An experiment of this course on an x86 processor with AVX2, one
+    thread. The values say nothing about a board.}
+\end{frame}
+
+% ------------------------------------------------------------------ threads
+\begin{frame}{Threads, and the law of Amdahl}
+  \begin{columns}[c]
+    \begin{column}{0.48\textwidth}
+      \[
+        \text{speedup} = \frac{1}{(1 - p) + \dfrac{p}{G}}
+      \]
+      \small
+      \begin{tabular}{@{}rL{0.78\textwidth}@{}}
+        $p$ & The part of the time that the faster path does \\
+        $G$ & The gain on this part: 4 for 4 cores \\
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}rrr@{}}
+        \toprule
+        $p$ & \textbf{4 cores} & \textbf{No limit on} $G$ \\
+        \midrule
+        0.50 & 1.6 & 2 \\
+        0.80 & 2.5 & 5 \\
+        0.90 & 3.1 & 10 \\
+        0.95 & 3.5 & 20 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A runtime splits the work of a layer between the cores. The
+          Raspberry Pi 5 has 4 cores.
+    \item Some work stays outside: read the camera, change the size of the
+          image, the Python code, the post-processing.
+    \item The same law applies to each accelerator. A unit that makes 90
+          percent of the time 100 times faster gives a speedup of 9.2.
+  \end{itemize}
+  \keypoint{Measure the complete pipeline, from the camera to the result.
+    The part that you do not accelerate sets the limit.}
+\end{frame}
+
+% --------------------------------------------------------------- CPU GPU NPU
+\begin{frame}{CPU, GPU, NPU: flexible or efficient}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.3cm, minimum height=0.7cm, align=center}]
+    \node[b, draw=darkcyan]    (c) at (0,0)   {CPU};
+    \node[b, draw=cardinalred] (g) at (3.6,0) {GPU};
+    \node[b, draw=treegreen]   (n) at (7.2,0) {NPU};
+    \draw[<->, coolgray] (-1.2,-0.7) -- (8.4,-0.7);
+    \node[coolgray, anchor=west] at (-1.2,-0.95) {runs each program};
+    \node[coolgray, anchor=east] at (8.4,-0.95)
+      {most MACs for each joule};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.13\textwidth}L{0.25\textwidth}L{0.26\textwidth}L{0.27\textwidth}@{}}
+    \toprule
+    & \textbf{CPU} & \textbf{GPU} & \textbf{NPU} \\
+    \midrule
+    Design & A small number of complex cores, with SIMD
+           & Many simple cores that do the same step
+           & A fixed array of MAC units \\
+    Runs   & Each operator, and all the other code
+           & Programs for large tensors
+           & Only the operators that it supports \\
+    Numbers & \code{float32} and \code{int8}
+            & Mostly \code{float32} and \code{float16}
+            & Mostly \code{int8} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item NPU: neural processing unit. It is a circuit for one kind of work.
+    \item More special hardware gives more MACs for each joule, and it runs
+          fewer kinds of models.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The GPU: many simple cores}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{A CPU core}
+        \begin{itemize}
+          \item It is made for code with branches.
+          \item A large part of its area is control logic and cache.
+          \item A small part does arithmetic.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{A GPU}
+        \begin{itemize}
+          \item It is made for one simple step on very many values.
+          \item Most of its area does arithmetic.
+          \item One thread is slow. Thousands together are fast.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Each call of a GPU has a price: the program sends the data and
+          starts the kernel. For a small model and one image, the CPU can
+          be faster.
+    \item The Raspberry Pi 5 has a GPU for graphics. The labs run the
+          models on the CPU.
+  \end{itemize}
+  \keypoint{A GPU pays for large tensors and large batches. An edge device
+    often has one image and a small model.}
+\end{frame}
+
+\begin{frame}{The NPU: fixed units for one kind of work}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      n/.style={draw=treegreen, rounded corners=2pt, fill=treegreen!15,
+                minimum width=1.45cm, minimum height=0.6cm, align=center},
+      c/.style={draw=darkcyan, rounded corners=2pt, fill=darkcyan!15,
+                minimum width=1.45cm, minimum height=0.6cm, align=center}]
+    \node[coolgray, anchor=east] at (-1.0,0)    {NPU};
+    \node[coolgray, anchor=east] at (-1.0,-1.1) {CPU};
+    \node[n] (a) at (0,0)      {Convolution};
+    \node[n] (b) at (2.0,0)    {Convolution};
+    \node[c] (x) at (4.0,-1.1) {Resize};
+    \node[n] (d) at (6.0,0)    {Convolution};
+    \node[c] (e) at (8.0,-1.1) {Select boxes};
+    \draw[->] (a) -- (b);
+    \draw[->, cardinalred] (b) -- (x);
+    \draw[->, cardinalred] (x) -- (d);
+    \draw[->, cardinalred] (d) -- (e);
+    \node[cardinalred] at (1.4,-1.1) {each red arrow: a copy};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item An NPU has an array of MAC units and a local memory. It does a
+          convolution in \code{int8} with very little energy.
+    \item A tool compiles the model for the NPU before the deployment.
+    \item An operator that the NPU does not support runs on the CPU. This
+          is the \textbf{fallback}. The data then moves between the two
+          units, and the gain can go.
+    \item Examples: the NPU in the chip of a phone, a small NPU next to a
+          microcontroller core, an accelerator board for the Raspberry Pi.
+  \end{itemize}
+  \keypoint{Before you buy an accelerator, check that it supports each
+    operator of your model.}
+\end{frame}
+
+% --------------------------------------------------------------- memory wall
+\begin{frame}{The memory wall}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1.3cm, y=0.52cm]
+    \foreach \k/\len/\v/\l/\c in {
+        0/0.48/0.03/{Add in \code{int8}}/darkcyan!55,
+        1/1.95/0.9/{Add in \code{float32}}/darkcyan!55,
+        2/2.57/3.7/{Multiply in \code{float32}}/darkcyan!55,
+        3/2.70/5/{Read from a small cache}/darkorange!55,
+        4/4.81/640/{Read from the RAM}/cardinalred!60} {
+      \fill[\c] (0,-\k) rectangle (\len,-\k+0.7);
+      \node[anchor=east] at (-0.1,-\k+0.35) {\l};
+      \node[anchor=west] at (\len+0.05,-\k+0.35) {\v\ pJ};
+    }
+    \draw[coolgray] (0,1.0) -- (0,-4.3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The move of a value costs more than the arithmetic. A read from
+          the RAM costs about 170 times the energy of one multiplication.
+          The bars have a logarithmic scale.
+    \item Time has the same order: the arithmetic units wait for the
+          memory.
+    \item The gap grows. Each new processor adds more arithmetic than
+          memory bandwidth.
+  \end{itemize}
+  \keypoint{The question is not only ``how many MACs?''. It is also ``how
+    many bytes move, and from where?''}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 11. Estimates
+    of M.~Horowitz (2014) for a 45 nm process.}
+\end{frame}
+
+\begin{frame}{The memory hierarchy}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      m/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum height=1.05cm, align=center}]
+    \node[m, minimum width=1.6cm, draw=darkcyan] (r) at (0,0)
+      {Registers\\some values};
+    \node[m, minimum width=2.1cm, draw=darkcyan] (a) at (2.35,0)
+      {Cache L2\\512 KB, each core};
+    \node[m, minimum width=2.1cm, draw=darkorange] (b) at (5.0,0)
+      {Cache L3\\2 MB, shared};
+    \node[m, minimum width=2.1cm, draw=cardinalred] (d) at (7.65,0)
+      {RAM\\8 GB, shared};
+    \draw[<->] (r) -- (a); \draw[<->] (a) -- (b); \draw[<->] (b) -- (d);
+    \draw[->, coolgray] (-0.8,-0.95) -- (8.7,-0.95);
+    \node[coolgray, anchor=west] at (-0.8,-1.2) {fast, small};
+    \node[coolgray, anchor=east] at (8.7,-1.2) {slow, large};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The numbers are the sizes of the Raspberry Pi 5. A value in a
+          cache is near the core. A value in the RAM comes over a bus that
+          the 4 cores share.
+    \item The weights of MobileNetV2: 13.4 MB in \code{float32}, and 3.3 MB
+          in \code{int8}. They do not fit in the caches. Each inference
+          reads them from the RAM.
+    \item Its first feature map, $112 \times 112 \times 32$: 1.5 MB in
+          \code{float32}, and 0.4 MB in \code{int8}.
+  \end{itemize}
+  \keypoint{A smaller tensor is faster two times: fewer bytes move, and
+    they stay in a nearer memory.}
+  \source{Cache sizes: product brief of the Raspberry Pi 5. Tensor sizes: a
+    calculation with 3\,504\,872 parameters.}
+\end{frame}
+
+\begin{frame}{Measured: one loop, and data of different sizes}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.72cm, y=0.135cm]
+        \draw[->, coolgray] (0.3,0) -- (7.9,0);
+        \draw[->, coolgray] (0.3,0) -- (0.3,27);
+        \node[anchor=west, coolgray] at (0.4,26.5) {GFLOP in one second};
+        \foreach \y in {10,20} {
+          \draw[coolgray] (0.3,\y) -- (0.22,\y) node[left] {\y};
+          \draw[coolgray!40, dotted] (0.3,\y) -- (7.8,\y);
+        }
+        \foreach \k/\v/\l/\u/\c in {1/22.2/16/KB/darkcyan!65,
+                                    2/11.2/64/KB/darkcyan!45,
+                                    3/8.8/256/KB/darkcyan!45,
+                                    4/6.3/1/MB/darkorange!55,
+                                    5/6.3/16/MB/darkorange!55,
+                                    6/2.7/64/MB/cardinalred!60,
+                                    7/2.8/512/MB/cardinalred!60} {
+          \fill[\c] (\k-0.36,0) rectangle (\k+0.36,\v);
+          \node[above] at (\k,\v) {\v};
+          \node[below, align=center] at (\k,0) {\l\\\u};
+        }
+        \node[coolgray] at (4,-7.6) {size of the two arrays together};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item The loop is $y \mathrel{+}= a\,x$ with SIMD: one MAC for each
+              element.
+        \item Caches of this processor: 32 KB, 256 KB, and 30 MB.
+        \item Each step down in the plot is one cache that is too small.
+        \item From the first cache to the RAM: a factor of 8.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.2em
+  \keypoint{The same code and the same arithmetic. Only the place of the
+    data changes.}
+  \source{An experiment of this course on an x86 processor with AVX2, one
+    thread. The values say nothing about a board.}
+\end{frame}
+
+% ----------------------------------------------------------- the two regimes
+\begin{frame}{Compute-bound or memory-bound}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Compute-bound}
+        \begin{itemize}
+          \item The arithmetic units are busy all the time.
+          \item The data arrives fast enough.
+          \item A faster core, wider SIMD, or more cores help.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Memory-bound}
+        \begin{itemize}
+          \item The arithmetic units wait for data.
+          \item The memory bus is busy all the time.
+          \item Only fewer bytes, or a faster memory, help.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item One model has layers of the two types. A large convolution does
+          many MACs with each byte. A ReLU does one comparison and moves
+          8 bytes.
+    \item The wrong optimization gives no gain. More cores do not help a
+          workload that waits for the memory.
+  \end{itemize}
+  \keypoint{First find the limit of the workload. Then select the
+    optimization.}
+\end{frame}
+
+\begin{frame}{Arithmetic intensity}
+  \[
+    I = \frac{\text{operations}}{\text{bytes that move}}
+    \qquad \text{unit: FLOP for each byte}
+  \]
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+    \toprule
+    \textbf{Operator in \texttt{float32}} & $I$ \\
+    \midrule
+    Add two feature maps                                       & 0.083 \\
+    ReLU                                                       & 0.125 \\
+    Fully connected layer, one input vector                    & 0.5 \\
+    Depthwise convolution $3 \times 3$                         & 2.25 \\
+    Convolution $3 \times 3$, 64 to 64 channels, $56 \times 56$ & 132 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item One MAC is 2 operations. The bytes are the input, the weights,
+          and the output: each tensor one time.
+    \item A fully connected layer uses each weight one time. A convolution
+          uses each weight at each position of the image.
+    \item In \code{int8}, the same operator moves one quarter of the bytes.
+          Its intensity is 4 times as high.
+  \end{itemize}
+  \source{A calculation. Method: \emph{Machine Learning Systems}, Volume I,
+    chapter 11.}
+\end{frame}
+
+% ----------------------------------------------------------------- roofline
+\begin{frame}{The Roofline model}
+  \begin{columns}[c]
+    \begin{column}{0.54\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=1cm, y=0.9cm]
+        \draw[->, coolgray] (0,0) -- (5.6,0);
+        \draw[->, coolgray] (0,0) -- (0,3.2);
+        \node[coolgray, anchor=west] at (0.1,3.15) {rate in FLOP/s};
+        \node[coolgray] at (2.8,-0.35)
+          {arithmetic intensity $I$ in FLOP/byte};
+        \fill[darkcyan!10] (0,0) -- (0,0.4) -- (2.3,2.7) -- (2.3,0) -- cycle;
+        \fill[cardinalred!8] (2.3,0) rectangle (5.4,2.7);
+        \draw[darkcyan, line width=1.2pt] (0,0.4) -- (2.3,2.7);
+        \draw[cardinalred, line width=1.2pt] (2.3,2.7) -- (5.4,2.7);
+        \draw[coolgray, dashed] (2.3,0) -- (2.3,2.7);
+        \node[darkcyan!80!black, rotate=45, anchor=south] at (1.05,1.5)
+          {$\text{BW} \times I$};
+        \node[cardinalred, anchor=south] at (3.9,2.7) {$R_{\text{peak}}$};
+        \node[darkcyan!80!black] at (1.25,0.5) {memory-bound};
+        \node[cardinalred] at (3.9,1.2) {compute-bound};
+        \node[coolgray, anchor=west] at (2.35,0.2) {ridge point};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \[
+        R = \min\left(R_{\text{peak}},\; \text{BW} \times I\right)
+      \]
+      \small
+      \begin{tabular}{@{}rL{0.76\textwidth}@{}}
+        $R$ & The highest rate that the workload can reach \\
+        $R_{\text{peak}}$ & The peak rate of the arithmetic units \\
+        BW & The memory bandwidth in bytes for each second \\
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The two axes have a logarithmic scale. The roof has two parts: a
+          slope and a flat part.
+    \item The \textbf{ridge point} is $R_{\text{peak}} / \text{BW}$. A
+          workload with a lower intensity is memory-bound.
+    \item The hardware gives the roof. The workload gives the position
+          below the roof.
+  \end{itemize}
+  \source{Williams, Waterman, and Patterson, ``Roofline: An Insightful
+    Visual Performance Model for Multicore Architectures'', 2009.}
+\end{frame}
+
+\begin{frame}{Measured: the roofline of one core}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      % Coordinates: the logarithm (base 10) of the intensity and of the rate.
+      \begin{tikzpicture}[font=\scriptsize, x=0.9cm, y=1.3cm]
+        \draw[->, coolgray] (-1.3,-0.3) -- (3.25,-0.3);
+        \draw[->, coolgray] (-1.3,-0.3) -- (-1.3,2.3);
+        \node[coolgray, anchor=west] at (-1.25,2.25) {GFLOP/s};
+        \node[coolgray] at (1.0,-0.72) {$I$ in FLOP/byte};
+        \foreach \x/\l in {-1/0.1, 0/1, 1/10, 2/100, 3/1000} {
+          \draw[coolgray] (\x,-0.3) -- (\x,-0.35) node[below] {\l};
+        }
+        \foreach \y/\l in {0/1, 1/10, 2/100} {
+          \draw[coolgray] (-1.3,\y) -- (-1.35,\y) node[left] {\l};
+          \draw[coolgray!40, dotted] (-1.3,\y) -- (3.1,\y);
+        }
+        \draw[darkcyan, line width=1.1pt] (-1.3,-0.139) -- (0.757,1.918);
+        \draw[cardinalred, line width=1.1pt] (0.757,1.918) -- (3.1,1.918);
+        \draw[coolgray, dashed] (0.757,-0.3) -- (0.757,1.918);
+        \foreach \x/\y/\n/\a/\b in {-1.079/0.021/1/-0.78/-0.16,
+                                    -0.903/0.161/2/-0.52/0.03,
+                                    -0.778/0.334/3/-0.38/0.27,
+                                    -0.301/0.574/4/0.02/0.6,
+                                    2.533/1.918/5/2.533/1.68,
+                                    2.232/-0.041/6/2.6/-0.041} {
+          \draw[coolgray, very thin] (\x,\y) -- (\a,\b);
+          \fill[black] (\x,\y) circle (1.5pt);
+          \node[fill=white, inner sep=1pt] at (\a,\b) {\textbf{\n}};
+        }
+        \node[coolgray, anchor=west] at (0.8,0.72) {ridge: 5.7};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \scriptsize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}rL{0.36\textwidth}rrr@{}}
+        \toprule
+        & \textbf{Workload} & $I$ & \textbf{Rate} & \textbf{Roof} \\
+        \midrule
+        1 & Add two arrays            & 0.083 & 1.05 & 1.20 \\
+        2 & ReLU                      & 0.125 & 1.45 & 1.81 \\
+        3 & $c = a + 3\,b$            & 0.167 & 2.16 & 2.41 \\
+        4 & Matrix $\times$ vector    & 0.5   & 3.75 & 7.23 \\
+        5 & Product, library          & 341   & 82.8 & 82.8 \\
+        6 & Product, three loops      & 171   & 0.91 & 82.8 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Peak: 82.8 GFLOP/s (workload 5). Bandwidth: 14.5 GB/s (a read
+          loop).
+    \item Workloads 1 to 4 use arrays that are much larger than the caches.
+          They reach 52 to 90 percent of the roof. Rates in GFLOP/s.
+    \item Workload 4 is a fully connected layer with one input vector. Its
+          rate is 22 times lower than the rate of workload 5.
+  \end{itemize}
+  \source{An experiment of this course on an x86 processor with AVX2, one
+    thread.}
+\end{frame}
+
+\begin{frame}{Read the roofline with care}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Fact} & \textbf{Example of the measurement} \\
+    \midrule
+    The roof is a limit. It is not a prediction.
+      & The matrix product with three simple loops reaches 0.91 GFLOP/s.
+        The library reaches 82.8 with the same arithmetic: a factor of
+        about 90. \\
+    The intensity depends on the code.
+      & The library cuts the matrices into blocks that fit in a cache. It
+        uses each byte many times before the byte leaves the cache. \\
+    The bandwidth depends on the place of the data.
+      & The loop $y \mathrel{+}= a\,x$ has an intensity of 0.167. With arrays in the
+        first cache it reaches 22.2 GFLOP/s. The roof for data in the
+        RAM is 2.4. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A very small model has one more limit: the fixed cost of each
+          operator in the runtime.
+  \end{itemize}
+  \keypoint{The roof tells you which resource limits a good kernel. The
+    quality of the kernel decides how near to the roof you get.}
+  \source{The experiment of this course: an x86 processor with AVX2, one
+    thread.}
+\end{frame}
+
+\begin{frame}{Measured: more threads}
+  \begin{columns}[c]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.37cm, y=0.36cm]
+        \draw[->, coolgray] (0,0) -- (13.2,0);
+        \draw[->, coolgray] (0,0) -- (0,10.6);
+        \node[coolgray, anchor=west] at (0.2,10.4) {speedup};
+        \node[coolgray] at (6.5,-1.9) {threads};
+        \foreach \x in {1,2,4,8,12} {
+          \draw[coolgray] (\x,0) -- (\x,-0.2) node[below] {\x};
+        }
+        \foreach \y in {2,4,6,8} {
+          \draw[coolgray] (0,\y) -- (-0.2,\y) node[left] {\y};
+          \draw[coolgray!40, dotted] (0,\y) -- (12.8,\y);
+        }
+        \draw[coolgray, dashed] (1,1) -- (8.2,8.2);
+        \draw[cardinalred, line width=1.1pt] plot coordinates
+          {(1,1) (2,1.75) (4,3.35) (8,6.36) (12,8.16)};
+        \draw[darkcyan, line width=1.1pt] plot coordinates
+          {(1,1) (2,1.80) (4,2.98) (8,3.38) (12,3.37)};
+        \foreach \x/\y in {1/1, 2/1.75, 4/3.35, 8/6.36, 12/8.16} {
+          \fill[cardinalred] (\x,\y) circle (1.5pt);
+        }
+        \foreach \x/\y in {2/1.80, 4/2.98, 8/3.38, 12/3.37} {
+          \fill[darkcyan] (\x,\y) circle (1.5pt);
+        }
+        \node[cardinalred, anchor=east] at (12.9,9.2) {matrix product};
+        \node[darkcyan!80!black, anchor=west] at (7.2,2.4) {$c = a + 3\,b$};
+        \node[coolgray, anchor=east] at (5.6,6.4) {ideal};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{itemize}
+        \item The matrix product is compute-bound. With 12 threads it is
+              8.2 times as fast.
+        \item The loop $c = a + 3\,b$ is memory-bound. Its gain stops at
+              3.4.
+        \item All cores share the memory. The bandwidth grows from 14.5
+              to 59.6 GB/s with 8 threads, and then it stops.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{A test for your model: change the number of threads. A small
+    gain is a sign of a memory-bound workload, or of a part that is not
+    parallel.}
+  \source{The experiment of this course: an x86 processor with 12 cores
+    and AVX2. The values say nothing about a board.}
+\end{frame}
+
+\begin{frame}{The regime selects the optimization}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.15\textwidth}L{0.39\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    & \textbf{Memory-bound} & \textbf{Compute-bound} \\
+    \midrule
+    Typical operators
+      & ReLU, add, a fully connected layer, a depthwise convolution
+      & A large convolution, a matrix product with a batch \\
+    What helps
+      & Fewer bytes: \code{int8}, smaller feature maps. Fused operators
+        (Part 3).
+      & SIMD kernels, threads, an accelerator. Fewer MACs (Day 6). \\
+    No help
+      & More cores, a higher peak rate
+      & A faster memory \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item \code{int8} helps in the two regimes: one quarter of the bytes,
+          and 4 times as many values in one register.
+    \item This is the limit of the hardware. The kernels decide what you
+          get: on the work computer of Day 6, the \code{int8} models were
+          1.6 times slower.
+    \item A language model that makes one token reads all its weights for
+          this token. It is memory-bound (Day 10).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The Raspberry Pi 5 on this map}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.77\textwidth}@{}}
+    \toprule
+    Processor & 4 cores of the type Cortex-A76, 2.4 GHz \\
+    SIMD      & NEON: 128 bits, 2 SIMD units in each core \\
+    Peak, \code{float32}
+              & 2 units $\times$ 4 values $\times$ 2 operations $\times$
+                2.4 GHz: 38.4 GFLOP/s for one core, 153.6 GFLOP/s for 4
+                cores \\
+    Caches    & 512 KB for each core (L2), 2 MB for all cores (L3) \\
+    RAM       & 8 GB. The 4 cores share its bandwidth. \\
+    GPU, NPU  & A GPU for graphics. No NPU: an accelerator board can use
+                the PCIe port. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The same calculation for the work computer gives 80 GFLOP/s (2
+          units, 8 values, 2 operations, 2.5 GHz). The measurement: 82.8.
+    \item Nobody measured the memory bandwidth of the board for this
+          course. So its ridge point is not known.
+  \end{itemize}
+  \keypoint{On this board, acceleration is: NEON kernels, 4 threads, and
+    fewer bytes. The runtime gives the first two. Parts 2 and 3 show how.}
+  \source{Product brief of the Raspberry Pi 5. SIMD units: documentation
+    of Arm for the Cortex-A76. The peak is a calculation.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{place three workloads on a Roofline plot}{%
+  \small
+  One core of an example device has a peak rate of 40 GFLOP/s and a memory
+  bandwidth of 8 GB/s. Three layers in \code{float32} run on it. The table
+  gives the operations and the bytes in millions.
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.66\textwidth}rr@{}}
+    \toprule
+    & \textbf{Layer} & \textbf{Operations} & \textbf{Bytes} \\
+    \midrule
+    A & Convolution $3 \times 3$, 64 to 64 channels, $56 \times 56$
+      & 231.2 & 1.75 \\
+    B & Depthwise convolution $3 \times 3$, 32 channels, $112 \times 112$
+      & 7.23 & 3.21 \\
+    C & Fully connected, 1280 to 1000 & 2.56 & 5.13 \\
+    \bottomrule
+  \end{tabular}}
+  \begin{enumerate}
+    \item Calculate the ridge point of the device. Draw the roof: the axes
+          are the intensity from 0.1 to 1000, and the rate from 1 to 100
+          GFLOP/s.
+    \item Calculate the arithmetic intensity of each layer. Place the three
+          layers on the plot, at the roof.
+    \item Which layers are memory-bound? Calculate the shortest time of
+          each layer.
+    \item The model changes to \code{int8}: each layer moves one quarter of
+          the bytes. Which layer changes its regime?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{place three workloads on a Roofline plot}{%
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      % Coordinates: the logarithm (base 10) of the intensity and of the rate.
+      \begin{tikzpicture}[font=\scriptsize, x=0.76cm, y=1.35cm]
+        \draw[->, coolgray] (-1,0) -- (3.3,0);
+        \draw[->, coolgray] (-1,0) -- (-1,2.25);
+        \node[coolgray, anchor=west] at (-0.95,2.2) {GFLOP/s};
+        \node[coolgray] at (1.1,-0.42) {$I$ in FLOP/byte};
+        \foreach \x/\l in {-1/0.1, 0/1, 1/10, 2/100, 3/1000} {
+          \draw[coolgray] (\x,0) -- (\x,-0.05) node[below] {\l};
+        }
+        \foreach \y/\l in {0/1, 1/10, 2/100} {
+          \draw[coolgray] (-1,\y) -- (-1.05,\y) node[left] {\l};
+          \draw[coolgray!40, dotted] (-1,\y) -- (3.2,\y);
+        }
+        \draw[darkcyan, line width=1.1pt] (-0.903,0) -- (0.699,1.602);
+        \draw[cardinalred, line width=1.1pt] (0.699,1.602) -- (3.2,1.602);
+        \draw[coolgray, dashed] (0.699,0) -- (0.699,1.602);
+        \foreach \x/\y/\n/\p in {2.121/1.602/A/above, 0.352/1.255/B/left,
+                                 -0.301/0.602/C/left} {
+          \fill[black] (\x,\y) circle (1.6pt);
+          \node[\p, inner sep=2.5pt] at (\x,\y) {\textbf{\n}};
+        }
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \footnotesize
+      \begin{enumerate}
+        \item Ridge point: $40 / 8 = 5$ FLOP for each byte.
+        \item A: $231.2 / 1.75 = 132$. B: $7.23 / 3.21 = 2.25$.
+              C: $2.56 / 5.13 = 0.5$.
+        \item B and C are below 5: memory-bound. Rates: A 40, B
+              $8 \times 2.25 = 18$, C $8 \times 0.5 = 4$ GFLOP/s.
+              Times: A 5.8 ms, B 0.40 ms, C 0.64 ms.
+        \item The intensities become 528, 9, and 2. B goes over the ridge
+              point: it is now compute-bound. C stays memory-bound. Its
+              limit grows to 16 GFLOP/s.
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \footnotesize
+  Layer C has one third of the operations of layer B, and it needs more
+  time. A count of operations alone does not give the time. For question
+  4, the peak rate of the device stays at 40.
+}
