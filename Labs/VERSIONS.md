@@ -57,6 +57,16 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `tensorflow-cpu` | 2.21.0 | `day03` (`motion_classifier.ipynb`: training and conversion), `day04` (`quantization.ipynb`: quantization and conversion to `int8`), `day06` (`compression.ipynb`: pruning, distillation, and quantization) |
 | `keras` | 3.12.4 | `day03`, `day04` (installed with `tensorflow-cpu`) |
 | `onnx`, `onnxruntime` | 1.23.1, 1.23.2 | Day 3 lecture (export from PyTorch) |
+| `torch`, `torchvision` in the environment of the Day 7 lab | 2.13.0, 0.28.0 (CPU versions) | `day07` (`export_inspect.ipynb`). The package `litert-torch` selects these versions, so this lab has its own environment and its own file `Labs/day07/requirements.txt`. |
+| `litert-torch` | 0.9.4 | `day07` (export from PyTorch to LiteRT) |
+| `onnxscript` | 0.7.2 | `day07` (`torch.onnx.export` with `dynamo=True`) |
+| `onnx`, `onnxruntime` | 1.23.1, 1.23.2 | `day07` (`export_inspect.ipynb`, `pi/bench.py`, and the file `models/mnv2_int8.onnx`) |
+| `ai-edge-litert` | 2.2.0 | `day07` (`pi/classify_image.py`, `pi/bench.py`) |
+| `ai-edge-quantizer` | 0.9.0 | `day07` (the file `models/mnv2_int8.tflite`) |
+| `pillow` | 12.3.0 | `day07` (`pi/classify_image.py`) |
+| `ipykernel`, `jupyter-client` | 6.31.0, 8.6.3 | `day07`: the newest versions that `litert-torch` 0.9.4 accepts |
+| `notebook`, `netron` | 7.6.3, 9.3.0 | `day07` (the notebook, and the viewer for model files) |
+| `ncnn`, `pnnx` | 1.0.20260526, 20260526 | Day 7 lecture. The lab does not need them. |
 
 ## Arduino board cores and libraries
 

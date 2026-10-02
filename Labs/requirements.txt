@@ -23,6 +23,9 @@ torchvision
 # Conversion and runtimes (Days 3, 4, and 7).
 # tensorflow-cpu has Keras and the converter to the LiteRT format.
 # ai-edge-litert runs a LiteRT file on the laptop.
+# The notebook of the Day 7 lab needs the package litert-torch, which needs
+# its own version of torch. That lab has its own environment and its own
+# file: day07/requirements.txt.
 tensorflow-cpu
 ai-edge-litert
 onnx

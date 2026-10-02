@@ -1,0 +1,11 @@
+# Files that the lab makes. They are not part of the repository.
+models/mnv2.tflite
+models/mnv2_static.onnx
+models/mnv2_dynamic.onnx
+models/mnv2_unfused.onnx
+models/mnv2_level_*.onnx
+models/*.onnx.data
+images/
+capture_*.jpg
+test.jpg
+results.csv
