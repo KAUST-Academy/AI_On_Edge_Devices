@@ -1,9 +1,569 @@
 % Part 3 of Day 4: Quantization-aware training and debugging.
 %
 % Topics of the syllabus: simulated quantization and the straight-through
-% estimator; mixed precision; how to find the layer that loses accuracy; short
-% overview of binary and ternary networks. Exercise: read a per-layer error
-% report and name the layer to keep in float.
+% estimator; mixed precision; how to find the layer that loses accuracy;
+% short overview of binary and ternary networks. Exercise: read a per-layer
+% error report and name the layer to keep in float.
+%
+% The error report of the exercise has example values. The frame says so.
 
 \theorypart{Quantization-aware training and debugging}%
   {read a per-layer error report and name the layer to keep in float}
+
+% ------------------------------------------------------------------ why QAT
+\begin{frame}{When post-training quantization is not enough}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item The weights of a float model were trained for float
+              arithmetic. Nobody told the training about the rounding.
+        \item PTQ adds the rounding error after the training. The model
+              cannot react to it.
+        \item For most models with 8 bits, the error is small enough.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Cases with a larger loss}
+        \begin{itemize}
+          \item A very small model: it has no redundancy.
+          \item Less than 8 bits.
+          \item A layer with a very wide range of values.
+          \item An output that must be exact, for example a regression.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{Two answers exist. Find the cause and repair it (debugging), or
+    let the training learn weights that accept the rounding
+    (quantization-aware training).}
+\end{frame}
+
+\begin{frame}{The idea of quantization-aware training}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=0.9cm, align=center}]
+    \node[b] (w) at (0,0)   {Float\\weights};
+    \node[b, draw=cardinalred] (f) at (2.9,0) {Simulated\\quantization};
+    \node[b] (l) at (5.8,0) {Layer};
+    \node[b] (o) at (8.7,0) {Loss};
+    \draw[->] (w) -- (f); \draw[->] (f) -- (l); \draw[->] (l) -- (o);
+    \draw[->, darkcyan] (o.south) -- ++(0,-0.6) -| node[pos=0.25, below]
+      {gradient: updates the float weights} (w.south);
+    \node[font=\scriptsize, text=coolgray] at (4.35,0.8)
+      {forward pass: the layer sees the rounded weights};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item The training keeps the weights in \code{float32}.
+    \item In the forward pass, each weight and each activation goes
+          through the mapping of Part 1: quantize, then dequantize.
+    \item The loss then includes the rounding error. The optimizer finds
+          weights that give a small loss \emph{with} the rounding.
+    \item After the training, the converter makes a real \code{int8}
+          model.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The model trains with the error that the device will have.}
+\end{frame}
+
+\begin{frame}{Simulated quantization}
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.5cm, y=0.5cm]
+        \draw[->, coolgray] (-0.3,0) -- (7.6,0) node[right] {$r$};
+        \draw[->, coolgray] (0,-0.3) -- (0,6.4) node[above] {$\hat{r}$};
+        \draw[coolgray, dashed] (0,0) -- (6.0,6.0);
+        \draw[cardinalred, line width=1pt] (0,0) -- (0.5,0);
+        \foreach \k in {1,...,5} {
+          \draw[cardinalred, line width=1pt] (\k-0.5,\k-1) -- (\k-0.5,\k);
+          \draw[cardinalred, line width=1pt] (\k-0.5,\k) -- (\k+0.5,\k);
+        }
+        \draw[cardinalred, line width=1pt] (5.5,5) -- (7.4,5);
+        \node[anchor=west] at (5.9,4.3) {clamp};
+        \node[below] at (5,0) {$r_{\max}$};
+        \draw[coolgray, dotted] (5,0) -- (5,5);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.57\textwidth}
+      \small
+      \[
+        q = \text{clamp}\!\left(\text{round}\!\left(\frac{r}{S}\right)
+            + Z\right) \quad\; \hat{r} = S \, (q - Z)
+      \]
+      \begin{itemize}
+        \item The result $\hat{r}$ is a float value. It can have only 256
+              different values.
+        \item The other name is ``fake quantization'': the value has the
+              error of an integer, and the type of a float.
+        \item A normal training framework can calculate with it. It needs
+              no integer kernels.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{The forward pass of the training has the same rounding error as
+    the \code{int8} model on the device.}
+\end{frame}
+
+\begin{frame}{The problem: rounding has no gradient}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.6cm, y=0.5cm]
+        \draw[->, coolgray] (0,0) -- (6.6,0) node[right] {$r$};
+        \draw[->, coolgray] (0,0) -- (0,5.8);
+        \node[anchor=west] at (0.2,5.6) {$\text{round}(r)$};
+        \foreach \k in {0,...,4} {
+          \draw[cardinalred, line width=1pt] (\k,\k+0.5) -- (\k+1,\k+0.5);
+        }
+        \foreach \k in {1,...,4} {
+          \draw[cardinalred, line width=1pt] (\k,\k-0.5) -- (\k,\k+0.5);
+        }
+        \node[darkcyan, align=center] at (4.3,1.4)
+          {flat parts:\\slope 0};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \begin{itemize}
+        \item Training needs the gradient of the loss for each weight.
+        \item The round function is a staircase. On each step it is flat:
+              the slope is 0.
+        \item With the chain rule, a slope of 0 makes the complete
+              gradient 0.
+        \item The weights get no update. The training stops.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{A small change of a weight does not change its rounded value. So
+    the exact gradient says: no direction is better.}
+\end{frame}
+
+\begin{frame}[fragile]{The straight-through estimator}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.3}
+      \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+        \toprule
+        \textbf{Pass} & \textbf{The rounding is} \\
+        \midrule
+        Forward  & The real staircase \\
+        Backward & The identity: slope 1 inside the range, slope 0
+                   outside the range \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.5em
+      The gradient goes ``straight through'' the rounding.
+    \end{column}
+    \begin{column}{0.50\textwidth}
+\begin{lstlisting}[style=python]
+from keras import ops
+
+def fake_quant(x, S, Z):
+    q = ops.clip(ops.round(x / S) + Z,
+                 -128, 127)
+    x_q = S * (q - Z)
+    # forward: x_q, backward: identity
+    d = ops.stop_gradient(x_q - x)
+    return x + d
+\end{lstlisting}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The estimator is not the correct gradient. It is a useful
+          approximation: ``if the float weight grows, the rounded weight
+          grows also, in the end''.
+    \item \code{stop\_gradient} hides the difference $x_q - x$ from the
+          backward pass. The forward value is still $x_q$.
+  \end{itemize}
+  \source{Bengio et al., ``Estimating or Propagating Gradients Through
+    Stochastic Neurons for Conditional Computation'', 2013.}
+\end{frame}
+
+\begin{frame}{Float weights collect small updates}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.44cm, y=1.5cm]
+    \draw[->, coolgray] (0,0.1) -- (18.6,0.1) node[right] {step};
+    \foreach \y/\l in {0.5/level $k$, 1.5/level $k + 1$} {
+      \draw[coolgray!60, dashed] (0,\y) -- (18,\y);
+      \node[anchor=east, coolgray] at (0,\y) {\l};
+    }
+    \draw[coolgray!60] (0,1.0) -- (18,1.0);
+    \node[anchor=east, coolgray] at (0,1.0) {limit};
+    \draw[darkcyan, line width=0.9pt]
+      plot[smooth] coordinates {(0,0.55) (2,0.62) (4,0.70) (6,0.79)
+        (8,0.88) (10,0.97) (12,1.06) (14,1.16) (16,1.26) (18,1.36)};
+    \draw[cardinalred, line width=1.1pt] (0,0.5) -- (10.7,0.5) --
+      (10.7,1.5) -- (18,1.5);
+    \node[darkcyan, anchor=north west] at (13.0,0.92) {float weight};
+    \node[cardinalred, anchor=south west] at (11.0,1.5) {weight that the layer
+      sees};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item One optimizer step changes a weight by much less than one
+          quantization step.
+    \item The float weight keeps the sum of the small updates.
+    \item When the float weight passes the limit between two levels, the
+          weight that the layer sees changes by one step.
+    \item An integer weight with no float copy cannot do this: a small
+          update disappears in the rounding.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Quantization-aware training in practice}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center}]
+    \node[b] (a) at (0,0)    {Trained\\float model};
+    \node[b] (b) at (2.15,0) {Add simulated\\quantization};
+    \node[b, draw=cardinalred] (c) at (4.3,0) {Train some\\epochs};
+    \node[b] (d) at (6.45,0) {Convert\\to \code{int8}};
+    \node[b] (e) at (8.6,0)  {Test};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item \textbf{Start from the trained float model.} Do not start from
+          random weights.
+    \item \textbf{Use a small learning rate,} for example a tenth of the
+          rate of the float training. Some epochs are enough.
+    \item \textbf{The ranges} of the activations come from the training
+          data: an observer keeps a moving average of the minimum and the
+          maximum.
+    \item \textbf{Convert} with the same settings as PTQ. Then test the
+          real \code{int8} model, not the simulated model.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Quantization-aware training is a fine-tuning step after the
+    normal training. It does not replace it.}
+\end{frame}
+
+\begin{frame}{Compare the two methods}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.35\textwidth}L{0.35\textwidth}@{}}
+    \toprule
+    & \textbf{Post-training (PTQ)} & \textbf{Quantization-aware (QAT)} \\
+    \midrule
+    Data      & Some hundreds of inputs, no labels
+              & The training set, with labels \\
+    Time      & Seconds & A part of the training time \\
+    You need  & The converter & The training code \\
+    Accuracy  & Good for most models with 8 bits
+              & Recovers 0.5 to 1.0 points of the loss \\
+    Use it    & Always first & When PTQ misses the target, or below 8
+                               bits \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The two methods give the same type of file: an \code{int8}
+          LiteRT model. The device sees no difference.
+    \item A different model, with fewer problems for the quantizer, is
+          sometimes less work than QAT.
+  \end{itemize}
+  \source{Accuracy range: slides of \emph{Machine Learning Systems},
+    Volume I, chapter 10.}
+\end{frame}
+
+% ------------------------------------------------------------------ debugging
+\begin{frame}{First checks when the accuracy decreases}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Check} & \textbf{Typical cause} \\
+    \midrule
+    The float LiteRT model & If this model is wrong, the problem is the
+        conversion or the test code, not the quantization. \\
+    The input of the test  & The test code does not quantize the input,
+        or it uses a wrong scale or a wrong zero point. \\
+    The pre-processing     & The calibration set has a different
+        normalization than the training set. \\
+    The clipped inputs     & The calibration set does not cover all
+        classes (exercise of Part 2). \\
+    The accuracy of each class & One class fails. The total accuracy hides
+        it. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \keypoint{Most ``quantization problems'' are data problems or code
+    problems. Do these five checks before you change the method.}
+\end{frame}
+
+\begin{frame}{Find the layer: compare the outputs of each layer}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.6cm, minimum height=0.7cm, align=center},
+      q/.style={b, draw=cardinalred},
+      e/.style={font=\scriptsize, text=darkcyan}]
+    \node[anchor=east, text=coolgray] at (-1.0,0.6) {float};
+    \node[anchor=east, text=coolgray] at (-1.0,-0.9) {\code{int8}};
+    \foreach \k/\x in {1/0, 2/2.3, 3/4.6, 4/6.9} {
+      \node[b] (f\k) at (\x,0.6)  {Layer \k};
+      \node[q] (q\k) at (\x,-0.9) {Layer \k};
+    }
+    \foreach \a/\b in {1/2, 2/3, 3/4} {
+      \draw[->] (f\a) -- (f\b); \draw[->] (q\a) -- (q\b);
+    }
+    \foreach \k/\x/\v in {1/0/0.4, 2/2.3/0.6, 3/4.6/9.8, 4/6.9/10.1} {
+      \draw[<->, darkcyan] (\x+0.95,0.3) -- (\x+0.95,-0.6);
+      \node[e, anchor=west] at (\x+1.0,-0.15) {\v};
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{enumerate}
+    \item Run the float model and the \code{int8} model with the same
+          inputs.
+    \item After each layer, dequantize the \code{int8} output and compare
+          it with the float output.
+    \item Write the error in percent of the range of the float output.
+  \end{enumerate}
+  \begin{itemize}
+    \item The error of a layer includes the errors of all layers before
+          it. Look for the layer where the error grows suddenly: layer 3
+          in the figure.
+  \end{itemize}
+  \source{The error values of the figure are examples, in percent.}
+\end{frame}
+
+\begin{frame}{Find the layer: quantize one layer at a time}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.42\textwidth}rr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Accuracy} & \textbf{Loss} \\
+    \midrule
+    All layers in float        & 92.0 & none \\
+    Only layer 1 in \code{int8} & 91.9 & 0.1 \\
+    Only layer 2 in \code{int8} & 91.8 & 0.2 \\
+    Only layer 3 in \code{int8} & 87.5 & \textbf{4.5} \\
+    Only layer 4 in \code{int8} & 91.9 & 0.1 \\
+    All layers in \code{int8}  & 87.0 & 5.0 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item This second method measures the accuracy directly. It needs one
+          conversion and one test for each layer.
+    \item The table is the sensitivity of the model: which layer costs how
+          much accuracy.
+    \item One layer usually causes most of the loss. The sum of the single
+          losses is near the total loss.
+  \end{itemize}
+  \source{The values of the table are examples, in percent.}
+\end{frame}
+
+\begin{frame}{Layers that are often sensitive}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.40\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Layer} & \textbf{Reason} & \textbf{Possible repair} \\
+    \midrule
+    The first layer & The input has a wide range, or values that the
+        calibration set did not have & A better calibration set, or a
+        normalized input \\
+    A depthwise convolution & After the folding, the channels have very
+        different ranges & Per-channel scales \\
+    A layer with ReLU & The activation has no upper limit. Some values are
+        very large. & ReLU6: the range is always 0 to 6 \\
+    An addition of two branches & The two inputs have different scales
+        & Quantization-aware training \\
+    The last layer & Small differences between the outputs decide the
+        class & Keep this layer in float \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \keypoint{Many repairs are changes of the model, not of the quantizer. A
+    model that is designed for quantization loses less.}
+\end{frame}
+
+\begin{frame}{Mixed precision}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.5cm, minimum height=0.8cm, align=center},
+      f/.style={b, draw=cardinalred, fill=white},
+      c/.style={b, draw=darkcyan, minimum width=1.2cm, font=\scriptsize}]
+    \node[b] (a) at (0,0)   {Layer 1\\\code{int8}};
+    \node[b] (b) at (1.95,0) {Layer 2\\\code{int8}};
+    \node[c] (d1) at (3.75,0) {DE-\\QUANTIZE};
+    \node[f] (e) at (5.5,0) {Layer 3\\\code{float32}};
+    \node[c] (d2) at (7.25,0) {QUANTIZE};
+    \node[b] (g) at (9.05,0) {Layer 4\\\code{int8}};
+    \foreach \a/\b in {a/b, b/d1, d1/e, e/d2, d2/g} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item Mixed precision: different layers use different formats. The
+          sensitive layer keeps more bits.
+    \item The converter adds one operator before and one operator after
+          the float layer.
+    \item \textbf{Cost:} the weights of the float layer need four times the
+          flash, its activations need four times the RAM, and the device
+          needs a float kernel for it.
+    \item A second option of LiteRT: activations with 16 bits and weights
+          with 8 bits.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Keep in float only the layer that the error report names. Then
+    measure the size and the accuracy again.}
+\end{frame}
+
+\begin{frame}{Binary and ternary networks}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.22\textwidth}L{0.24\textwidth}L{0.18\textwidth}@{}}
+    \toprule
+    & \textbf{INT8} & \textbf{Ternary} & \textbf{Binary} \\
+    \midrule
+    Values of a weight & 256 & $-1$, 0, $+1$ & $-1$, $+1$ \\
+    Bits               & 8 & 2 & 1 \\
+    Size against FP32  & 1/4 & 1/16 & 1/32 \\
+    Multiplication     & Integer multiplier & Add, subtract, or skip
+                       & XNOR gate \\
+    Training           & PTQ or QAT & QAT & QAT \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The loss of accuracy is large. ResNet-50 on ImageNet: 76.2
+          percent in FP32, and 51 percent with 1 bit.
+    \item The gain needs kernels or hardware that calculate with single
+          bits. TensorFlow Lite Micro has no such kernels.
+    \item Use these formats only when \code{int8} does not fit. Compare
+          with a smaller \code{int8} model first.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 10, and its
+    slides.}
+\end{frame}
+
+\begin{frame}{The order of the methods}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      f/.style={draw, line width=0.8pt, rounded corners=3pt, fill=boxgray,
+                minimum width=6.6cm, minimum height=0.72cm, align=left,
+                text width=6.2cm},
+      r/.style={text=coolgray, align=left, text width=3.4cm, anchor=west}]
+    \node[f, draw=treegreen] (a) at (0,0)
+      {\textbf{1.} PTQ with a good calibration set};
+    \node[f, draw=treegreen] (b) at (0,-0.95)
+      {\textbf{2.} The five first checks};
+    \node[f, draw=darkcyan] (c) at (0,-1.9)
+      {\textbf{3.} Error report: find the layer};
+    \node[f, draw=darkcyan] (d) at (0,-2.85)
+      {\textbf{4.} Repair the layer, or keep it in float};
+    \node[f, draw=cardinalred] (e) at (0,-3.8)
+      {\textbf{5.} Quantization-aware training};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[r] at (3.5,0)     {seconds};
+    \node[r] at (3.5,-0.95) {minutes};
+    \node[r] at (3.5,-1.9)  {minutes};
+    \node[r] at (3.5,-2.85) {an hour};
+    \node[r] at (3.5,-3.8)  {a new training};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item Stop at the first step that reaches your accuracy target.
+    \item Each step costs more time than the step before it.
+  \end{itemize}
+  \keypoint{Write the target before you start: for example, ``the
+    \code{int8} model loses less than 1 point''.}
+\end{frame}
+
+\begin{frame}{The lab of today}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.08\textwidth}L{0.12\textwidth}L{0.70\textwidth}@{}}
+    \toprule
+    \textbf{Part} & \textbf{Time} & \textbf{Work} \\
+    \midrule
+    A & 30 min & Quantize tensors by hand in NumPy. Measure the rounding
+                 error and the clipping error. \\
+    B & 50 min & Quantize a small CNN after the training. Change the
+                 calibration set, and observe the accuracy. \\
+    C & 40 min & Train the same CNN with simulated quantization. Compare
+                 with the result of Part B. \\
+    D & 30 min & Put the float model and the \code{int8} model of Day 3 on
+                 the board. Compare flash, arena, latency, and accuracy. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The deliverable is a comparison table with one float row and one
+          \code{int8} row for the size, the accuracy, and the latency.
+    \item The Decision Log explains the change of the accuracy.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Each \code{int8} number needs the float number next to it,
+    from the same test set and the same board.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{read a per-layer error report}{%
+  \small
+  A small CNN has an accuracy of 91.0 percent in float and 85.2 percent in
+  \code{int8}. The target is a loss below 1 point. The error report:
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}llrrr@{}}
+    \toprule
+    \textbf{Layer} & \textbf{Type} & \textbf{Parameters}
+    & \textbf{Output error} & \textbf{Loss} \\
+    \midrule
+    1 & Convolution           & 448    & 0.5 & 0.1 \\
+    2 & Depthwise convolution & 160    & 7.9 & 4.9 \\
+    3 & Pointwise convolution & 544    & 8.2 & 0.3 \\
+    4 & Fully connected       & 5130   & 8.4 & 0.2 \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.2em
+  {\footnotesize ``Output error'': the difference between the float output
+  and the \code{int8} output after the layer, in percent of the range.
+  ``Loss'': the loss of accuracy in points with only this layer in
+  \code{int8}.\par}
+  \begin{enumerate}
+    \item Which layer do you keep in float? Give two reasons from the
+          table.
+    \item Layers 3 and 4 have a large output error. Why do they stay in
+          \code{int8}?
+    \item How many bytes of flash does your decision cost?
+    \item Name one repair that you try before you keep the layer in float.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes. The values are examples.
+}
+
+\answerframe{read a per-layer error report}{%
+  \small
+  \begin{enumerate}
+    \item Layer 2, the depthwise convolution. First reason: the output
+          error grows from 0.5 to 7.9 percent at this layer. Second reason:
+          this layer alone costs 4.9 points of the 5.8 points.
+    \item Their error comes from layer 2. The error of a layer includes
+          the errors of all layers before it. Alone, layers 3 and 4 cost
+          0.3 and 0.2 points.
+    \item About 480 bytes. The 160 parameters need 160 bytes in
+          \code{int8} and 640 bytes in \code{float32}. The exact value is
+          432 bytes: the 16 biases have 32 bits in the two formats. Add the
+          two operators DEQUANTIZE and QUANTIZE. The activations of this
+          layer also need four times the RAM.
+    \item Per-channel scales for the depthwise convolution, if the
+          converter did not use them. Or ReLU6 in place of ReLU after the
+          layer. Or quantization-aware training.
+  \end{enumerate}
+  \vskip 0.2em
+  The expected result: a loss of about $5.8 - 4.9 = 0.9$ points. This is
+  below the target of 1 point. Measure it.
+}
