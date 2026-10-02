@@ -1,0 +1,19 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A CPU, a GPU, and an NPU get their speed from parallel arithmetic.
+          The memory must deliver the data at the same rate.
+    \item The Roofline model gives the limit of a workload: the peak compute
+          rate, or the memory bandwidth times the arithmetic intensity.
+    \item A runtime has three layers: the model format, the graph optimizer,
+          and the kernel library. Two runtimes can give different latencies
+          for the same model.
+    \item A graph optimizer folds constants, removes unused nodes, and fuses
+          operators. With a static input shape, the runtime plans the memory
+          one time.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{The latency is a property of the model, the runtime, and the
+            device together. Measure each combination on the Raspberry Pi
+            before you select one.}
+\end{frame}

@@ -1,0 +1,29 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 7 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item Days 1 to 6 made the model smaller. From today the device is the
+          Raspberry Pi 5: a Linux computer with four processor cores and 8 GB
+          of RAM.
+    \item On this device, the same model can run in more than one runtime. The
+          runtime, its kernels, the number of threads, and the precision
+          change the latency.
+    \item A faster processor does not help a workload that waits for memory.
+          The Roofline model shows which of the two limits applies.
+    \item In the lab you run MobileNetV2 on the Raspberry Pi, export one model
+          to ONNX and to LiteRT, and measure the latency for each runtime,
+          thread count, and precision.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Explain how SIMD, accelerators, and memory bandwidth limit inference
+          speed.
+    \item Name the main graph optimizations and state what each one does.
+    \item Export a PyTorch model to ONNX and to LiteRT.
+    \item Compare inference runtimes on the Raspberry Pi.
+    \item Explain the trade-off between static and dynamic input shapes.
+  \end{itemize}
+\end{frame}
