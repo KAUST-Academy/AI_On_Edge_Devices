@@ -77,7 +77,8 @@ step. The PDF is still correct.
 ## Rules for every deck
 
 - Load only `preamble/course.tex`. Do not load `preamble/packages.tex` or
-  `preamble/commands.tex`. Those two files belong to the older CNN recap deck.
+  `preamble/commands.tex`. Those two files are the older preamble of the
+  template. No deck uses them.
 - Keep the cover frame unchanged.
 - Set `\coursecredits` in the main file. Name only the sources that the deck
   uses. The header of `preamble/course.tex` lists the commands.
