@@ -1,0 +1,65 @@
+% Goal and plan of the Day 5 lab.
+% The parts and the times come from the Day 5 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has one audio model and one vision model
+          on the XIAOML Kit: a keyword spotter that makes one event for
+          each spoken keyword, and an image classifier that shows the class
+          on the display.
+    \item \textbf{Board:} the XIAOML Kit, with the microphone, the camera,
+          and the display.
+    \item \textbf{Deliverable:} two live demonstrations, and the file
+          \code{report.md} with the measurement table and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the features, the two models, and the
+    post-processing. In the lab, Edge Impulse Studio makes the features and
+    the models. You write the post-processing, you tune it, and you measure
+    the two models on the board.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{The model comes from a tool in some minutes. The work of the
+    engineer is the data before the model and the decisions after it.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (80,0.8);
+    \fill[treegreen!60]   (80,0)  rectangle (135,0.8);
+    \fill[cardinalred!55] (135,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (80,0) -- (80,0.8) (135,0) -- (135,0.8)
+      (150,0) -- (150,0.8);
+    \node at (40,0.4)    {\textbf{A}: 80 min};
+    \node at (107.5,0.4) {\textbf{B}: 55 min};
+    \node at (142.5,0.4) {\textbf{C}};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,80,135,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Keyword spotting: data, training in Edge Impulse Studio, the
+        \code{int8} model on the kit, smoothing and threshold & 80 min \\
+    B & Image classification: transfer learning on a prepared dataset, the
+        \code{int8} model on the kit, the class on the display & 55 min \\
+    C & Measure: latency and RAM of the two models & 15 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.4em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

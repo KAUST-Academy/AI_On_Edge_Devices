@@ -1,0 +1,50 @@
+% Check criterion, deliverable, and the Decision Log question of Day 5.
+% The criterion and the deliverable come from the Day 5 section of the
+% syllabus and from Labs/day05/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ The Serial Monitor of the keyword sketch shows
+          \code{Task A1: complete. Task A2: complete.}
+    \item \cmark\ The keyword sketch gives no event in 30 seconds of normal
+          speech with no keyword.
+    \item \cmark\ The keyword sketch gives one event for each spoken
+          \code{yes}, in a test with 5 words.
+    \item \cmark\ The image sketch shows the correct class for three test
+          objects or test photos, one of each class.
+    \item \cmark\ The report has the tuning table with at least three
+          rounds.
+    \item \cmark\ The report has the measurement table with the latency
+          and the RAM of the two models.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}. Show the two demonstrations
+  to the instructor.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    The two models go into one product: the voice-controlled camera of the
+    lecture. The keyword model is stage 1, and the image model is stage 2.
+    \begin{itemize}
+      \item Which settings do you select for the post-processing of
+            stage 1?
+      \item Can one XIAO ESP32S3 run the two stages?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the false accepts, the missed words, and the delay of your
+          settings from the tuning table,
+    \item gives the times and the RAM of the two models from the
+          measurement table,
+    \item names what you lose with your decision. Example: fewer false
+          accepts against a longer delay.
+  \end{itemize}
+\end{frame}

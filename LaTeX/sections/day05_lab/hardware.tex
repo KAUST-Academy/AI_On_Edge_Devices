@@ -1,0 +1,65 @@
+% Hardware, software, and the path of the two models of the Day 5 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item XIAOML Kit: XIAO ESP32S3 Sense with the expansion board.
+        \item USB-C data cable.
+        \item Laptop with a microphone, for your own recordings.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \textbf{Software}
+      \begin{itemize}
+        \item Arduino IDE 2 with the esp32 core 3.3.12, and the library
+              U8g2.
+        \item One Edge Impulse account for each student.
+        \item Python 3.10 or later for one script. It needs no package.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.80\textwidth}@{}}
+    Lab files & \code{Labs/day05/}. Run the commands from this folder. \\
+    Build     & \code{Tools > PSRAM > OPI PSRAM} for the two sketches \\
+    Sketches  & \code{sketches/kws\_stream/} and
+                \code{sketches/image\_classifier/} \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{The same path for the two models}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Data};
+    \node[b, draw=darkcyan] (b) at (2.15,0) {Edge Impulse\\Studio};
+    \node[b] (c) at (4.3,0)  {Arduino\\library};
+    \node[b, draw=cardinalred] (d) at (6.45,0) {Sketch};
+    \node[b] (e) at (8.6,0)  {Kit};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {clips of 1 s,\\or photos};
+    \node[lab] at (2.15,-0.95) {features, training,\\\code{int8}};
+    \node[lab] at (4.3,-0.95)  {a ZIP file for\\each model};
+    \node[lab] at (6.45,-0.95) {your settings,\\your tasks};
+    \node[lab] at (8.6,-0.95)  {events, classes,\\times};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The Studio makes one library for each project. The library holds
+          the feature code, the model, and the runtime.
+    \item In each sketch, change the first \code{\#include} line to the
+          header of your library.
+    \item In \code{Deployment}, select \code{Arduino library} and the model
+          type \code{Quantized (int8)}.
+    \item The first build of a library needs some minutes. Start it, and
+          read the next step during the build.
+  \end{itemize}
+  \keypoint{On Days 3 and 4 you wrote the inference code. Today a tool
+    writes it, and you write the code around it.}
+\end{frame}
