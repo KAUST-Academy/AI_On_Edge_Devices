@@ -1,0 +1,42 @@
+% Check criterion, deliverable, and the Decision Log question of Day 6.
+% The criterion and the deliverable come from the Day 6 section of the
+% syllabus and from Labs/day06/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ The notebook prints \code{complete} for tasks 1, 3, 4, 5,
+          and 7.
+    \item \cmark\ The report has the two predictions: task 2 and task 6.
+          You wrote them before the experiments.
+    \item \cmark\ The plot \code{tradeoff.png} has at least six models.
+    \item \cmark\ The report names one model for the XIAO ESP32S3 and one
+          model for the Raspberry Pi 5, with the numbers of each model.
+    \item \cmark\ The selection states the constraint that decides for
+          each product.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md} and the plot
+  \code{tradeoff.png}.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    Which model do you select for the XIAO ESP32S3, and which model for the
+    Raspberry Pi 5? Use the budgets of section 10 of the notebook.
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the file size, the peak, the accuracy, and the latency of
+          each selected model,
+    \item names the constraint that decides for each product, and the
+          model that this constraint removes,
+    \item says what the product loses with the selection. Example: some
+          points of accuracy against half of the RAM.
+  \end{itemize}
+\end{frame}

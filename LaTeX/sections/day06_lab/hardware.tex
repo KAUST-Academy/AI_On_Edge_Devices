@@ -1,0 +1,70 @@
+% Software and the structure of the notebook of the Day 6 lab.
+\begin{frame}{Software and files}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \textbf{You need}
+      \begin{itemize}
+        \item A laptop. No board.
+        \item The Python environment of Days 1 and 3, with
+              \code{tensorflow-cpu} and \code{ai-edge-litert}.
+        \item No new package.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \textbf{The lab folder gives}
+      \begin{itemize}
+        \item \code{compression.ipynb}: the notebook with seven tasks.
+        \item \code{models/baseline.keras}: the CNN of the lecture.
+        \item \code{models/teacher.keras}: a wider CNN.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.80\textwidth}@{}}
+    Lab files & \code{Labs/day06/}. Run the commands from this folder. \\
+    Notebook  & \code{../../.venv/bin/jupyter lab compression.ipynb} \\
+    Dataset   & Fashion-MNIST. The first cell downloads it: about 30 MB. \\
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The two models are trained. A training from the start needs too
+          much time for a lab.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{From two models to one plot}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.2cm, minimum height=0.9cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (base) at (0,0.7)  {Baseline};
+    \node[b] (teach) at (0,-0.9) {Teacher};
+    \node[b, draw=darkcyan] (prune) at (2.9,0.7) {Part A:\\pruning};
+    \node[b, draw=treegreen] (dist) at (2.9,-0.9) {Part B:\\distillation};
+    \node[b, draw=cardinalred] (quant) at (5.8,-0.1) {Part C:\\quantize};
+    \node[b] (plot) at (8.5,-0.1) {Plot and\\selection};
+    \draw[->] (base) -- (prune); \draw[->] (teach) -- (dist);
+    \draw[->] (prune.east) -- (quant.west);
+    \draw[->] (dist.east) -- (quant.west);
+    \draw[->] (quant) -- (plot);
+    \node[lab] at (2.9,1.45) {4 candidates};
+    \node[lab] at (2.9,-1.65) {2 candidates};
+    \node[lab] at (5.8,-0.85) {7 models,\\14 files};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Each part adds models to one list of candidates. The baseline is
+          the first candidate.
+    \item Part C converts each candidate to a \code{float32} file and to an
+          \code{int8} file, and it measures four numbers for each file: the
+          size, the accuracy, the latency, and the peak of the activations.
+    \item An experiment starts only when the check of its task prints
+          \code{complete}.
+  \end{itemize}
+  \keypoint{The latency of this lab is the latency of your laptop. Day 9
+    measures the same models on the boards.}
+\end{frame}
