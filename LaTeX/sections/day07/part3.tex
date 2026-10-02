@@ -5,6 +5,635 @@
 % part teaches layer fusion, precision calibration, and dynamic shapes with
 % tools that run on the Raspberry Pi. Exercise: fuse a convolution, a batch
 % normalization, and a ReLU on paper.
+%
+% The measured numbers of this part are results of an experiment of this
+% course on the work computer: MobileNetV2 of torchvision with its ImageNet
+% weights, one thread, on an x86 processor with AVX2. The latencies say
+% nothing about a board. The accuracy is the accuracy on 500 validation
+% images of the dataset Imagenette (10 classes of ImageNet). Each frame with
+% such a number says so in its source line.
 
 \theorypart{Graph optimization}%
   {fuse a convolution, a batch normalization, and a ReLU on paper}
+
+% ------------------------------------------------------------- the overview
+\begin{frame}{You do not run the graph that you trained}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.50\textwidth}r@{}}
+    \toprule
+    \textbf{MobileNetV2} & \textbf{Size of the graph} \\
+    \midrule
+    The PyTorch model & 141 layers \\
+    ONNX file, export with no optimization & 560 nodes \\
+    ONNX file, normal export & 100 nodes \\
+    The same file in ONNX Runtime, after all optimizations & 56 nodes \\
+    LiteRT file & 70 operators \\
+    NCNN file & 77 layers \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The PyTorch model has 52 convolutions, 52 batch normalizations,
+          35 ReLU6 activations, 1 dropout, and 1 fully connected layer.
+    \item All these graphs give the same class for an image. Their outputs
+          differ only by the rounding.
+    \item The optimizer removes work. It does not remove information.
+  \end{itemize}
+  \keypoint{An optimizer changes the graph before the first inference.
+    After that, each inference does less work.}
+  \source{An export of this course from one PyTorch model.}
+\end{frame}
+
+\begin{frame}{Six jobs of a graph optimizer}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.48\textwidth}L{0.19\textwidth}@{}}
+    \toprule
+    \textbf{Job} & \textbf{What it does} & \textbf{The result} \\
+    \midrule
+    Constant folding & It calculates each value that never changes, one
+                       time & The same \\
+    Removal of unused nodes & It removes each node that no output needs
+                     & The same \\
+    Operator fusion  & It makes one operator from operators in a row
+                     & The same \\
+    Memory layout    & It puts the values of a tensor in the order that
+                       the kernels want & The same \\
+    Shape planning   & It calculates the size of each tensor and plans the
+                       memory & The same \\
+    Precision selection & It changes \code{float32} to \code{float16} or
+                       to \code{int8} & It changes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item ``The same'' means: the same to about 6 digits. The order of the
+          additions changes, so the rounding changes.
+    \item Only the last job needs data: a calibration set, and a test of
+          the accuracy.
+  \end{itemize}
+\end{frame}
+
+% --------------------------------------------------------- constant folding
+\begin{frame}{Constant folding}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      g/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=1.25cm, minimum height=0.55cm, align=center},
+      k/.style={draw=darkorange, rounded corners=2pt, fill=darkorange!15,
+                minimum width=1.25cm, minimum height=0.55cm, align=center}]
+    \node[coolgray] at (2.0,1.0) {before};
+    \node[k] (s) at (0,0)    {Shape};
+    \node[k] (e) at (1.6,0)  {Expand};
+    \node[k] (c) at (3.2,0)  {Cast};
+    \node[g] (b) at (4.8,0)  {Batch norm.};
+    \draw[->] (s) -- (e); \draw[->] (e) -- (c); \draw[->] (c) -- (b);
+    \node[coolgray] at (8.3,1.0) {after};
+    \node[k] (v) at (7.4,0)  {Constant};
+    \node[g] (b2) at (9.2,0) {Batch norm.};
+    \draw[->] (v) -- (b2);
+    \draw[->, coolgray, line width=1pt] (5.75,0) -- (6.55,0);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item A node with only constant inputs gives the same output at each
+          inference. The optimizer runs the node one time and stores the
+          output.
+    \item The export of MobileNetV2 with no optimization has 560 nodes.
+          Most of them prepare the parameters of the batch normalizations:
+          127 \code{Constant}, 122 \code{CastLike}, 104 \code{Expand}, and
+          52 \code{Shape}.
+    \item The optimizer of the exporter folds these nodes. With the fusion
+          of the next frames, 100 nodes stay.
+    \item With a static input shape, each calculation of a shape is also a
+          constant.
+  \end{itemize}
+  \source{An export of this course with \texttt{torch.onnx.export}, with
+    and without the option \texttt{optimize}.}
+\end{frame}
+
+\begin{frame}{Removal of unused nodes}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Node} & \textbf{Why it can go} \\
+    \midrule
+    Dropout  & In an inference, it gives its input as its output. \\
+    Identity & It only copies a tensor. \\
+    A node for the training & The loss, or a second output that only the
+                               training reads. No output of the deployed
+                               model needs it. \\
+    Two equal subgraphs & They have the same inputs and the same
+                          operators. One of them is enough. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The optimizer starts at the outputs and goes back through the
+          graph. A node that it does not reach has no reader.
+    \item Put the model in the mode \code{eval()} before the export. A
+          model in the training mode keeps its dropout, and its batch
+          normalizations use the statistics of the batch.
+  \end{itemize}
+  \keypoint{A node that no output needs costs time at each inference.
+    After the export, check that the file has only the nodes of the
+    inference.}
+\end{frame}
+
+% ------------------------------------------------------------------ fusion
+\begin{frame}{Operator fusion}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      g/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=1.5cm, minimum height=0.6cm, align=center},
+      f/.style={draw=cardinalred, rounded corners=2pt, fill=cardinalred!12,
+                minimum width=2.6cm, minimum height=0.6cm, align=center},
+      m/.style={draw=darkcyan, fill=darkcyan!20, minimum width=0.5cm,
+                minimum height=0.6cm}]
+    \node[m] (i) at (0,0) {};
+    \node[g] (a) at (1.5,0) {Convolution};
+    \node[m] (t1) at (3.0,0) {};
+    \node[g] (b) at (4.5,0) {Batch norm.};
+    \node[m] (t2) at (6.0,0) {};
+    \node[g] (c) at (7.5,0) {ReLU};
+    \node[m] (o) at (9.0,0) {};
+    \foreach \a/\b in {i/a, a/t1, t1/b, b/t2, t2/c, c/o} { \draw[->] (\a) -- (\b); }
+    \node[m] (i2) at (2.4,-1.1) {};
+    \node[f] (d) at (4.5,-1.1) {Convolution with ReLU};
+    \node[m] (o2) at (6.6,-1.1) {};
+    \draw[->] (i2) -- (d); \draw[->] (d) -- (o2);
+    \node[darkcyan!80!black, anchor=west] at (7.0,-1.1)
+      {cyan: a tensor in the memory};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Each operator reads its input from the memory and writes its
+          output to the memory. Three operators make three passes.
+    \item The batch normalization and the ReLU do very little arithmetic
+          for each byte. They are memory-bound (Part 1).
+    \item The fused operator makes one pass. The values between the steps
+          stay in a register.
+    \item The first layer of MobileNetV2 in \code{float32}: the three
+          operators move 8.2 MB. The fused operator moves 2.1 MB.
+  \end{itemize}
+  \keypoint{Fusion removes complete passes over the memory. It is the most
+    important optimization for memory-bound operators.}
+  \source{A calculation: an input of $224 \times 224 \times 3$ and a
+    feature map of $112 \times 112 \times 32$, each tensor one time.}
+\end{frame}
+
+\begin{frame}{Fold the batch normalization into the convolution}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      In an inference, the two operators are:
+      \[
+        z = W * x + b
+      \]
+      \[
+        y = \gamma \, \frac{z - \mu}{\sqrt{\sigma^2 + \varepsilon}} + \beta
+      \]
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      One convolution gives the same $y$:
+      \[
+        s = \frac{\gamma}{\sqrt{\sigma^2 + \varepsilon}}
+      \]
+      \[
+        W' = s\,W \qquad b' = s\,(b - \mu) + \beta
+      \]
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item $\gamma$ and $\beta$ are trained. $\mu$ and $\sigma^2$ are the
+          mean and the variance that the training collected. After the
+          training, all four are constants.
+    \item Each output channel has its own $s$.
+    \item The check on the first layer of MobileNetV2: the largest
+          difference between the two outputs is $9.5 \times 10^{-7}$. The
+          largest output is 3.1.
+    \item The model loses 68\,224 values of its batch normalizations and
+          gets 17\,056 bias values.
+  \end{itemize}
+  \keypoint{The folding is constant folding with algebra. After it, the
+    batch normalization costs nothing.}
+  \source{Formulas: \emph{Machine Learning Systems}, Volume I, chapter 13.
+    Check and counts: an experiment of this course.}
+\end{frame}
+
+\begin{frame}{Fuse the activation}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{How}
+        \begin{itemize}
+          \item ReLU is $\max(0, y)$. ReLU6 limits $y$ to the range from 0
+                to 6.
+          \item The kernel of the convolution applies the limit before it
+                writes each output value.
+          \item In \code{int8}, the limit is the limit of the integer
+                range. It costs nothing.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{How you see it}
+        \begin{itemize}
+          \item LiteRT: the operator \code{CONV\_2D} has the property
+                ``fused activation''.
+          \item ONNX Runtime: the node \code{FusedConv}.
+          \item NCNN: the convolution layer has the activation as a
+                parameter.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The LiteRT file of MobileNetV2 from the export of this course has
+          no activation operator. All 35 are in the convolutions.
+    \item A fusion is possible only when one operator reads the middle
+          tensor. A tensor with two readers must exist in the memory.
+    \item Some runtimes also fuse the addition of a residual connection
+          into the convolution before it.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Measured: optimization levels of ONNX Runtime}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.14\textwidth}rL{0.46\textwidth}rr@{}}
+    \toprule
+    \textbf{Level} & \textbf{Nodes} & \textbf{What changes}
+    & \textbf{Latency} & \textbf{Load} \\
+    \midrule
+    Disabled & 152 & Nothing & 27.7 ms & 0.067 s \\
+    Basic    & 100 & The 52 batch normalizations go into the convolutions
+             & 26.1 ms & 0.078 s \\
+    Extended & 65  & 35 activations go into the convolutions
+             & 25.2 ms & 0.086 s \\
+    All      & 56  & A memory layout for the SIMD kernels. The 10 additions
+                     go into the convolutions.
+             & 11.5 ms & 0.097 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The file is an export of MobileNetV2 that keeps its batch
+          normalizations.
+    \item The two fusion steps give 9 percent. The memory layout gives a
+          factor of 2.2 on this processor.
+    \item The output of each level differs from the first output by 0.0001
+          percent of the largest value. The load needs 0.03 s more.
+  \end{itemize}
+  \source{An experiment of this course on an x86 processor, one thread.}
+\end{frame}
+
+% ------------------------------------------------------------------ layout
+\begin{frame}{Memory layout}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.55cm, y=0.5cm]
+    \node[anchor=east] at (-0.3,0.5) {NCHW};
+    \foreach \i/\c/\l in {0/cardinalred!45/R, 1/cardinalred!45/R,
+        2/cardinalred!45/R, 3/cardinalred!45/R, 4/treegreen!45/G,
+        5/treegreen!45/G, 6/treegreen!45/G, 7/treegreen!45/G,
+        8/skyblue!50/B, 9/skyblue!50/B, 10/skyblue!50/B, 11/skyblue!50/B} {
+      \draw[coolgray, fill=\c] (\i,0) rectangle (\i+1,1);
+      \node at (\i+0.5,0.5) {\l};
+    }
+    \node[anchor=west] at (12.3,0.5) {channel by channel};
+    \node[anchor=east] at (-0.3,-1.0) {NHWC};
+    \foreach \i/\c/\l in {0/cardinalred!45/R, 1/treegreen!45/G,
+        2/skyblue!50/B, 3/cardinalred!45/R, 4/treegreen!45/G,
+        5/skyblue!50/B, 6/cardinalred!45/R, 7/treegreen!45/G,
+        8/skyblue!50/B, 9/cardinalred!45/R, 10/treegreen!45/G,
+        11/skyblue!50/B} {
+      \draw[coolgray, fill=\c] (\i,-1.5) rectangle (\i+1,-0.5);
+      \node at (\i+0.5,-1.0) {\l};
+    }
+    \node[anchor=west] at (12.3,-1.0) {pixel by pixel};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The figure shows an image of $2 \times 2$ pixels with 3 channels
+          in the memory. The same 12 values, in two orders.
+    \item PyTorch and ONNX use NCHW. LiteRT and XNNPACK use NHWC. A SIMD
+          kernel is fast when the values that it needs lie side by side.
+    \item ONNX Runtime on x86 uses a third layout: blocks of 8 channels,
+          which fill one AVX2 register. This is the last level of the
+          table before.
+    \item Where two layouts meet, the converter adds a \code{Transpose}
+          operator. The LiteRT file from PyTorch has one at its input.
+  \end{itemize}
+  \keypoint{Check the input shape of each file in Netron: $1 \times 3
+    \times 224 \times 224$ or $1 \times 224 \times 224 \times 3$. Your
+    pre-processing must give this order.}
+\end{frame}
+
+% ------------------------------------------------------------------ shapes
+\begin{frame}{Static shapes: the runtime plans one time}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{With all shapes known}
+        \begin{itemize}
+          \item The size of each tensor is a constant.
+          \item The runtime plans the memory before the first inference:
+                one arena, as on Day 3.
+          \item Two tensors that never live at the same time share the
+                same bytes.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{What you gain}
+        \begin{itemize}
+          \item No memory allocation during an inference.
+          \item A peak memory that you know before the deployment.
+          \item A latency that changes little from run to run.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item In LiteRT, the call \code{allocate\_tensors()} does this plan.
+          For MobileNetV2 it needs 10 ms, one time.
+    \item Some backends accept only static shapes. An NPU is the usual
+          example.
+  \end{itemize}
+  \source{Time of the plan: an experiment of this course on an x86
+    processor.}
+\end{frame}
+
+\begin{frame}[fragile]{Dynamic shapes: one file, more input sizes}
+\begin{lstlisting}[style=python]
+batch = torch.export.Dim("batch", min=1, max=64)
+
+torch.onnx.export(model, (example,), "mnv2_dynamic.onnx",
+                  input_names=["image"], output_names=["logits"],
+                  dynamic_shapes={"x": {0: batch}},
+                  dynamo=True, external_data=False)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A dimension of the input gets a name in place of a number. Netron
+          shows the input shape \code{batch} $\times\ 3 \times 224 \times
+          224$.
+    \item The key \code{"x"} is the name of the input in the function
+          \code{forward} of the model.
+    \item The static file accepts only its shape. With 2 images, ONNX
+          Runtime stops with \code{Got: 2 Expected: 1}.
+    \item The usual dynamic dimensions: the batch size, the size of the
+          image, the length of a text.
+  \end{itemize}
+  \keypoint{A dynamic dimension is a decision at the export. The runtime
+    cannot add it later.}
+\end{frame}
+
+\begin{frame}{Measured: static and dynamic shapes}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}L{0.66\textwidth}r@{}}
+        \toprule
+        \textbf{ONNX Runtime} & \textbf{ms} \\
+        \midrule
+        Static file, 1 image          & 11.7 \\
+        Dynamic file, 1 image         & 11.3 \\
+        Dynamic file, 4 images, first run & 57.8 \\
+        Dynamic file, 4 images, next runs & 46.1 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+        \toprule
+        \textbf{Dynamic image size} & \textbf{ms} \\
+        \midrule
+        $128 \times 128$ & 4.3 \\
+        $160 \times 160$ & 6.2 \\
+        $192 \times 192$ & 8.7 \\
+        $224 \times 224$ & 11.8 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item For one image, the dynamic file costs nothing here.
+    \item The first run with a new shape is 26 percent slower: the runtime
+          plans the memory again. LiteRT needs 15 ms for a new plan.
+    \item A batch of 4 needs 11.5 ms for each image: no gain on one core.
+          A smaller image is faster: the time follows the number of pixels.
+  \end{itemize}
+  \keypoint{On an edge device, start with a static shape and a batch of 1.
+    Use a dynamic dimension only when the product needs it.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% --------------------------------------------------------------- precision
+\begin{frame}{Precision selection}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}L{0.40\textwidth}rrr@{}}
+    \toprule
+    \textbf{LiteRT file of MobileNetV2} & \textbf{Bytes}
+    & \textbf{Accuracy} & \textbf{Latency} \\
+    \midrule
+    \code{float32}                              & 14\,078\,620 & 77.4 & 11.7 ms \\
+    Weights in \code{int8}, the rest in \code{float32}
+                                                & 3\,918\,032  & 77.6 & 11.9 ms \\
+    Dynamic range                               & 3\,887\,696  & 77.6 & 28.5 ms \\
+    Full \code{int8}, with calibration          & 4\,107\,968  & 75.2 & 16.0 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Accuracy in percent on 500 images of 10 ImageNet classes.
+    \item Each \code{int8} file has 28 to 29 percent of the size of the
+          \code{float32} file.
+    \item Full \code{int8} loses 2.2 points here. Is this acceptable? The
+          requirement of the product decides.
+    \item The latency is from an x86 processor: \code{int8} gives no gain
+          there. On the Raspberry Pi 5, the published gain is a factor of
+          2.9 (Part 2).
+  \end{itemize}
+  \keypoint{The precision is a decision with three numbers: size,
+    accuracy, and latency. Measure the latency on the target.}
+  \source{An experiment of this course with the validation images of
+    Imagenette, on an x86 processor with AVX2.}
+\end{frame}
+
+\begin{frame}[fragile]{Precision calibration with ONNX Runtime}
+\begin{lstlisting}[style=python]
+from onnxruntime.quantization import (CalibrationDataReader, QuantFormat,
+                                      QuantType, quantize_static)
+
+class Reader(CalibrationDataReader):
+    def __init__(self, images):
+        self.items = iter([{"image": x[None]} for x in images])
+    def get_next(self):
+        return next(self.items, None)
+
+quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
+                quant_format=QuantFormat.QDQ, per_channel=True,
+                activation_type=QuantType.QUInt8, weight_type=QuantType.QInt8)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The tool is a part of the Python package of ONNX Runtime. Its
+          function \code{quant\_pre\_process} makes the prepared file.
+    \item The reader gives the calibration images one by one, with the
+          pre-processing of the model. The tool runs the model and records
+          the range of each activation (Day 4).
+    \item The result is an ONNX file with \code{QuantizeLinear} and
+          \code{DequantizeLinear} nodes. The runtime fuses them into
+          \code{int8} operators.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Measured: the calibration data decides}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.48\textwidth}rr@{}}
+    \toprule
+    \textbf{Calibration set} & \textbf{ONNX Runtime} & \textbf{LiteRT} \\
+    \midrule
+    No quantization: \code{float32}     & 77.4 & 77.4 \\
+    100 training images, range from the minimum and the maximum
+                                        & 71.0 & 75.2 \\
+    100 training images, range from a percentile & 74.4 & not measured \\
+    100 images of random noise          & 14.4 & 12.8 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Accuracy in percent of the \code{int8} file, on 500 validation
+          images. The calibration images come from the training set.
+    \item With noise, the tool records ranges that no real image gives. The
+          model is then almost random.
+    \item The method for the range also counts: 3.4 points between two
+          settings of one tool.
+  \end{itemize}
+  \keypoint{The same rule as on Day 4: calibrate with data that looks like
+    the data of the product. Then test the accuracy.}
+  \source{An experiment of this course with Imagenette.}
+\end{frame}
+
+% -------------------------------------------------------------------- check
+\begin{frame}{Check what the optimizer did}
+  \begin{enumerate}
+    \item \textbf{Look.} Open the file before and after in Netron. Find the
+          operators that are gone and the operators that are new.
+    \item \textbf{Count.} Write the number of operators of each type.
+    \item \textbf{Compare.} Give the two files the same input. The outputs
+          must agree to about 6 digits for \code{float32}.
+    \item \textbf{Measure.} The latency, the load time, and for a new
+          precision the accuracy.
+  \end{enumerate}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
+    \toprule
+    \textbf{Runtime} & \textbf{Where you see the optimized graph} \\
+    \midrule
+    LiteRT, NCNN & In the exported file: the converter did the work. \\
+    ONNX Runtime & Set \code{options.optimized\_model\_filepath}. The
+                   runtime then writes the graph that it runs. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \keypoint{Do not trust a setting. Look at the graph that runs.}
+\end{frame}
+
+\begin{frame}{The lab of today}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lL{0.20\textwidth}rL{0.56\textwidth}@{}}
+    \toprule
+    & \textbf{Part} & \textbf{Time} & \textbf{You do} \\
+    \midrule
+    A & Setup & 35 min & Start the Raspberry Pi, connect with SSH, and
+                         test the camera. \\
+    B & First inference & 35 min & Run MobileNetV2 with LiteRT on test
+                         images and on the camera. \\
+    C & Export and inspect & 45 min & Export one PyTorch model to ONNX
+                         with a static shape and with a dynamic shape, and
+                         to LiteRT. Find the fused operators in Netron. \\
+    D & Measure & 35 min & Measure the latency for each runtime, thread
+                         count, and precision. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item You hand in the latency table and one Decision Log entry.
+    \item The check: the table has two runtimes or more, two thread counts
+          or more, and two precisions or more.
+    \item Before Part D, write your prediction for each row. The numbers
+          of the lecture are from an x86 processor. Your table gives the
+          numbers of the Raspberry Pi.
+  \end{itemize}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{fuse three operators on paper}{%
+  \small
+  A convolution has one filter with three weights and a bias. Then come a
+  batch normalization and a ReLU. Ignore $\varepsilon$.
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.60\textwidth}@{}}
+    \toprule
+    Convolution & $W = (2,\ -1,\ 0.5)$ and $b = 1$ \\
+    Batch normalization & $\gamma = 3$, $\beta = -1$, $\mu = 3$,
+                          $\sigma = 2$ \\
+    \bottomrule
+  \end{tabular}}
+  \begin{enumerate}
+    \item Calculate $s$, the weights $W'$, and the bias $b'$ of the fused
+          convolution.
+    \item The input is $x = (2,\ 1,\ 4)$. Calculate the output with the
+          three operators, and then with the fused operator.
+    \item Do the same for $x = (0,\ 2,\ 2)$. Where is the ReLU in the fused
+          operator?
+    \item The input tensor has 0.57 MB and each later tensor has 1.53 MB.
+          Each operator reads its input and writes its output. How many MB
+          move with three operators, and with the fused operator?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{fuse three operators on paper}{%
+  \small
+  \begin{enumerate}
+    \item $s = \gamma / \sigma = 1.5$. So $W' = (3,\ -1.5,\ 0.75)$ and
+          $b' = 1.5 \times (1 - 3) - 1 = -4$.
+    \item Three operators: $z = 4 - 1 + 2 + 1 = 6$. Then
+          $y = 3 \times (6 - 3) / 2 - 1 = 3.5$. The ReLU keeps 3.5.
+          Fused: $6 - 1.5 + 3 - 4 = 3.5$.
+    \item Three operators: $z = 0 - 2 + 1 + 1 = 0$. Then
+          $y = 3 \times (0 - 3) / 2 - 1 = -5.5$. The ReLU gives 0.
+          Fused: $0 - 3 + 1.5 - 4 = -5.5$, and the limit at the end of the
+          kernel gives 0. The ReLU is one comparison before the kernel
+          writes the value.
+    \item Three operators: $(0.57 + 1.53) + (1.53 + 1.53) + (1.53 + 1.53)
+          = 8.22$ MB. Fused: $0.57 + 1.53 = 2.10$ MB. The fusion removes 74
+          percent of the bytes that move.
+  \end{enumerate}
+  \vskip 0.1em
+  The fused operator has 4 values in place of 8. The result is the same
+  for each input.
+}
