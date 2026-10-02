@@ -54,7 +54,7 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `torchvision` | 0.29.1 (CPU version) | `day01` |
 | `matplotlib` | 3.10.9 | `day01`, `day02` (`dataset.ipynb`, `logger.py --plot`) |
 | `nbconvert` | 7.17.1 | Run of the notebooks with no browser |
-| `tensorflow-cpu` | 2.21.0 | `day03` (`motion_classifier.ipynb`: training and conversion), `day04` (`quantization.ipynb`: quantization and conversion to `int8`) |
+| `tensorflow-cpu` | 2.21.0 | `day03` (`motion_classifier.ipynb`: training and conversion), `day04` (`quantization.ipynb`: quantization and conversion to `int8`), `day06` (`compression.ipynb`: pruning, distillation, and quantization) |
 | `keras` | 3.12.4 | `day03`, `day04` (installed with `tensorflow-cpu`) |
 | `onnx`, `onnxruntime` | 1.23.1, 1.23.2 | Day 3 lecture (export from PyTorch) |
 
