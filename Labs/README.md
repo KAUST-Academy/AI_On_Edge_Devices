@@ -23,6 +23,7 @@ Each lab adds one row here.
 | Day 1 | Toolchain, sensor tests, and model budgets | XIAOML Kit | `day01/` | not tested on hardware. The sketches compile. The notebook runs on a laptop. |
 | Day 2 | MicroPython, sensor input, and a motion dataset | XIAOML Kit | `day02/` | not tested on hardware. The laptop programs and the notebook run with a simulated board. The fallback sketch compiles. |
 | Day 3 | From a trained model to the microcontroller | XIAOML Kit | `day03/` | not tested on hardware. The notebook runs on a laptop. The sketches compile. A host build of the runtime confirms the model and the feature code. |
+| Day 4 | Quantization | XIAOML Kit | `day04/` | not tested on hardware. The notebook runs on a laptop. The sketch compiles for the two models. A host build of the runtime runs the sketch file and confirms the two models and the quantization code. |
 
 ## Rules for every lab folder
 
