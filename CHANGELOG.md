@@ -1,4 +1,4 @@
-##  (2026-10-01)
+##  (2026-10-02)
 
 
 ### Features
@@ -9,6 +9,19 @@
 * **day01:** add theory block 2 on model cost ([2311d31](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/2311d313ec3f7c427df459b2e97719b013278ba9))
 * **day01:** add theory block 3 on the edge AI workflow ([884beb3](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/884beb3d5d123c6283c0a7fb19c4631c99e84599))
 * **day01:** add theory deck skeleton ([69cb4f9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/69cb4f90a3aaa0918281bcedd0a2aa42ec6dd307))
+* **day02-lab:** add lab deck for Day 2 ([c6c2fc2](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/c6c2fc2183bce8d4fd4abe06c30eaee73a27748e))
+* **day02-lab:** add the lab files of Day 2 ([93c3c13](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/93c3c13e39ceebb37e3531e811d73f08c4e2a1ab))
+* **day02:** add theory part 1 on microcontroller anatomy ([f8fe25a](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/f8fe25afd2563fada7bb3124df469c43d0bf0680))
+* **day02:** add theory part 2 on sensors and sampling ([ab66677](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/ab6667788ba60d4c23fe3e0de7e7aeb3bc997bd3))
+* **day02:** add theory part 3 on sensor data engineering ([9f4bf83](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/9f4bf83789ed7799fee7b6e47d2138488c64f7aa))
+* **day03-lab:** add lab deck for Day 3 ([4f6eedc](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/4f6eedc36f270636e28fcfc5cabbc603eb5fdbec))
+* **day03-lab:** add the lab files of Day 3 ([7b290ff](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/7b290ffc095870eb24d13a9e394ae803114d68c0))
+* **day03:** add theory part 1 on deployment formats ([59dc734](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/59dc73478d96a0b17861bf32c694048ce33f160c))
+* **day03:** add theory part 2 on TensorFlow Lite Micro ([8299292](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/82992923090625996649f1fa405b23ee459f9921))
+* **day03:** add theory part 3 on features for time series ([c6b5d7c](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/c6b5d7c82b2f4632e9f8f054ee47af1953469f7a))
+* **day04:** add theory part 1 on number formats ([dfd36d2](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/dfd36d22401784b8272d8eaebd7a66b109fcfdc6))
+* **day04:** add theory part 2 on post-training quantization ([83cf89a](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/83cf89a06b102ec966c2743b25512ba8f37bda22))
+* **day04:** add theory part 3 on quantization-aware training ([d2dd525](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/d2dd5254d592447abce708add8a8b642b6f63d3b))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
 * **release:** Version 1 ([85acb78](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/85acb78cf1fad575d1648cf150593335fee4b255))
 
