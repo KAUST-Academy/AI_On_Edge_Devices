@@ -34,6 +34,16 @@
 * **day06:** add theory part 1 on pruning ([93631e1](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/93631e170866b54a94c7b35979911a282dd121b0))
 * **day06:** add theory part 2 on distillation ([05b13fc](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/05b13fc83565ef20ddf7afbacc81d9ab05e980eb))
 * **day06:** add theory part 3 on efficient design ([fba8a0e](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/fba8a0e9c7e08c9baed93b13567a6ec59acca225))
+* **day07-lab:** add lab deck for Day 7 ([9ac4ccb](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/9ac4ccbc7df684f08a9c3c2e5245ff55092aee4e))
+* **day07-lab:** add the lab files of Day 7 ([bd2273c](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/bd2273c36f6378f0ae2b231c53f7d004574671a7))
+* **day07:** add theory part 1 on acceleration fundamentals ([8249153](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/8249153d448c1bbf0c613cacfd338bdf67a1a204))
+* **day07:** add theory part 2 on the runtime stack ([c141c3d](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/c141c3df7ad7e22ac4ddfb5e5fc2dbc6f92e90d0))
+* **day07:** add theory part 3 on graph optimization ([73c0595](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/73c059504e411307990ec55f43f4a2ef064bb39c))
+* **day08-lab:** add lab deck for Day 8 ([4db7d9b](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/4db7d9b8bfbf16bc20530568f63e30eeda62411e))
+* **day08-lab:** add object detection lab files ([1342974](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/1342974d2713b119fa19a7d768a232f83ddd6e6b))
+* **day08:** add theory part 1 on detection models ([c4b9302](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/c4b9302f821a112569dce605c9645e734aeabd3b))
+* **day08:** add theory part 2 on metrics and data ([a46db0c](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/a46db0c0f3187b6a39a57d687784ebd22284ecd2))
+* **day08:** add theory part 3 on deployment ([3b8feef](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/3b8feefe40813606e4e424e0b04fb2c8931b4958))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
 * **release:** Version 1 ([85acb78](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/85acb78cf1fad575d1648cf150593335fee4b255))
 
@@ -43,5 +53,6 @@
 * **day01:** correct the layout of five frames in block 1 ([6e7a27e](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/6e7a27ebbccfd125b9e3aeefd27d4b402e4525e9))
 * **day01:** give the model size of MobileNetV2 with 1 MB = 1024 KB ([678dd2f](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/678dd2f06ff2b2ed19bbfc7f06776602928a04c7))
 * **day04:** correct the gradient rule of the estimator frame ([32ad2bd](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/32ad2bdac6d20cbb4d320d5ae8a3740f7a7a932e))
+* **docs:** join the rows of the reuse table ([9880079](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/98800797cbce9afb42742fc66df66ece5c3dcfd4))
 * **setup:** keep the figure of the test deck inside its column ([b20aedb](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/b20aedb5b86e0a0306cfa4697546b2d57cd62f3c))
 
