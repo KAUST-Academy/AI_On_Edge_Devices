@@ -1,0 +1,19 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item An audio model does not take samples. It takes a small image of the
+          sound: MFCC features of short frames.
+    \item A keyword spotting model needs a class for unknown words and a class
+          for noise. You tune it with the false accept rate and the false
+          reject rate.
+    \item For a vision model, the peak activation memory decides if the model
+          fits. A smaller image and a narrower network decrease it.
+    \item A stream gives many results each second. Smoothing and a threshold
+          turn them into one decision. A cascade keeps the large device
+          asleep.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{On a microcontroller, the model is one part of a pipeline. The
+            features before the model and the post-processing after the model
+            decide the result as much as the model.}
+\end{frame}
