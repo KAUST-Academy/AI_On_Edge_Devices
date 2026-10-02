@@ -44,6 +44,7 @@
 * **day08:** add theory part 1 on detection models ([c4b9302](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/c4b9302f821a112569dce605c9645e734aeabd3b))
 * **day08:** add theory part 2 on metrics and data ([a46db0c](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/a46db0c0f3187b6a39a57d687784ebd22284ecd2))
 * **day08:** add theory part 3 on deployment ([3b8feef](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/3b8feefe40813606e4e424e0b04fb2c8931b4958))
+* **day09:** add theory part 1 on what to measure ([7db8c82](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/7db8c82904af88513f049cc0ec840e28078240fd))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
 * **release:** Version 1 ([85acb78](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/85acb78cf1fad575d1648cf150593335fee4b255))
 
