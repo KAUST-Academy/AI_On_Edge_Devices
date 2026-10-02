@@ -1,0 +1,589 @@
+// image_classifier - image classification with the Edge Impulse library
+//
+// Day 5 lab, Part B. Edge Impulse Studio trains the image model with
+// transfer learning and makes an Arduino library. This sketch runs that
+// library with the camera of the kit and shows the class on the display.
+//
+// Board:     XIAOML Kit (XIAO ESP32S3 Sense with the expansion board)
+// FQBN:      esp32:esp32:XIAO_ESP32S3:PSRAM=opi (Tools > PSRAM > OPI PSRAM)
+// Core:      esp32 by Espressif Systems 3.3.12. If the build of the Edge
+//            Impulse library fails with this core, use the core 2.0.17.
+// Libraries: the Arduino library of your Edge Impulse project (model type
+//            "Quantized (int8)"), U8g2 2.36.19
+// Serial:    115200 baud
+//
+// Hardware status: changed code, not tested on hardware (prepared on
+// 2026-10-02). The sketch needs the library of an Edge Impulse project.
+// Only the Studio can make that library. The sketch compiles with a
+// replacement for that library, which is not in this repository.
+//
+// Before you compile: change the first #include line to the name of the
+// header of your library. The name comes from the name of your project.
+//
+// Credits: this sketch is a copy of
+// XIAOML_Kit_code/XIAOML-Kit-Img_Class_OLED_Gen/XIAOML-Kit-Img_Class_OLED_Gen.ino
+// of "XIAO ESP32S3 Sense" by Marcelo Rovai
+// (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0). That sketch adapts
+// the example "esp32_camera" of Edge Impulse. The notice of Edge Impulse
+// follows this comment.
+// Changes from the source:
+//   - This header comment, and the comment at the #include line.
+//   - The two pin names of the camera bus are the names of the core 3.x
+//     (pin_sccb_sda and pin_sccb_scl).
+//   - The sketch waits 3 s for the Serial Monitor, not for all time. So it
+//     also starts with no laptop.
+//   - New: the capture time, the free memory, and the time of one loop in
+//     the output, for Part C of the lab.
+//   - New: the setting VOTE_FRAMES. The display shows a class only when the
+//     last frames agree (Part 3 of the Day 5 lecture).
+
+/* Edge Impulse Arduino examples
+ * Copyright (c) 2022 EdgeImpulse Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+// The source says: tested with the core 2.0.17 and the XIAO ESP32S3 Sense
+// V1.0 and V1.1. The model must use TFLITE/INT8.
+
+/* Includes ---------------------------------------------------------------- */
+// Change this line to the header of the library of your project.
+#include <Box_versus_Wheel_-_XIAO_ESP32S3_inferencing.h>
+#include "edge-impulse-sdk/dsp/image/image.hpp"
+#include "esp_camera.h"
+
+// OLED display libraries
+#include <U8g2lib.h>
+#include <Wire.h>
+
+#define PWDN_GPIO_NUM     -1
+#define RESET_GPIO_NUM    -1
+#define XCLK_GPIO_NUM     10
+#define SIOD_GPIO_NUM     40
+#define SIOC_GPIO_NUM     39
+#define Y9_GPIO_NUM       48
+#define Y8_GPIO_NUM       11
+#define Y7_GPIO_NUM       12
+#define Y6_GPIO_NUM       14
+#define Y5_GPIO_NUM       16
+#define Y4_GPIO_NUM       18
+#define Y3_GPIO_NUM       17
+#define Y2_GPIO_NUM       15
+#define VSYNC_GPIO_NUM    38
+#define HREF_GPIO_NUM     47
+#define PCLK_GPIO_NUM     13
+
+/* Constant defines -------------------------------------------------------- */
+#define EI_CAMERA_RAW_FRAME_BUFFER_COLS           320
+#define EI_CAMERA_RAW_FRAME_BUFFER_ROWS           240
+#define EI_CAMERA_FRAME_BYTE_SIZE                 3
+
+// ---- Setting of Part B --------------------------------------------------------
+// Number of frames that must give the same class before the display shows
+// the class. 1: each frame alone.
+#define VOTE_FRAMES 3
+
+/* Private variables ------------------------------------------------------- */
+static bool debug_nn = false; // Set this to true to see e.g. features generated from the raw signal
+static bool is_initialised = false;
+uint8_t *snapshot_buf; //points to the output of the capture
+
+// OLED display initialization
+U8G2_SSD1306_72X40_ER_1_HW_I2C u8g2(U8G2_R2, U8X8_PIN_NONE);
+
+// Variables for inference results display
+String predicted_class = "NONE";
+float confidence = 0.0;
+unsigned long last_inference_time = 0;
+
+// Variables for the vote and for the measurements of Part C
+String vote_class = "";
+int vote_count = 0;
+unsigned long capture_ms = 0;
+unsigned long last_loop_ms = 0;
+
+static camera_config_t camera_config = {
+    .pin_pwdn = PWDN_GPIO_NUM,
+    .pin_reset = RESET_GPIO_NUM,
+    .pin_xclk = XCLK_GPIO_NUM,
+    .pin_sccb_sda = SIOD_GPIO_NUM,
+    .pin_sccb_scl = SIOC_GPIO_NUM,
+
+    .pin_d7 = Y9_GPIO_NUM,
+    .pin_d6 = Y8_GPIO_NUM,
+    .pin_d5 = Y7_GPIO_NUM,
+    .pin_d4 = Y6_GPIO_NUM,
+    .pin_d3 = Y5_GPIO_NUM,
+    .pin_d2 = Y4_GPIO_NUM,
+    .pin_d1 = Y3_GPIO_NUM,
+    .pin_d0 = Y2_GPIO_NUM,
+    .pin_vsync = VSYNC_GPIO_NUM,
+    .pin_href = HREF_GPIO_NUM,
+    .pin_pclk = PCLK_GPIO_NUM,
+
+    //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
+    .xclk_freq_hz = 20000000,
+    .ledc_timer = LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0,
+
+    .pixel_format = PIXFORMAT_JPEG, //YUV422,GRAYSCALE,RGB565,JPEG
+    .frame_size = FRAMESIZE_QVGA,    //QQVGA-UXGA Do not use sizes above QVGA when not JPEG
+
+    .jpeg_quality = 12, //0-63 lower number means higher quality
+    .fb_count = 1,       //if more than one, i2s runs in continuous mode. Use only with JPEG
+    .fb_location = CAMERA_FB_IN_PSRAM,
+    .grab_mode = CAMERA_GRAB_WHEN_EMPTY,
+};
+
+/* Function definitions ------------------------------------------------------- */
+bool ei_camera_init(void);
+void ei_camera_deinit(void);
+bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf);
+void display_inference_result(void);
+String abbreviate_class_name(String class_name);
+
+/**
+* @brief      Arduino setup function
+*/
+void setup()
+{
+    // put your setup code here, to run once:
+    Serial.begin(115200);
+    // Wait 3 s for the Serial Monitor. Then start also with no laptop.
+    const unsigned long serial_start = millis();
+    while (!Serial && millis() - serial_start < 3000) {
+        delay(10);
+    }
+    
+    Serial.println("XIAO ESP32S3 Image Classification with OLED Display");
+    
+    // Initialize OLED display
+    u8g2.begin();
+    u8g2.clearDisplay();
+    u8g2.setFont(u8g2_font_ncenB08_tr);
+    
+    // Show initialization message
+    u8g2.firstPage();
+    do {
+        u8g2.setCursor(5, 12);
+        u8g2.print("XIAOML");
+        u8g2.setCursor(2, 25);
+        u8g2.print("Starting");
+        u8g2.setCursor(5, 38);
+        u8g2.print("Camera");
+    } while (u8g2.nextPage());
+    
+    if (ei_camera_init() == false) {
+        ei_printf("Failed to initialize Camera!\r\n");
+        // Show error on display
+        u8g2.firstPage();
+        do {
+            u8g2.setCursor(5, 15);
+            u8g2.print("Camera");
+            u8g2.setCursor(10, 30);
+            u8g2.print("Error!");
+        } while (u8g2.nextPage());
+        while(1);
+    }
+    else {
+        ei_printf("Camera initialized\r\n");
+    }
+
+    // Show model information
+    ei_printf("Model: %s\n", EI_CLASSIFIER_PROJECT_NAME);
+    ei_printf("Classes: %d\n", EI_CLASSIFIER_LABEL_COUNT);
+    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+        ei_printf("  %d: %s\n", ix, ei_classifier_inferencing_categories[ix]);
+    }
+
+    ei_printf("Input: %d x %d pixels\n", EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
+    ei_printf("Vote: %d frames\n", VOTE_FRAMES);
+    ei_printf("PSRAM: %s\n", psramFound() ? "active" : "not active");
+    ei_printf("Free internal heap: %lu bytes, free PSRAM: %lu bytes\n",
+              (unsigned long)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+              (unsigned long)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+
+    ei_printf("\nStarting continuous inference in 2 seconds...\n");
+    ei_sleep(2000);
+    
+    // Clear display for inference results
+    u8g2.clearDisplay();
+}
+
+/**
+* @brief      Get data and run inferencing
+*
+* @param[in]  debug  Get debug info if true
+*/
+void loop()
+{
+    // instead of wait_ms, we'll wait on the signal, this allows threads to cancel us...
+    if (ei_sleep(5) != EI_IMPULSE_OK) {
+        return;
+    }
+
+    snapshot_buf = (uint8_t*)malloc(EI_CAMERA_RAW_FRAME_BUFFER_COLS * EI_CAMERA_RAW_FRAME_BUFFER_ROWS * EI_CAMERA_FRAME_BYTE_SIZE);
+
+    // check if allocation was successful
+    if(snapshot_buf == nullptr) {
+        ei_printf("ERR: Failed to allocate snapshot buffer!\n");
+        return;
+    }
+
+    ei::signal_t signal;
+    signal.total_length = EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT;
+    signal.get_data = &ei_camera_get_data;
+
+    const unsigned long capture_start = millis();
+    if (ei_camera_capture((size_t)EI_CLASSIFIER_INPUT_WIDTH, (size_t)EI_CLASSIFIER_INPUT_HEIGHT, snapshot_buf) == false) {
+        ei_printf("Failed to capture image\r\n");
+        free(snapshot_buf);
+        return;
+    }
+    capture_ms = millis() - capture_start;
+
+    // Run the classifier
+    ei_impulse_result_t result = { 0 };
+
+    EI_IMPULSE_ERROR err = run_classifier(&signal, &result, debug_nn);
+    if (err != EI_IMPULSE_OK) {
+        ei_printf("ERR: Failed to run classifier (%d)\n", err);
+        free(snapshot_buf);
+        return;
+    }
+
+    // Find the class with highest confidence
+    float max_confidence = 0.0;
+    String best_class = "UNKNOWN";
+    
+    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+        if (result.classification[ix].value > max_confidence) {
+            max_confidence = result.classification[ix].value;
+            best_class = String(result.classification[ix].label);
+        }
+    }
+    
+    // The vote: count the frames in sequence with the same class.
+    if (best_class == vote_class) {
+        vote_count++;
+    } else {
+        vote_class = best_class;
+        vote_count = 1;
+    }
+
+    // Update global variables for display
+    predicted_class = (vote_count >= VOTE_FRAMES) ? best_class : String("...");
+    confidence = max_confidence;
+    const unsigned long loop_ms = millis() - last_loop_ms;
+    last_loop_ms = millis();
+    last_inference_time = millis();
+    
+    // Display results on OLED
+    display_inference_result();
+
+    // print the predictions to serial
+    ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                result.timing.dsp, result.timing.classification, result.timing.anomaly);
+    ei_printf("Timing (Capture: %lu ms., Loop: %lu ms.), free internal heap: %lu bytes\n",
+                capture_ms, loop_ms,
+                (unsigned long)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+
+#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+    ei_printf("Object detection bounding boxes:\r\n");
+    for (uint32_t i = 0; i < result.bounding_boxes_count; i++) {
+        ei_impulse_result_bounding_box_t bb = result.bounding_boxes[i];
+        if (bb.value == 0) {
+            continue;
+        }
+        ei_printf("  %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\r\n",
+                bb.label,
+                bb.value,
+                bb.x,
+                bb.y,
+                bb.width,
+                bb.height);
+    }
+
+    // Print the prediction results (classification)
+#else
+    ei_printf("Predictions:\r\n");
+    for (uint16_t i = 0; i < EI_CLASSIFIER_LABEL_COUNT; i++) {
+        ei_printf("  %s: ", ei_classifier_inferencing_categories[i]);
+        ei_printf("%.5f\r\n", result.classification[i].value);
+    }
+    
+    // Print best prediction
+    ei_printf("Best: %s (%.1f%%), display: %s\r\n", best_class.c_str(), max_confidence * 100.0,
+              predicted_class.c_str());
+#endif
+
+    // Print anomaly result (if it exists)
+#if EI_CLASSIFIER_HAS_ANOMALY
+    ei_printf("Anomaly prediction: %.3f\r\n", result.anomaly);
+#endif
+
+#if EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+    ei_printf("Visual anomalies:\r\n");
+    for (uint32_t i = 0; i < result.visual_ad_count; i++) {
+        ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
+        if (bb.value == 0) {
+            continue;
+        }
+        ei_printf("  %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\r\n",
+                bb.label,
+                bb.value,
+                bb.x,
+                bb.y,
+                bb.width,
+                bb.height);
+    }
+#endif
+
+    free(snapshot_buf);
+}
+
+/**
+ * @brief Display inference results on OLED
+ */
+void display_inference_result(void) {
+    u8g2.firstPage();
+    do {
+        // Display predicted class with large font (abbreviated to 3 letters)
+        u8g2.setFont(u8g2_font_ncenB14_tr);
+        String display_class = abbreviate_class_name(predicted_class);
+        
+        // Center the 3-letter abbreviation
+        int text_width = u8g2.getStrWidth(display_class.c_str());
+        int x_pos = (72 - text_width) / 2;
+        u8g2.setCursor(x_pos, 20);
+        u8g2.print(display_class);
+        
+        // Display confidence percentage with smaller font
+        u8g2.setFont(u8g2_font_6x10_tr);
+        String conf_text = String(confidence * 100.0, 1) + "%";
+        int conf_width = u8g2.getStrWidth(conf_text.c_str());
+        int conf_x = (72 - conf_width) / 2;
+        u8g2.setCursor(conf_x, 35);
+        u8g2.print(conf_text);
+        
+        // Draw a simple frame
+        u8g2.drawFrame(0, 0, 72, 40);
+        
+    } while (u8g2.nextPage());
+}
+
+/**
+ * @brief Create 3-letter abbreviation from class name
+ */
+String abbreviate_class_name(String class_name) {
+    class_name.toUpperCase();
+    
+    // If 3 letters or less, return as is
+    if (class_name.length() <= 3) {
+        return class_name;
+    }
+    
+    // Extract consonants and vowels
+    String consonants = "";
+    String vowels = "";
+    
+    for (int i = 0; i < class_name.length(); i++) {
+        char c = class_name.charAt(i);
+        if (c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U') {
+            vowels += c;
+        } else if (c >= 'A' && c <= 'Z') {
+            consonants += c;
+        }
+    }
+    
+    // Strategy: Use consonants first, then fill with vowels if needed
+    String result = "";
+    
+    // Take up to 3 consonants
+    if (consonants.length() >= 3) {
+        result = consonants.substring(0, 3);
+    } else if (consonants.length() > 0) {
+        result = consonants;
+        // Fill remaining spots with vowels
+        int remaining = 3 - consonants.length();
+        if (vowels.length() > 0) {
+            for (int i = 0; i < remaining && i < vowels.length(); i++) {
+                result += vowels.charAt(i);
+            }
+        }
+        // If still not 3 letters, pad with first letters of original
+        while (result.length() < 3 && result.length() < class_name.length()) {
+            for (int i = 0; i < class_name.length() && result.length() < 3; i++) {
+                char c = class_name.charAt(i);
+                if (result.indexOf(c) == -1) {  // Don't add duplicates
+                    result += c;
+                }
+            }
+            break;  // Avoid infinite loop
+        }
+    } else {
+        // No consonants, just take first 3 characters
+        result = class_name.substring(0, 3);
+    }
+    
+    // Ensure we have exactly 3 characters (pad with original if needed)
+    while (result.length() < 3 && result.length() < class_name.length()) {
+        result += class_name.charAt(result.length());
+    }
+    
+    return result;
+}
+
+/**
+ * @brief   Setup image sensor & start streaming
+ *
+ * @retval  false if initialisation failed
+ */
+bool ei_camera_init(void) {
+
+    if (is_initialised) return true;
+
+#if defined(CAMERA_MODEL_ESP_EYE)
+  pinMode(13, INPUT_PULLUP);
+  pinMode(14, INPUT_PULLUP);
+#endif
+
+    //initialize the camera
+    esp_err_t err = esp_camera_init(&camera_config);
+    if (err != ESP_OK) {
+      Serial.printf("Camera init failed with error 0x%x\n", err);
+      return false;
+    }
+
+    sensor_t * s = esp_camera_sensor_get();
+    // initial sensors are flipped vertically and colors are a bit saturated
+    if (s->id.PID == OV3660_PID) {
+      s->set_vflip(s, 1); // flip it back
+      s->set_brightness(s, 1); // up the brightness just a bit
+      s->set_saturation(s, 0); // lower the saturation
+    }
+
+#if defined(CAMERA_MODEL_M5STACK_WIDE)
+    s->set_vflip(s, 1);
+    s->set_hmirror(s, 1);
+#elif defined(CAMERA_MODEL_ESP_EYE)
+    s->set_vflip(s, 1);
+    s->set_hmirror(s, 1);
+    s->set_awb_gain(s, 1);
+#endif
+
+    is_initialised = true;
+    return true;
+}
+
+/**
+ * @brief      Stop streaming of sensor data
+ */
+void ei_camera_deinit(void) {
+
+    //deinitialize the camera
+    esp_err_t err = esp_camera_deinit();
+
+    if (err != ESP_OK)
+    {
+        ei_printf("Camera deinit failed\n");
+        return;
+    }
+
+    is_initialised = false;
+    return;
+}
+
+/**
+ * @brief      Capture, rescale and crop image
+ *
+ * @param[in]  img_width     width of output image
+ * @param[in]  img_height    height of output image
+ * @param[in]  out_buf       pointer to store output image, NULL may be used
+ *                           if ei_camera_frame_buffer is to be used for capture and resize/cropping.
+ *
+ * @retval     false if not initialised, image captured, rescaled or cropped failed
+ *
+ */
+bool ei_camera_capture(uint32_t img_width, uint32_t img_height, uint8_t *out_buf) {
+    bool do_resize = false;
+
+    if (!is_initialised) {
+        ei_printf("ERR: Camera is not initialized\r\n");
+        return false;
+    }
+
+    camera_fb_t *fb = esp_camera_fb_get();
+
+    if (!fb) {
+        ei_printf("Camera capture failed\n");
+        return false;
+    }
+
+   bool converted = fmt2rgb888(fb->buf, fb->len, PIXFORMAT_JPEG, snapshot_buf);
+
+   esp_camera_fb_return(fb);
+
+   if(!converted){
+       ei_printf("Conversion failed\n");
+       return false;
+   }
+
+    if ((img_width != EI_CAMERA_RAW_FRAME_BUFFER_COLS)
+        || (img_height != EI_CAMERA_RAW_FRAME_BUFFER_ROWS)) {
+        do_resize = true;
+    }
+
+    if (do_resize) {
+        ei::image::processing::crop_and_interpolate_rgb888(
+        out_buf,
+        EI_CAMERA_RAW_FRAME_BUFFER_COLS,
+        EI_CAMERA_RAW_FRAME_BUFFER_ROWS,
+        out_buf,
+        img_width,
+        img_height);
+    }
+
+    return true;
+}
+
+static int ei_camera_get_data(size_t offset, size_t length, float *out_ptr)
+{
+    // we already have a RGB888 buffer, so recalculate offset into pixel index
+    size_t pixel_ix = offset * 3;
+    size_t pixels_left = length;
+    size_t out_ptr_ix = 0;
+
+    while (pixels_left != 0) {
+        // Swap BGR to RGB here
+        // due to https://github.com/espressif/esp32-camera/issues/379
+        out_ptr[out_ptr_ix] = (snapshot_buf[pixel_ix + 2] << 16) + (snapshot_buf[pixel_ix + 1] << 8) + snapshot_buf[pixel_ix];
+
+        // go to the next pixel
+        out_ptr_ix++;
+        pixel_ix+=3;
+        pixels_left--;
+    }
+    // and done!
+    return 0;
+}
+
+#if !defined(EI_CLASSIFIER_SENSOR) || EI_CLASSIFIER_SENSOR != EI_CLASSIFIER_SENSOR_CAMERA
+#error "Invalid model for current sensor"
+#endif

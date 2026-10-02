@@ -142,6 +142,12 @@ Sketches of `Labs/day04/` (2026-10-02, XIAO ESP32S3, PSRAM disabled):
 | `motion_quant` (solution), `int8` model, `MODEL_INT8 1` | 379 701 bytes | 31 384 bytes |
 | `motion_quant` (student version, tasks not complete), `MODEL_INT8 1` | 378 961 bytes | 31 384 bytes |
 
+Sketches of `Labs/day05/` (2026-10-02, XIAO ESP32S3, OPI PSRAM): `kws_stream`
+and `image_classifier` need the Arduino library of an Edge Impulse project.
+They compile with a replacement for that library, so this file gives no
+size. The kit lab of the source names the core 2.0.17 for these libraries.
+Nobody built a real library with the core 3.3.12.
+
 Sketch of `Labs/day02/` (2026-10-02, XIAO ESP32S3, PSRAM disabled):
 
 | Sketch | Flash | RAM |

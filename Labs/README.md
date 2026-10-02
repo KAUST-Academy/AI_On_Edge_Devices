@@ -24,6 +24,7 @@ Each lab adds one row here.
 | Day 2 | MicroPython, sensor input, and a motion dataset | XIAOML Kit | `day02/` | not tested on hardware. The laptop programs and the notebook run with a simulated board. The fallback sketch compiles. |
 | Day 3 | From a trained model to the microcontroller | XIAOML Kit | `day03/` | not tested on hardware. The notebook runs on a laptop. The sketches compile. A host build of the runtime confirms the model and the feature code. |
 | Day 4 | Quantization | XIAOML Kit | `day04/` | not tested on hardware. The notebook runs on a laptop. The sketch compiles for the two models. A host build of the runtime runs the sketch file and confirms the two models and the quantization code. |
+| Day 5 | Audio and vision on the microcontroller | XIAOML Kit | `day05/` | not tested on hardware. The two sketches need the library of an Edge Impulse project. They compile with a replacement for that library. The post-processing code and the download script run on a laptop. |
 
 ## Rules for every lab folder
 
