@@ -1,0 +1,49 @@
+% Check criterion, deliverable, and the Decision Log question of Day 8.
+% The criterion and the deliverable come from the Day 8 section of the
+% syllabus and from Labs/day08/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{python pi/detect\_ssd.py images/bus.jpg} prints
+          \code{Task A1: complete} and a list of detections.
+    \item \cmark\ The notebook prints \code{Tasks complete: 1, 2, 3} in its
+          last cell.
+    \item \cmark\ The live image shows a box for the bottle and a box for
+          the cup, with the custom model.
+    \item \cmark\ \code{python pi/bench\_detect.py} prints
+          \code{Task D1: complete}.
+    \item \cmark\ The frame-rate table of the report has four measured rows
+          or more: two image sizes and two precisions.
+    \item \cmark\ The report gives the accuracy loss of the \code{int8}
+          file.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}. Show the live image to the
+  instructor.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    A product with a Raspberry Pi 5 and a camera must count the bottles
+    and the cups on a table, with 10 frames in each second or more.
+    \begin{itemize}
+      \item Which file do you select: which runtime, which image size, and
+            which precision?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the frame rate and the mAP50-95 of your selection and of
+          one other file from your table,
+    \item compares the frame rate with the target of 10 frames in each
+          second,
+    \item names what you lose with your decision. Example: the file for
+          320 pixels is faster, and it finds fewer small objects.
+  \end{itemize}
+\end{frame}

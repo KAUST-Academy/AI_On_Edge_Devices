@@ -1,0 +1,40 @@
+% Fallbacks and common problems of the Day 8 lab. The rows come from
+% Labs/day08/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    \code{the package ultralytics is not available}
+      & The environment is not active:
+        \code{source \textasciitilde/yolo/bin/activate} \\
+    The camera gives no photo
+      & Use \code{images/bus.jpg} in Part A, and \code{--source images/}
+        in Parts C and D. Tell the instructor. \\
+    The download of the dataset stops
+      & Run \code{python get\_dataset.py} again. It keeps the complete
+        images. \\
+    The training is not complete in time
+      & The instructor gives the file \code{cupbottle.pt}. Put it into
+        \code{models/} and run the notebook from section 3. \\
+    A task is not complete in time
+      & Use the cell or the file of the folder \code{solutions/}. Write
+        this in the report. \\
+    The export to LiteRT stops with an error
+      & Do Parts C and D with the two NCNN folders. The instructor gives
+        the four LiteRT files. \\
+    The live image has many wrong boxes
+      & Use the image size of the file name: \code{cupbottle\_320...}
+        runs with 320. \\
+    The custom model does not find your objects
+      & Use \code{--conf 0.15}, a plain background, and a distance of
+        about 50 cm. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}
