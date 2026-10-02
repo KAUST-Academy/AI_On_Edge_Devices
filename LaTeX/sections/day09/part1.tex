@@ -3,6 +3,864 @@
 % Topics of the syllabus: system, model, and data benchmarks; MLPerf Tiny and
 % MLPerf Inference Edge. Exercise: read one MLPerf Tiny result table and
 % compare two devices.
+%
+% The measured numbers of this part have three origins. Each frame with such
+% a number says so in its source line.
+% 1. An experiment of this course: MobileNetV2 in LiteRT on the work computer
+%    (an x86 processor with AVX2). The times say nothing about a board.
+% 2. Results that MLCommons published: the result file of MLPerf Tiny v1.2
+%    (closed division) and the rules of MLPerf Inference. The latency and
+%    the mean power of an MLPerf Tiny row are calculations of this course:
+%    1000 / rate, and energy x rate.
+% 3. Numbers that the authors of the sources published.
 
 \theorypart{What to measure}%
   {read one MLPerf Tiny result table and compare two devices}
+
+% ------------------------------------------------------------------ question
+\begin{frame}{Which number is the latency?}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.50\textwidth}rr@{}}
+    \toprule
+    \textbf{MobileNetV2 on a Raspberry Pi 5} & \textbf{Mean}
+    & \textbf{Median} \\
+    \midrule
+    \code{float32}, kernels with no optimization & 2440 ms  & 2440 ms \\
+    \code{float32}, XNNPACK                      & 11.24 ms & 10.84 ms \\
+    \code{int8}, XNNPACK                         & 3.91 ms  & 3.69 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item You saw this table on Day 7. Each number is correct: the same
+          model, the same board, 50 runs for each row.
+    \item ``MobileNetV2 needs 4 ms on a Raspberry Pi 5'' and ``it needs
+          2.4 seconds'' are the two ends of this table.
+    \item The rows differ in the kernels and in the precision. The columns
+          differ in the statistic.
+  \end{itemize}
+  \keypoint{A number is a result only together with its method: the device,
+    the model file, the runtime, the input, the runs, and the statistic.}
+  \source{\emph{EdgeML with Raspberry Pi}, guide for ExecuTorch.}
+\end{frame}
+
+% ---------------------------------------------------------------- components
+\begin{frame}{A benchmark has seven parts}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.13\textwidth}L{0.40\textwidth}L{0.39\textwidth}@{}}
+    \toprule
+    \textbf{Part} & \textbf{It fixes} & \textbf{Example} \\
+    \midrule
+    Task          & What the system must do
+                  & Give the class of one image \\
+    Dataset       & The inputs and the labels of the test
+                  & 500 images of 10 classes \\
+    Model         & The file that runs
+                  & MobileNetV2 in \code{int8} \\
+    Metrics       & The numbers and their units
+                  & Median latency in ms, accuracy \\
+    Harness       & The program that gives the inputs and reads the clock
+                  & A Python script on the board \\
+    System        & The hardware and the software
+                  & Raspberry Pi 5, LiteRT, 4 threads \\
+    Run rules     & How to run, and what you can change
+                  & 20 runs to warm up, 200 timed runs \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \keypoint{You can compare two results only when all seven parts are the
+    same, or when exactly one part is different.}
+\end{frame}
+
+% --------------------------------------------------------------- three types
+\begin{frame}{Three types of benchmark}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize,
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=3.25cm, minimum height=2.5cm, align=center,
+                text width=3.0cm}]
+    \node[b, draw=darkcyan] at (0,0)
+      {\textbf{System benchmark}\\[3pt]
+       Is the device fast enough and small enough?\\[3pt]
+       {\scriptsize latency, throughput,\\ memory, energy}};
+    \node[b, draw=cardinalred] at (3.55,0)
+      {\textbf{Model benchmark}\\[3pt]
+       Is the model that you deploy still good?\\[3pt]
+       {\scriptsize accuracy, mAP,\\ accuracy of each class}};
+    \node[b, draw=treegreen] at (7.1,0)
+      {\textbf{Data benchmark}\\[3pt]
+       Do the test data represent the product?\\[3pt]
+       {\scriptsize coverage, label quality,\\ separate test set}};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Day 7 measured the system: one model in more than one runtime.
+    \item Day 4 measured the model: the accuracy before and after the
+          quantization.
+    \item Day 8 measured the data: the effect of label errors on the mAP.
+  \end{itemize}
+  \keypoint{A product can pass one type and fail a different type. A report
+    has the three types together.}
+\end{frame}
+
+% ------------------------------------------------------------ system metrics
+\begin{frame}{System benchmark: the metrics}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.27\textwidth}L{0.15\textwidth}L{0.50\textwidth}@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Unit} & \textbf{Question} \\
+    \midrule
+    Latency              & ms
+        & How long does one inference take? \\
+    Throughput           & inferences/s
+        & How many inferences in one second? \\
+    Peak memory (RAM)    & KB, MB
+        & Does the model run together with the program? \\
+    Storage (flash)      & KB, MB
+        & Does the model file fit? \\
+    Energy per inference & $\mu$J, mJ
+        & How long does the battery supply the device? \\
+    Load time            & ms, s
+        & When is the first result ready after power-on? \\
+    Temperature          & $^\circ$C
+        & Is the result the same after ten minutes? \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Each metric is a limit of the device from Day 1: time, memory,
+          energy.
+    \item The accuracy is not in this table. Each row needs it as a
+          condition.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- histogram
+\begin{frame}{Latency is a distribution}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=2.0cm, y=0.0038cm]
+        % Counts of the bins of 0.25 ms from 10.5 ms.
+        \foreach \k/\c in {0/7, 1/120, 2/201, 3/345, 4/702, 5/482, 6/120,
+                           7/21, 8/2} {
+          \fill[darkcyan!60] (10.5+\k*0.25+0.02,0)
+            rectangle (10.5+\k*0.25+0.23,\c);
+        }
+        \draw[coolgray] (10.4,0) -- (12.85,0);
+        \foreach \v in {10.5,11.0,11.5,12.0,12.5} {
+          \draw[coolgray] (\v,0) -- (\v,-18) node[below] {\v};
+        }
+        \node[coolgray] at (11.65,-185) {latency of one inference in ms};
+        \draw[cardinalred, thick] (11.621,0) -- (11.621,790);
+        \node[cardinalred, anchor=south] at (11.52,790) {median};
+        \draw[cardinalred, dashed, thick] (12.051,0) -- (12.051,640);
+        \node[cardinalred, anchor=south] at (12.03,640) {p95};
+        \draw[cardinalred, dashed, thick] (12.264,0) -- (12.264,460);
+        \node[cardinalred, anchor=south west, inner sep=1pt] at (12.27,460)
+          {p99};
+        \node[coolgray, anchor=west] at (10.42,650) {702 runs};
+        \draw[coolgray] (10.98,640) -- (11.5,690);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \small
+      \begin{itemize}
+        \item 2000 inferences of MobileNetV2 with one thread and the same
+              input.
+        \item The fastest needs 10.62 ms, and the slowest needs 12.52 ms.
+        \item \textbf{Median} (p50): one half of the inferences need this
+              time or less. Here: 11.62 ms.
+        \item \textbf{p95}: 95 percent need this time or less: 12.05 ms.
+        \item \textbf{p99}: 99 percent: 12.26 ms.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{One timed inference is one sample of this distribution. Report
+    the median and one high percentile.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+\begin{frame}{A second program on the same core}
+  \begin{columns}[c]
+    \begin{column}{0.58\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.215cm, y=0.72cm]
+        % Counts of the bins of 1 ms from 10 ms. The height is
+        % log10(count) + 0.301, so that one run has a visible bar.
+        \foreach \k/\h in {0/2.505, 1/3.526, 2/2.322, 16/1.531, 17/1.748,
+                           20/0.602, 21/1.301, 22/0.301} {
+          \fill[darkcyan!60] (\k+0.08,0) rectangle (\k+0.92,\h);
+        }
+        \draw[coolgray] (-0.4,0) -- (23.4,0);
+        \foreach \k/\v in {0/10, 5/15, 10/20, 15/25, 20/30} {
+          \draw[coolgray] (\k,0) -- (\k,-0.08) node[below] {\v};
+        }
+        \node[coolgray] at (11.5,-0.88) {latency of one inference in ms};
+        \foreach \h/\v in {0.301/1, 1.301/10, 2.301/100, 3.301/1000} {
+          \draw[coolgray] (-0.4,\h) -- (-0.7,\h) node[left] {\v};
+          \draw[coolgray!30, dotted] (-0.4,\h) -- (23.4,\h);
+        }
+        \draw[coolgray] (-0.4,0) -- (-0.4,3.75);
+        \node[coolgray, anchor=west] at (-0.2,3.95) {runs (log scale)};
+        \draw[cardinalred, dashed, thick] (17.452,0) -- (17.452,2.55);
+        \node[cardinalred, anchor=south] at (17.452,2.55) {p99};
+        \draw[cardinalred] (16,1.95) -- (23,1.95);
+        \node[cardinalred, anchor=south] at (20.6,1.95) {58 runs};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{ms} & \textbf{Alone} & \textbf{Shared} \\
+        \midrule
+        Mean    & 11.58 & 11.94 \\
+        Median  & 11.62 & 11.46 \\
+        p95     & 12.05 & 12.15 \\
+        p99     & 12.26 & 27.45 \\
+        Maximum & 12.52 & 32.10 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The same 2000 inferences. A second program uses the core for
+          20 ms in each 400 ms, as a device that also reads a sensor.
+    \item 58 inferences (2.9 percent) need more than 1.5 times the median.
+          The mean changes by 3 percent. The p99 is 2.2 times as large.
+  \end{itemize}
+  \keypoint{The mean and the median hide the slow inferences. A high
+    percentile shows them.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% --------------------------------------------------------- which percentile
+\begin{frame}{Which statistic for which product}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.34\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    \textbf{Statistic} & \textbf{It tells you} & \textbf{Use it for} \\
+    \midrule
+    Median
+        & The typical inference
+        & A comparison of two models or two runtimes \\
+    p95, p99
+        & The time that 1 inference in 20, or 1 in 100, passes
+        & A soft deadline: a voice command, a frame of a live video \\
+    Maximum
+        & The slowest inference of this run, not of all runs
+        & A first look at a hard deadline: a control loop \\
+    Mean
+        & The total time divided by the number of inferences
+        & The throughput and the energy of a long run \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item MLPerf Inference reports the 90th percentile for queries of one
+          sample, and the 99th percentile for queries of 8 samples.
+    \item A percentile needs enough runs. The p99 of 100 runs is the second
+          largest value: Part 2.
+  \end{itemize}
+  \keypoint{Write the statistic and the number of runs with each latency.}
+  \source{The rules of MLPerf Inference (MLCommons).}
+\end{frame}
+
+% ---------------------------------------------------------------- throughput
+\begin{frame}{Throughput is not always 1 / latency}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.44\textwidth}rr@{}}
+    \toprule
+    \textbf{MobileNetV2 on 4 cores} & \textbf{Median latency}
+    & \textbf{Throughput} \\
+    \midrule
+    One stream, 1 thread             & 11.49 ms & 86.4 each second \\
+    One stream, 4 threads            & 3.26 ms  & 300.8 each second \\
+    Four streams, 1 thread each      & 12.43 ms & 321.9 each second \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item \textbf{Latency}: the time for one answer. \textbf{Throughput}:
+          the answers in one second, for the complete device.
+    \item One stream: the throughput is about 1 / latency. Four threads make
+          one inference 3.5 times as fast, not 4 times. Each row is a run
+          of 10 seconds.
+    \item Four streams at the same time give 7 percent more throughput. But
+          each inference needs 3.8 times as long.
+    \item One camera with a person in front of it needs a low latency. A
+          recorder with four cameras needs a high throughput.
+  \end{itemize}
+  \keypoint{Decide which of the two numbers your product needs. Then set
+    the threads and the streams for that number.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% -------------------------------------------------------------------- memory
+\begin{frame}{Memory: three different numbers}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.50\textwidth}rr@{}}
+    \toprule
+    \textbf{MobileNetV2 in LiteRT} & \textbf{\code{float32}}
+    & \textbf{\code{int8}} \\
+    \midrule
+    Model file (storage)                      & 13.4 MB & 3.9 MB \\
+    RAM that the load of the model adds       & 47.3 MB & 24.6 MB \\
+    Peak RAM that the model adds              & 48.2 MB & 25.0 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The Python process with the runtime has 31 MB before the load.
+    \item The runtime makes its own copy of the weights and adds the buffers
+          of the activations. The RAM is 3.5 times the \code{float32} file.
+    \item Linux: read the peak of the process (\code{VmHWM} in
+          \code{/proc/self/status}). A computer with 8 GB has room.
+    \item Microcontroller: the flash holds the program and the model. The
+          RAM holds the arena and the other data. No room: no run.
+  \end{itemize}
+  \keypoint{The file size does not tell you the RAM. Measure the peak RAM
+    of the complete program on the device.}
+  \source{An experiment of this course. 1 MB is 1024 KB.}
+\end{frame}
+
+% -------------------------------------------------------------------- energy
+\begin{frame}{Energy per inference}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \begin{block}{Definition}
+        \small
+        $E = P_{\text{active}} \times t_{\text{inference}}$\\[3pt]
+        1 mW $\times$ 1 ms = 1 $\mu$J
+      \end{block}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \begin{block}{A published result}
+        \small
+        Keyword spotting on a Cortex-M4 board:\\
+        43.19 ms and 1820.5 $\mu$J for one inference.\\
+        Mean power: $1820.5 / 43.19 = 42.2$ mW.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The power (mW) says how fast the device uses its battery at this
+          moment. The energy ($\mu$J) says what one inference costs.
+    \item A battery holds energy. The number of inferences of one battery
+          is its energy divided by the energy per inference.
+    \item A faster processor can use more power and less energy: it
+          completes the work earlier. Speed and efficiency are two
+          different results.
+    \item A device that sleeps between two inferences also uses energy in
+          the sleep: Part 3.
+  \end{itemize}
+  \source{MLPerf Tiny v1.2, board NUCLEO-L4R5ZI (MLCommons).\\
+    The latency and the power are calculations.}
+\end{frame}
+
+% ---------------------------------------------------------- model benchmark
+\begin{frame}{Model benchmark: test the file that you deploy}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.36\textwidth}L{0.32\textwidth}r@{}}
+    \toprule
+    \textbf{MobileNetV2 in LiteRT} & \textbf{Calibration}
+    & \textbf{Accuracy} \\
+    \midrule
+    \code{float32}          & none                  & 77.4 percent \\
+    Weights in \code{int8}  & none                  & 77.6 percent \\
+    Full \code{int8}        & 100 images            & 75.2 percent \\
+    Full \code{int8}        & 100 images of noise   & 12.8 percent \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item You know these rows from Day 7. The last two files have the same
+          operators and the same precision. A speed test sees no difference.
+    \item A latency with no accuracy rewards the wrong file: a model that
+          gives a wrong answer wins each speed test.
+    \item MLPerf gives each benchmark a quality target. One example: the
+          accuracy must be 99 percent of the \code{float32} accuracy.
+  \end{itemize}
+  \keypoint{The accuracy is a condition of each system result. Measure it
+    with the file and the runtime of the device.}
+  \source{An experiment of this course with 500 images.\\
+    Quality target: the rules of MLPerf Inference.}
+\end{frame}
+
+\begin{frame}{How many test samples?}
+  \begin{columns}[c]
+    \begin{column}{0.36\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}rr@{}}
+        \toprule
+        \textbf{Samples} & \textbf{Interval} \\
+        \midrule
+        100     & $\pm$ 8.2 points \\
+        200     & $\pm$ 5.8 points \\
+        500     & $\pm$ 3.7 points \\
+        1000    & $\pm$ 2.6 points \\
+        5000    & $\pm$ 1.2 points \\
+        50\,000 & $\pm$ 0.4 points \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.60\textwidth}
+      \small
+      \[
+        \pm\, 1.96 \sqrt{\frac{p\,(1 - p)}{N}}
+      \]
+      \begin{itemize}
+        \item The 95 percent interval for an accuracy $p$ of 77.4 percent
+              and $N$ test samples.
+        \item 77.4 and 75.2 percent on 500 images: the difference of 2.2
+              points is smaller than the interval of one value.
+        \item For $\pm$ 1 point you need 6720 samples.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Two files on the same images: count the images for which the two
+          answers differ. This comparison is more exact than two intervals.
+    \item MLPerf Tiny tests the image classifier with 200 images. Its
+          quality target (85 percent) is below the reference (86.5 percent).
+  \end{itemize}
+  \keypoint{A test set is a measuring instrument. Its size sets the
+    smallest difference that you can see.}
+  \source{A calculation with the normal approximation.\\
+    MLPerf Tiny: Banbury et al., 2021.}
+\end{frame}
+
+% ----------------------------------------------------------- data benchmark
+\begin{frame}{Data benchmark: the test data and the product}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.16\textwidth}L{0.36\textwidth}L{0.40\textwidth}@{}}
+    \toprule
+    \textbf{Question} & \textbf{Check} & \textbf{In this course} \\
+    \midrule
+    Coverage
+        & Each condition of the product is in the test set: light, noise,
+          speaker, sensor
+        & Day 5: keywords in your own voice \\
+    Label quality
+        & A second person checks a sample of the labels
+        & Day 8: 10 percent of wrong classes cut mAP50 from 0.574 to 0.425 \\
+    Separation
+        & No test sample is in the training set
+        & Day 8: mAP50 of 0.670 with training images, 0.546 with new
+          images \\
+    Same source
+        & The test data come from the sensor of the device
+        & A photo on a screen is not the scene in front of the camera \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A study found label errors in the test sets of 10 common
+          datasets: 3.3 percent or more on average, and 6 percent or more
+          for ImageNet.
+  \end{itemize}
+  \keypoint{The best model and the fastest device cannot correct a test set
+    that does not represent the product.}
+  \source{Day 8: experiments of this course.\\
+    Label errors: Northcutt, Athalye, and Mueller, 2021.}
+\end{frame}
+
+% ------------------------------------------------------------------- window
+\begin{frame}{What is in the timed window?}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.7cm, minimum height=0.8cm, align=center}]
+    \node[b] (a) at (0,0)    {Capture};
+    \node[b] (b) at (2.05,0) {Pre-process};
+    \node[b, draw=darkcyan, minimum width=2.3cm] (c) at (4.45,0) {};
+    \node[b] (d) at (6.85,0) {Post-process};
+    \node[b] (e) at (8.9,0)  {Output};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[draw=cardinalred, fill=white, minimum width=0.55cm,
+          minimum height=0.45cm, inner sep=1pt] at (3.8,0) {op};
+    \node at (4.8,0) {Model};
+    \draw[cardinalred, thick] (3.53,-0.62) -- (3.53,-0.75) -- (4.07,-0.75)
+      -- (4.07,-0.62);
+    \node[cardinalred, below] at (3.8,-0.75) {micro: one operator};
+    \draw[darkcyan, thick] (3.3,0.6) -- (3.3,0.75) -- (5.6,0.75)
+      -- (5.6,0.6);
+    \node[darkcyan, above] at (4.45,0.75) {macro: the model};
+    \draw[treegreen, thick] (-0.85,-1.3) -- (-0.85,-1.45) -- (9.75,-1.45)
+      -- (9.75,-1.3);
+    \node[treegreen!60!black, below] at (4.45,-1.45)
+      {end to end: the application};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.47\textwidth}rrr@{}}
+    \toprule
+    \textbf{YOLO detector: time of one frame} & \textbf{Model}
+    & \textbf{All steps} & \textbf{Part} \\
+    \midrule
+    x86 processor, 640 pixels (Day 8)          & 49.27 ms & 52.75 ms
+        & 93 percent \\
+    Raspberry Pi Zero 2 W, 320 pixels          & 519.3 ms & 1263.6 ms
+        & 41 percent \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item The window of MLPerf Tiny is the model. The user of a product
+          waits for all steps.
+  \end{itemize}
+  \keypoint{Name the window with each time: ``model only'' or ``end to
+    end''.}
+  \source{x86: an experiment of this course.\\
+    Raspberry Pi Zero 2 W: \emph{Edge AI Engineering}.}
+\end{frame}
+
+% -------------------------------------------------------------------- suites
+\begin{frame}{Why a standard benchmark suite}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \begin{block}{Five vendors, five claims}
+        \footnotesize
+        \begin{itemize}
+          \item A: ``8 TOPS with \code{int8}''
+          \item B: ``15 TOPS with 4 bits''
+          \item C: the latency of its own model
+          \item D: a result of an old benchmark
+          \item E: the peak throughput
+        \end{itemize}
+        You cannot compare two of them.
+      \end{block}
+    \end{column}
+    \begin{column}{0.57\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}L{1.5cm}L{2.2cm}L{2.0cm}@{}}
+        \toprule
+        \textbf{Suite} & \textbf{Devices} & \textbf{Main metrics} \\
+        \midrule
+        Training          & Data centre
+            & Time to a quality target \\
+        Inference, Datacenter & Servers
+            & Throughput with a latency limit \\
+        Inference, Edge   & Systems outside a data centre
+            & Latency percentile, throughput \\
+        Tiny              & Microcontrollers
+            & Latency, accuracy, energy \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A suite fixes the parts of the benchmark for all submitters: the
+          task, the dataset, the model, the quality target, the harness, and
+          the run rules.
+    \item MLCommons, a non-profit group of companies and universities,
+          makes the MLPerf suites. The submitters review the results of
+          each other, and the code of each result is public.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 12.}
+\end{frame}
+
+% --------------------------------------------------------------- MLPerf Tiny
+\begin{frame}{MLPerf Tiny: four benchmarks}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.21\textwidth}L{0.30\textwidth}L{0.23\textwidth}L{0.13\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{Dataset and input} & \textbf{Model and file}
+    & \textbf{Target} \\
+    \midrule
+    Keyword spotting  & Speech Commands, $49 \times 10$
+        & DS-CNN, 52.5 KB       & 90 percent \\
+    Visual wake words & Visual Wake Words, $96 \times 96$
+        & MobileNetV1, 325 KB   & 80 percent \\
+    Image classification & CIFAR-10, $32 \times 32$
+        & ResNet, 96 KB         & 85 percent \\
+    Anomaly detection & ToyADMOS, $5 \times 128$
+        & Autoencoder, 270 KB   & AUC 0.85 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The four tasks are typical work of a microcontroller. You trained
+          the first two tasks on Day 5, with other models.
+    \item Visual wake words: is a person in the image, yes or no?
+    \item Anomaly detection: the sound of a machine. The model learns only
+          the normal sound. Each model file is smaller than 350 KB.
+  \end{itemize}
+  \keypoint{A result is valid only when the model on the device reaches the
+    quality target.}
+  \source{Banbury et al., 2021, table 1.}
+\end{frame}
+
+\begin{frame}{MLPerf Tiny: the harness and the run rules}
+  \begin{columns}[c]
+    \begin{column}{0.44\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+          b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                    minimum width=1.55cm, minimum height=0.75cm,
+                    align=center}]
+        \node[b] (h) at (0,0)        {Computer\\with the runner};
+        \node[b] (i) at (0,-1.5)     {Isolation\\(IO manager)};
+        \node[b, draw=darkcyan] (d) at (2.75,-1.5) {Device\\under test};
+        \node[b, draw=cardinalred] (e) at (2.75,0) {Energy\\monitor};
+        \draw[<->] (h) -- node[left] {USB} (i);
+        \draw[<->] (i) -- node[above] {serial} (d);
+        \draw[->, cardinalred, thick] (e) -- node[right, align=left]
+          {supply,\\current} (d);
+        \draw[<->] (h) -- (e);
+      \end{tikzpicture}
+      \par\vskip 0.3em
+      {\scriptsize The setup for the energy. For the latency and the
+       accuracy, the computer talks to the device directly.}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \small
+      \begin{itemize}
+        \item \textbf{Latency:} 5 runs. Each run has 10 seconds or more and
+              10 inferences or more. The result is the median of the
+              inferences each second.
+        \item \textbf{Accuracy:} one inference for each test input, on the
+              device.
+        \item \textbf{Energy:} the same 5 runs, with the energy monitor. The
+              result is the median in $\mu$J for each inference.
+        \item \textbf{Window:} the model only. The feature extraction is not
+              in the time.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \textbf{Closed division:} the reference model and dataset.
+          Post-training quantization is permitted, new training is not.
+    \item \textbf{Open division:} a different model or training is
+          permitted. The submitter documents each change.
+  \end{itemize}
+  \source{Banbury et al., ``MLPerf Tiny Benchmark'', 2021.}
+\end{frame}
+
+\begin{frame}{Read one result}
+  \small
+  \textbf{NUCLEO-L4R5ZI}: Arm Cortex-M4 at 120 MHz, 1.8 V, inference
+  software X-CUBE-AI v9.0, closed division.
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4.5pt}
+  \begin{tabular}{@{}L{0.23\textwidth}rrr|rr@{}}
+    \toprule
+    & \multicolumn{3}{c|}{\textbf{Published}}
+    & \multicolumn{2}{c}{\textbf{Calculated}} \\
+    \textbf{Benchmark} & \textbf{Inferences/s} & \textbf{Accuracy}
+    & \textbf{Energy} & \textbf{Latency} & \textbf{Power} \\
+    \midrule
+    Visual wake words    & 11.245  & 85.2 & 3894.6 $\mu$J & 88.9 ms
+        & 43.8 mW \\
+    Image classification & 6.056   & 87.0 & 6919.4 $\mu$J & 165.1 ms
+        & 41.9 mW \\
+    Keyword spotting     & 23.155  & 90.2 & 1820.5 $\mu$J & 43.2 ms
+        & 42.2 mW \\
+    Anomaly detection    & 190.086 & 0.86 & 203.4 $\mu$J  & 5.3 ms
+        & 38.7 mW \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Latency = 1000 / rate. Mean power = energy $\times$ rate.
+    \item Each accuracy is above its quality target: 80, 85, 90 percent, and
+          0.85.
+    \item The power is almost the same for the four models. The processor
+          is active all the time, so the energy follows the latency.
+    \item Read the system description first: the processor, the clock, the
+          voltage, and the software are a part of the result.
+  \end{itemize}
+  \source{MLPerf Tiny v1.2, closed division (MLCommons):\\
+    \texttt{github.com/mlcommons/tiny\_results\_v1.2}}
+\end{frame}
+
+\begin{frame}{An accelerator against a microcontroller}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.47\textwidth}rrr@{}}
+    \toprule
+    \textbf{Keyword spotting, closed division} & \textbf{Latency}
+    & \textbf{Energy} & \textbf{Accuracy} \\
+    \midrule
+    Cortex-M4 at 120 MHz, 1.8 V          & 43.2 ms & 1820.5 $\mu$J & 90.2 \\
+    Accelerator at 30.7 MHz, 0.9 V       & 4.4 ms  & 31.5 $\mu$J   & 91.1 \\
+    Accelerator at 98.7 MHz, 1.1 V       & 1.5 ms  & 43.8 $\mu$J   & 91.1 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The accelerator (NDP9120) has hardware for the layers of a neural
+          network. At 0.9 V it is 10 times as fast as the microcontroller
+          (NUCLEO-L4R5ZI) and uses 58 times less energy.
+    \item The same chip with a higher voltage and a faster clock: 2.9 times
+          as fast, with 39 percent more energy for each inference.
+    \item The two accuracy values differ: each submitter quantizes the
+          reference model with its own tools.
+  \end{itemize}
+  \keypoint{The voltage and the clock are settings of the benchmark. One
+    chip gives more than one result.}
+  \source{MLPerf Tiny v1.2, closed division (MLCommons).\\
+    The latency is a calculation.}
+\end{frame}
+
+% --------------------------------------------------------- MLPerf Inference
+\begin{frame}{MLPerf Inference: the Edge category}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.16\textwidth}L{0.44\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Scenario} & \textbf{How the queries arrive}
+    & \textbf{Result} \\
+    \midrule
+    Single stream
+        & The next query starts when the last query is complete. One
+          sample in each query.
+        & The 90th percentile of the latency \\
+    Multistream
+        & The same, with 8 samples in each query: 8 cameras.
+        & The 99th percentile of the latency \\
+    Offline
+        & All samples are there at the start.
+        & The throughput in samples each second \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A run has 600 seconds or more. A long run includes the effect of
+          the temperature (Part 3).
+    \item Two of its tasks: image classification with ResNet-50 on ImageNet,
+          and object detection with a YOLO model on 1525 images of COCO.
+    \item Quality target of the classifier: 99 percent of the
+          \code{float32} accuracy of 76.46 percent.
+    \item The Datacenter category has the scenario ``Server'': the queries
+          arrive at random times.
+  \end{itemize}
+  \source{The rules of MLPerf Inference (MLCommons), 2026-10-02.\\
+    The tasks change with each round.}
+\end{frame}
+
+% -------------------------------------------------------------------- limits
+\begin{frame}{What a standard benchmark does not tell you}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.44\textwidth}L{0.48\textwidth}@{}}
+    \toprule
+    \textbf{The suite uses} & \textbf{Your product has} \\
+    \midrule
+    Its reference model               & Your model, with your classes \\
+    Its dataset                       & Your users, your sensor, your room \\
+    The time of the model only        & Capture, features, and
+                                        post-processing \\
+    Inferences with no pause          & A duty cycle with sleep \\
+    The best software of the submitter & Your runtime and your settings \\
+    A laboratory                      & A closed box, in the sun \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Use a published result to select a chip or a runtime.
+    \item Use your own benchmark for the decisions of your product. It has
+          the same seven parts.
+    \item Part A of the lab: you write these parts as a protocol before the
+          first measurement.
+  \end{itemize}
+  \keypoint{A benchmark is a model of the use, not the use. Say what your
+    benchmark does not include.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{read an MLPerf Tiny result table}{%
+  \small
+  Two boards of one submitter in MLPerf Tiny v1.2, closed division, with the
+  same software. A: Cortex-M33 at 160 MHz. B: Cortex-M7 at 280 MHz.
+  \vskip 0.3em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}llrrr@{}}
+    \toprule
+    \textbf{Board} & \textbf{Benchmark} & \textbf{Inferences/s}
+    & \textbf{Accuracy} & \textbf{Energy} \\
+    \midrule
+    A & Visual wake words    & 16.870 & 85.2 & 1354.7 $\mu$J \\
+    A & Image classification & 9.003  & 87.0 & 2579.0 $\mu$J \\
+    B & Visual wake words    & 42.009 & 85.2 & 2965.5 $\mu$J \\
+    B & Image classification & 24.483 & 87.0 & 5090.3 $\mu$J \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item Calculate the latency of the visual wake words model on each
+          board.
+    \item Which board is faster, and by which factor? Which board uses less
+          energy for one inference, and by which factor?
+    \item Calculate the mean power of each board during this benchmark.
+    \item A door camera with a battery looks for a person 5 times each
+          second. Which board do you select? Which number is missing?
+    \item Why is the accuracy the same on the two boards?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{read an MLPerf Tiny result table}{%
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.34\textwidth}rrr@{}}
+    \toprule
+    \textbf{Visual wake words} & \textbf{Latency} & \textbf{Energy}
+    & \textbf{Mean power} \\
+    \midrule
+    A: Cortex-M33, 160 MHz & 59.3 ms & 1354.7 $\mu$J & 22.9 mW \\
+    B: Cortex-M7, 280 MHz  & 23.8 ms & 2965.5 $\mu$J & 124.6 mW \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item $1000 / 16.870 = 59.3$ ms and $1000 / 42.009 = 23.8$ ms.
+    \item B is 2.5 times as fast. A uses 2.2 times less energy for one
+          inference. The image classifier gives almost the same factors:
+          2.7 and 2.0.
+    \item Energy $\times$ rate: 22.9 mW for A and 124.6 mW for B. B uses
+          5.5 times the power for 2.5 times the speed.
+    \item Board A. The limit is 200 ms, and the two boards are fast enough.
+          A uses less than one half of the energy for each inference. The
+          table does not give the power in the sleep between two
+          inferences: Part 3.
+    \item The two boards run the same \code{int8} model with the same
+          software. In the closed division, the model is the reference
+          model.
+  \end{enumerate}
+}

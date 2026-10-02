@@ -24,6 +24,8 @@ the licence of its own source. Section 1 gives the licence of each source.
 | Seeed Arduino LSM6DS3 (Arduino library) | Seeed Studio | `github.com/Seeed-Studio/Seeed_Arduino_LSM6DS3` | MIT |
 | Arduino core for the ESP32 (camera example) | Espressif Systems | `github.com/espressif/arduino-esp32` | LGPL-2.1 |
 | COCO 2017 (annotations of the dataset) | Tsung-Yi Lin and others, COCO Consortium | `cocodataset.org` | CC BY 4.0 |
+| MLPerf Tiny v1.2 results (result file) | MLCommons and the submitters of the round | `github.com/mlcommons/tiny_results_v1.2` | Apache-2.0 |
+| MLPerf Inference rules | MLCommons | `github.com/mlcommons/inference_policies` | Apache-2.0 |
 
 Conditions:
 
@@ -39,6 +41,12 @@ Conditions:
 - **CC BY 4.0.** Name the author. This licence applies to the annotations of
   COCO. Each image of COCO keeps the licence that its author gave on Flickr,
   so this repository holds no image of COCO: a script downloads the images.
+- **MLPerf.** The MLPerf name and logo are trademarks of MLCommons
+  Association. The course gives published results of MLPerf Tiny v1.2 (closed
+  division) with no change of the values. A latency or a power that the
+  course calculates from a published rate and energy is not a result that
+  MLCommons verified. Each frame with such a value says that it is a
+  calculation.
 
 The licence of each repository above was read from its `LICENSE` file on
 2026-10-01.
@@ -197,3 +205,9 @@ has no empty line and no other text between its rows.
 | `Labs/day08/README.md`, `report.md` | text | Machine Learning Systems | `kits/contents/raspi/object_detection/object_detection.qmd` (sections "Pre-Trained Object Detection Models Overview", "Exploring a YOLO Model using Ultralytics", "Training YOLOv8 on a Customized Dataset", "Inference with the trained model, using the Raspi", "Object Detection on a live stream"), `books/vol1/12_benchmarking/12_benchmarking.qmd` (the measurement rules) | CC BY-NC-SA 4.0 | the steps of the kit lab, rewritten as lab steps with times: the inference with the SSD model and with YOLO, the training, the export, and the live application. The dataset, the tasks, the predictions, and the frame-rate table are new. |
 | `Labs/day08/get_dataset.py`, `pi/bench_detect.py`, `solutions/pi/bench_detect.py` | code | This repository | The method of the Day 8 lecture | GPL-3.0 | new code |
 | `LaTeX/sections/day08_lab/goal.tex`, `hardware.tex`, `parts.tex` | text | Machine Learning Systems | `kits/contents/raspi/object_detection/object_detection.qmd` (sections "Pre-Trained Object Detection Models Overview", "Exploring a YOLO Model using Ultralytics", "Training YOLOv8 on a Customized Dataset", "Object Detection on a live stream") | CC BY-NC-SA 4.0 | the steps of the inference with the SSD model and with YOLO, of the training, of the export, and of the live detection, as frames. The steps follow `Labs/day08/README.md`. All diagrams are new. The deck has no photo and no figure of a source. |
+| `LaTeX/sections/day09/part1.tex` | text | Machine Learning Systems | `books/vol1/12_benchmarking/12_benchmarking.qmd` (sections "ML Benchmarking Framework", "Domain-specific benchmarks", "System Benchmarking Suites", "Benchmarking Granularity", "Benchmark Components", "Inference metrics", "MLPerf inference benchmarks", "Model and Data Evaluation"), `slides/vol1/12_benchmarking/12_benchmarking.tex` | CC BY-NC-SA 4.0 | the three types of benchmark (system, model, data), the parts of a benchmark, the metrics of an inference benchmark, the granularity (micro, macro, end to end) as a new diagram, the example of five vendor claims, the table of the MLPerf suites (4 rows, shorter), the scenarios of MLPerf Inference, the test set as a measuring instrument, and the checks of a data benchmark, rewritten in short sentences for a microcontroller and for the Raspberry Pi 5. The names of data-centre products are removed. All diagrams are new. All measured numbers of MobileNetV2 (latency distribution, a second program on the same core, streams and threads, memory) are results of an experiment of this course on the work computer. The interval of an accuracy is a calculation of this course. The exercise is new. |
+| `LaTeX/sections/day09/part1.tex` | data | MLPerf Tiny v1.2 results | `summary.csv` (closed division) | Apache-2.0 | 14 results of 5 systems with no change of the values: the rate, the accuracy, and the energy of the boards NUCLEO-L4R5ZI, NUCLEO-U575ZI-Q, and NUCLEO-H7A3ZI-Q (STMicroelectronics) and of the NDP9120 at two voltages (Syntiant). The latency (1000 / rate) and the mean power (energy x rate) are calculations of this course, and the frames say so. |
+| `LaTeX/sections/day09/part1.tex` | text | MLPerf Inference rules | `inference_rules.adoc` (sections "Scenarios", "Benchmarks", read on 2026-10-02) | Apache-2.0 | the three scenarios of the Edge category with their result (90th percentile, 99th percentile, throughput), the minimum duration of 600 seconds, and two tasks with their quality target, rewritten as a new table |
+| `LaTeX/sections/day09/part1.tex` | text | Paper "MLPerf Tiny Benchmark" (Banbury et al., 2021, arXiv 2106.07597) | Table 1, sections 4, 5.2, and 5.3, appendix A | Not open (arXiv licence): facts only | the four benchmarks with their dataset, model, file size, and quality target as a new table, the measurement procedure and the two divisions in new sentences, and the energy setup as a new diagram. No figure and no sentence of the paper is copied. |
+| `LaTeX/sections/day09/part1.tex` | text | EdgeML with Raspberry Pi | `EXECUTORCH/README.md` (section "Performance Comparison Table") | GPL-3.0 | the published mean and median latencies of MobileNetV2 on a Raspberry Pi 5 (3 rows, no change of the values) |
+| `LaTeX/sections/day09/part1.tex` | text | Edge AI Engineering: Raspberry Pi | `raspi/object_detection/cv_yolo.html` (section "Inference with the trained model, using the Raspi") | Not stated | the published pipeline times of a Raspberry Pi Zero 2 W (237.6 ms, 519.3 ms, and 506.7 ms), as one sum and one ratio |
