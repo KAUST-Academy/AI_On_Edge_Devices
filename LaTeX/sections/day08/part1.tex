@@ -1,8 +1,956 @@
 % Part 1 of Day 8: Detection models.
 %
 % Topics of the syllabus: SSD, EfficientDet, FOMO, and the YOLO family;
-% detection head outputs; non-maximum suppression. Exercise: apply non-maximum
-% suppression to six boxes by hand.
+% detection head outputs; non-maximum suppression. Exercise: apply
+% non-maximum suppression to six boxes by hand.
+%
+% The facts about the model files of this part are results of an experiment
+% of this course: the three LiteRT files of the kit lab (SSD MobileNet V1,
+% EfficientDet-Lite0, FOMO) and three YOLO models of Ultralytics, read and
+% run on the work computer (an x86 processor with AVX2). The test image is
+% bus.jpg of the Ultralytics package. The times say nothing about a board.
+% Each frame with such a number says so in its source line. The numbers for
+% the Raspberry Pi Zero 2 W are numbers that the author of the companion
+% book published. The frame names the source.
 
 \theorypart{Detection models}%
   {apply non-maximum suppression to six boxes by hand}
+
+% ------------------------------------------------------------- a detection
+\begin{frame}{A detection: a class, a score, and a box}
+  \begin{columns}[c]
+    \begin{column}{0.44\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]}]
+        \fill[boxgray] (0,0) rectangle (4,4);
+        \draw[coolgray] (0,0) rectangle (4,4);
+        \draw[darkcyan, thick] (0.54,3.15) rectangle (3.46,1.28);
+        \node[darkcyan!70!black, anchor=south west, inner sep=1.5pt]
+          at (0.54,3.15) {bus 0.94};
+        \fill[darkcyan!70!black] (2.0,2.22) circle (1.3pt);
+        \node[darkcyan!70!black, anchor=west] at (2.03,2.22)
+          {$(c_x, c_y)$};
+        \draw[cardinalred, thick] (0.68,2.53) rectangle (1.40,0.65);
+        \draw[cardinalred, thick] (2.98,2.55) rectangle (3.50,0.74);
+        \draw[cardinalred, thick] (1.33,2.50) rectangle (1.78,0.82);
+        \draw[cardinalred, thick] (0.50,1.96) rectangle (0.74,0.77);
+        \node[cardinalred, font=\tiny] at (0.56,0.48) {0.40};
+        \node[cardinalred, font=\tiny] at (1.04,0.48) {0.90};
+        \node[cardinalred, font=\tiny] at (1.56,0.48) {0.83};
+        \node[cardinalred, font=\tiny] at (3.24,0.48) {0.85};
+        \node[cardinalred] at (2.35,0.48) {person};
+        \draw[->, coolgray] (0,4.15) -- (1.3,4.15) node[right] {$x$};
+        \draw[->, coolgray] (-0.15,4) -- (-0.15,2.7) node[below] {$y$};
+        \node[coolgray, anchor=south east, inner sep=1pt] at (-0.02,4.02)
+          {0};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.42\textwidth}L{0.50\textwidth}@{}}
+        \toprule
+        \textbf{Box format} & \textbf{Four numbers} \\
+        \midrule
+        Two corners     & $x_1,\ y_1,\ x_2,\ y_2$ \\
+        Centre and size & $c_x,\ c_y,\ w,\ h$ \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.5em
+      \begin{itemize}
+        \item The unit is a pixel, or a part of the image from 0 to 1.
+        \item The point $(0, 0)$ is the top left corner. The $y$ axis
+              points down.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The SSD file of the lab gives $y_1, x_1, y_2, x_2$ from 0 to 1.
+          The raw output of YOLO gives $c_x, c_y, w, h$ in pixels of the
+          model input.
+  \end{itemize}
+  \keypoint{Check the box format of each model. A wrong format gives boxes
+    at wrong places, and no error message.}
+  \source{Boxes: YOLO11n on the image \texttt{bus.jpg} of the Ultralytics
+    package, an experiment of this course.}
+\end{frame}
+
+% ------------------------------------------------------------ two families
+\begin{frame}{Two families of detectors}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[anchor=west, font=\footnotesize\bfseries] at (-0.9,0.85)
+      {Two stages};
+    \node[b] (a) at (0,0)    {Image};
+    \node[b] (b) at (2.2,0)  {Backbone};
+    \node[b, draw=darkorange] (c) at (4.4,0)  {Stage 1:\\propose regions};
+    \node[b, draw=darkorange] (d) at (6.6,0)
+      {Stage 2: classify\\each region};
+    \node[b] (e) at (8.8,0)  {Boxes};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[anchor=west, font=\footnotesize\bfseries] at (-0.9,-1.05)
+      {One stage};
+    \node[b] (f) at (0,-1.9)    {Image};
+    \node[b] (g) at (2.2,-1.9)  {Backbone};
+    \node[b, draw=darkcyan] (h) at (4.4,-1.9)
+      {Head: all boxes\\in one pass};
+    \node[b, draw=darkcyan] (i) at (6.6,-1.9)  {Remove the\\duplicates};
+    \node[b] (j) at (8.8,-1.9)  {Boxes};
+    \foreach \a/\b in {f/g, g/h, h/i, i/j} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item \textbf{Two stages:} R-CNN, Fast R-CNN, Faster R-CNN. The second
+          stage runs for each proposed region. This costs time.
+    \item \textbf{One stage:} SSD, EfficientDet, YOLO, and FOMO. One pass
+          of one network predicts the boxes and the classes for all
+          positions.
+    \item The cost of a single-stage model does not depend on the number of
+          objects in the image.
+  \end{itemize}
+  \keypoint{The detectors of this course are single-stage detectors. They
+    are the usual choice for an edge device.}
+\end{frame}
+
+% --------------------------------------------------------------- structure
+\begin{frame}{The parts of a single-stage detector}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[b] (a) at (0,0)    {Image};
+    \node[b, draw=darkcyan]    (b) at (2.2,0) {\textbf{Backbone}};
+    \node[b, draw=darkorange]  (c) at (4.4,0) {\textbf{Neck}};
+    \node[b, draw=cardinalred] (d) at (6.6,0) {\textbf{Head}};
+    \node[b, draw=treegreen]   (e) at (8.8,0)
+      {\textbf{Post-}\\\textbf{processing}};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[coolgray] at (2.2,-0.8) {feature maps};
+    \node[coolgray] at (4.4,-0.8) {mixed maps};
+    \node[coolgray] at (6.6,-0.8) {candidates};
+    \node[coolgray] at (8.8,-0.8) {detections};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.19\textwidth}L{0.42\textwidth}L{0.31\textwidth}@{}}
+    \toprule
+    \textbf{Part} & \textbf{Job} & \textbf{Examples} \\
+    \midrule
+    Backbone & It makes feature maps from the image. It is a classifier
+               with no last layers.
+             & MobileNet, EfficientNet \\
+    Neck     & It mixes maps of different depths.
+             & FPN, BiFPN \\
+    Head     & It predicts box values and class scores for each cell of a
+               map.
+             & Convolutions with shared weights \\
+    Post-processing & It makes the final list from the candidates. It has
+               no weights.
+             & Score threshold, non-maximum suppression \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \keypoint{A new detector changes one of the four parts. Ask which part
+    changed.}
+\end{frame}
+
+% -------------------------------------------------------------------- grid
+\begin{frame}{The grid: one prediction for each cell}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+          x=0.4cm, y=0.4cm]
+        \fill[boxgray] (0,0) rectangle (10,10);
+        \foreach \i in {0,...,10} {
+          \draw[coolgray!45] (\i,0) -- (\i,10);
+          \draw[coolgray!45] (0,\i) -- (10,\i);
+        }
+        \draw[darkcyan, thick] (1.6,2.4) rectangle (8.2,7.3);
+        \fill[cardinalred!55] (4,4) rectangle (5,5);
+        \fill[darkcyan!70!black] (4.9,4.85) circle (1.4pt);
+        \draw[->, cardinalred] (4.5,4) -- (4.5,-1.0);
+        \node[draw=cardinalred, fill=white, inner sep=2pt] at (5,-1.8)
+          {$c_x\ c_y\ w\ h \;\big|\; s_1\ s_2\ \dots\ s_{80}$};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item The last map of the backbone has $20 \times 20$ cells for an
+              image of $640 \times 640$ pixels. One cell covers
+              $32 \times 32$ pixels: the \textbf{stride} is 32.
+        \item The head gives one vector for each cell: 4 box values and
+              one score for each class.
+        \item The cell at the centre of an object predicts the box of the
+              complete object. The box can be much larger than the cell.
+        \item The head is a convolution. It uses the same weights for each
+              cell, as FOMO on Day 5.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{A detector is a classifier for each cell of a map, plus four
+    numbers for the box.}
+\end{frame}
+
+% -------------------------------------------------------------- three maps
+\begin{frame}{Three maps for three sizes of objects}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize]
+        \foreach \x/\n/\s/\t in {0/16/0.09/{stride 8},
+                                 1.7/8/0.18/{stride 16},
+                                 3.4/4/0.36/{stride 32}} {
+          \fill[boxgray] (\x,0) rectangle (\x+1.44,1.44);
+          \foreach \i in {0,...,\n} {
+            \draw[coolgray!55] (\x+\i*\s,0) -- (\x+\i*\s,1.44);
+            \draw[coolgray!55] (\x,\i*\s) -- (\x+1.44,\i*\s);
+          }
+          \node[below] at (\x+0.72,0) {\t};
+        }
+        \node[below, coolgray] at (0.72,-0.35)  {small objects};
+        \node[below, coolgray] at (4.12,-0.35)  {large objects};
+      \end{tikzpicture}
+      \vskip 0.4em
+      \small
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}rrr@{}}
+        \toprule
+        \textbf{Stride} & \textbf{Map at 640} & \textbf{Cells} \\
+        \midrule
+        8  & $80 \times 80$ & 6400 \\
+        16 & $40 \times 40$ & 1600 \\
+        32 & $20 \times 20$ & 400 \\
+        \midrule
+           & Sum            & 8400 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item A deep map knows what the object is. Its cells are coarse.
+        \item An early map has fine cells. It knows less about the meaning.
+        \item The neck mixes the maps: each map gets the meaning and the
+              position.
+        \item The head runs on each map.
+        \item In the test image, the 10 candidates for the bus come from
+              the map with the stride 32. The small person at the border
+              comes from the map with the stride 16.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{YOLO11n on the image \texttt{bus.jpg}, an experiment of this
+    course. The grids show 16, 8, and 4 cells on a side, not the real
+    number.}
+\end{frame}
+
+% ----------------------------------------------------------------- anchors
+\begin{frame}{Default boxes: the anchors}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+          x=0.4cm, y=0.4cm]
+        \fill[boxgray] (0,0) rectangle (10,9);
+        \foreach \i in {0,...,10} { \draw[coolgray!40] (\i,0) -- (\i,9); }
+        \foreach \i in {0,...,9}  { \draw[coolgray!40] (0,\i) -- (10,\i); }
+        \fill[cardinalred!45] (4,4) rectangle (5,5);
+        \draw[coolgray, dashed, thick] (2.5,2.5) rectangle (6.5,6.5);
+        \draw[coolgray, dashed, thick] (1.7,3.1) rectangle (7.3,5.9);
+        \draw[coolgray, dashed, thick] (3.1,1.7) rectangle (5.9,7.3);
+        \draw[darkcyan, very thick] (2.2,3.4) rectangle (8.6,6.4);
+        \draw[->, darkcyan!70!black] (7.3,5.9) -- (8.5,6.35);
+        \node[coolgray, above] at (5,9) {dashed: 3 default boxes};
+        \node[darkcyan!70!black, below] at (5,0)
+          {solid: the predicted box};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \small
+      \begin{itemize}
+        \item An \textbf{anchor} is a default box with a fixed size and a
+              fixed shape. Each cell has $K$ anchors.
+        \item For each anchor, the head predicts 4 corrections and the
+              class scores:
+              \[
+                K \times (4 + \text{classes}) \ \text{values for a cell}
+              \]
+        \item The corrections move the anchor and change its size.
+        \item The designer selects the sizes and the shapes of the anchors
+              for the objects of the dataset.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item SSD and EfficientDet use anchors. YOLOv8 and the newer YOLO
+          models use no anchors: each cell predicts the distances to the
+          four sides of the box.
+  \end{itemize}
+  \keypoint{With anchors, the number of candidates is the number of cells
+    times $K$.}
+\end{frame}
+
+% --------------------------------------------------------------------- SSD
+\begin{frame}{SSD: boxes from six maps}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.085cm, y=0.085cm]
+    \foreach \x/\n/\k/\c in {0/19/3/1083, 30/10/6/600, 50/5/6/150,
+                             65/3/6/54, 78/2/6/24, 90/1/6/6} {
+      \fill[darkcyan!18] (\x,0) rectangle (\x+\n,\n);
+      \draw[darkcyan] (\x,0) rectangle (\x+\n,\n);
+      \node[below, align=center] at (\x+0.5*\n,-0.5)
+        {$\n \times \n$\\$\times\,\k$\\\textbf{\c}};
+    }
+    \node[anchor=west, align=left] at (99,-9)
+      {cells\\anchors\\boxes};
+    \node[anchor=west, font=\footnotesize] at (40,16)
+      {$1083 + 600 + 150 + 54 + 24 + 6 = 1917$ default boxes};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item SSD: ``Single Shot MultiBox Detector'' (2016). The backbone of the
+          lab model is MobileNetV1.
+    \item The input is $300 \times 300 \times 3$ in \code{uint8}. The file
+          has 4\,183\,312 bytes.
+    \item For each default box, the head gives 4 box values and 91 class
+          values: 90 classes and the background.
+    \item The last operator of the file,
+          \code{TFLite\_Detection\_PostProcess}, does the post-processing.
+          The outputs are 10 boxes, 10 classes, 10 scores, and the number
+          of valid detections.
+  \end{itemize}
+  \source{The file \texttt{ssd-mobilenet-v1-tflite-default-v1.tflite} of
+    the kit lab, read with LiteRT. Method: Liu et al., 2016.}
+\end{frame}
+
+% ------------------------------------------------------------ EfficientDet
+\begin{frame}{EfficientDet: scale all parts together}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=0.95cm, align=center}]
+    \node[b] (a) at (0,0)    {Image};
+    \node[b, draw=darkcyan]    (b) at (2.8,0) {EfficientNet\\backbone};
+    \node[b, draw=darkorange]  (c) at (5.6,0) {BiFPN\\neck};
+    \node[b, draw=cardinalred] (d) at (8.4,0) {Box head and\\class head};
+    \foreach \a/\b in {a/b, b/c, c/d} { \draw[->] (\a) -- (\b); }
+    \node[coolgray] at (0,-0.8)   {more pixels};
+    \node[coolgray] at (2.8,-0.8) {wider and deeper};
+    \node[coolgray] at (5.6,-0.8) {more layers};
+    \node[coolgray] at (8.4,-0.8) {more layers};
+    \draw[treegreen, thick] (-1.0,-1.15) -- (9.4,-1.15);
+    \node[treegreen!70!black] at (4.2,-1.45)
+      {one scaling coefficient sets all four};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \textbf{BiFPN:} a neck that sends features from the deep maps to
+          the early maps, and back. It learns a weight for each input.
+    \item \textbf{Compound scaling:} the image size, the backbone, the
+          neck, and the heads grow together. This gives a family of models
+          from small to large.
+    \item The lab file is EfficientDet-Lite0: an input of
+          $320 \times 320$, five maps with 40, 20, 10, 5, and 3 cells on a
+          side, and 9 anchors for each cell: 19\,206 default boxes.
+    \item The file has 4\,563\,519 bytes. It gives 25 boxes.
+  \end{itemize}
+  \source{Method: Tan, Pang, and Le, 2020. The EfficientDet-Lite0 file of
+    the kit lab, read with LiteRT.}
+\end{frame}
+
+% -------------------------------------------------------------------- YOLO
+\begin{frame}{The YOLO family}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1.72cm]
+    \draw[coolgray, thick, -{Stealth[length=5pt]}] (-0.3,0) -- (5.5,0);
+    \foreach \x/\y/\n/\t in {
+        0/2016/{YOLO}/{one network,\\one pass},
+        1/2018/{YOLOv3}/{three maps},
+        2/2020/{YOLOv5}/{PyTorch},
+        3/2023/{YOLOv8}/{no anchors},
+        4/2024/{YOLO11}/{fewer\\parameters},
+        5/2026/{YOLO26}/{no\\suppression}} {
+      \fill[cardinalred] (\x,0) circle (2pt);
+      \node[above] at (\x,0.12) {\textbf{\n}};
+      \node[below, coolgray] at (\x,-0.1) {\y};
+      \node[below, align=center] at (\x,-0.5) {\t};
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item YOLO: ``You Only Look Once''. The first model showed that one
+          pass of one network is fast enough for video.
+    \item Different teams made the versions. A larger number is not always
+          the better model for your task.
+    \item Each version has five scales: n, s, m, l, and x. YOLO11n has 2.6
+          million parameters, and YOLO11x has 57.0 million. Part 3
+          compares the scales.
+    \item The Ultralytics package trains, exports, and runs the models with
+          one tool. The lab uses it.
+    \item The package and its models have the licence AGPL-3.0. Read the
+          licence before you use them in a product.
+  \end{itemize}
+  \source{Redmon et al., 2016 and 2018. The Ultralytics package, version
+    8.4.171. \emph{Edge AI Engineering}, ``Computer Vision Applications
+    with YOLO''.}
+\end{frame}
+
+% --------------------------------------------------------------- YOLO head
+\begin{frame}{The head of YOLO11: no anchors}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.3cm, minimum height=0.85cm, align=center}]
+    \node[b] (a) at (0,0) {One cell\\of one map};
+    \node[b, draw=darkcyan]    (b) at (3.1,0.65)
+      {Box branch:\\$4 \times 16$ values};
+    \node[b, draw=cardinalred] (c) at (3.1,-0.65)
+      {Class branch:\\80 values};
+    \node[b, draw=darkcyan]    (d) at (6.2,0.65)
+      {4 distances to the\\sides of the box};
+    \node[b, draw=cardinalred] (e) at (6.2,-0.65)
+      {80 scores,\\one sigmoid each};
+    \draw[->] (a.east) -- (b.west);
+    \draw[->] (a.east) -- (c.west);
+    \draw[->] (b) -- (d);
+    \draw[->] (c) -- (e);
+    \node[draw=treegreen, rounded corners=3pt, fill=boxgray, align=center,
+          minimum height=2.15cm] (f) at (8.75,0) {84\\values};
+    \draw[->] (d.east) -- (d.east -| f.west);
+    \draw[->] (e.east) -- (e.east -| f.west);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item \textbf{Box:} for each of the four sides, 16 values give a
+          probability for each distance from 0 to 15 cells. The mean is the
+          distance. The program converts the distances to
+          $c_x, c_y, w, h$.
+    \item \textbf{Class:} each class has its own sigmoid. The 80 scores of
+          a cell do not add up to 1.
+    \item The head has no separate score for ``an object is here''. The
+          score of a candidate is its largest class score.
+    \item YOLOv8 has the same head. YOLO26 predicts each distance with one
+          value.
+  \end{itemize}
+  \source{The head of the Ultralytics models, read from the package. The
+    raw outputs have 64 and 80 channels for each cell.}
+\end{frame}
+
+% ------------------------------------------------------------- raw output
+\begin{frame}[fragile]{Read the raw output}
+\begin{lstlisting}[style=python]
+from ultralytics import YOLO
+
+model = YOLO("yolo11n.pt")
+raw = model.model(image)[0][0]      # image: 1 x 3 x 640 x 640, values 0 to 1
+print(raw.shape)                    # torch.Size([84, 8400])
+
+boxes  = raw[:4].T                  # 8400 rows: cx, cy, w, h in pixels
+scores = raw[4:].max(0).values      # the largest class score of each cell
+labels = raw[4:].argmax(0)          # the class with this score
+keep   = scores > 0.25
+print(int(keep.sum()))              # 47
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The output has 84 rows and 8400 columns: 705\,600 numbers. The
+          80 classes are the classes of the dataset COCO.
+    \item For the test image, 47 cells have a score above 0.25. The image
+          shows 5 objects.
+    \item Normally, \code{model.predict()} does these steps and the
+          post-processing for you.
+  \end{itemize}
+  \keypoint{The output of the network is not a list of objects. It is one
+    candidate for each cell.}
+\end{frame}
+
+% -------------------------------------------------------- how many candidates
+\begin{frame}{How many candidates?}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}L{0.25\textwidth}rrrL{0.26\textwidth}@{}}
+    \toprule
+    \textbf{Model} & \textbf{Image} & \textbf{Maps} & \textbf{Candidates}
+    & \textbf{Values for each} \\
+    \midrule
+    SSD MobileNet V1   & 300 & 6 & 1917     & $4 + 91$ \\
+    EfficientDet-Lite0 & 320 & 5 & 19\,206  & $4 + 90$ \\
+    YOLO11n            & 320 & 3 & 2100     & $4 + 80$ \\
+    YOLO11n            & 640 & 3 & 8400     & $4 + 80$ \\
+    FOMO               & 160 & 1 & 400      & 3, and no box \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The number of candidates is fixed. It comes from the image size,
+          the strides, and the anchors.
+    \item An empty image and a full image give the same number.
+    \item Two times the image side gives four times the candidates.
+    \item The head of FOMO gives $20 \times 20$ cells with three classes:
+          the background and two objects.
+  \end{itemize}
+  \keypoint{The model always gives all candidates. The post-processing
+    selects the detections.}
+  \source{An experiment of this course with the model files.}
+\end{frame}
+
+% --------------------------------------------------------- score threshold
+\begin{frame}{Step 1: the score threshold}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1.7cm, y=0.5cm]
+    \foreach \k/\v/\w/\l/\c in {
+        0/8400/3.924/{All cells}/coolgray!50,
+        1/727/2.862/{Score above 0.001}/darkcyan!35,
+        2/66/1.820/{Score above 0.05}/darkcyan!50,
+        3/47/1.672/{Score above 0.25}/darkcyan!70,
+        4/38/1.580/{Score above 0.5}/darkcyan!90} {
+      \fill[\c] (0,-\k) rectangle (\w,-\k+0.72);
+      \node[anchor=east] at (-0.05,-\k+0.36) {\l};
+      \node[anchor=west] at (\w+0.03,-\k+0.36) {\v};
+    }
+    \draw[coolgray] (0,1.0) -- (0,-4.3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item YOLO11n on the test image at 640 pixels. The bars have a
+          logarithmic scale.
+    \item The threshold removes almost all candidates. The package uses
+          0.25 for a prediction.
+    \item A high threshold loses objects. The fifth person has the score
+          0.40: the threshold 0.5 removes this person.
+    \item A low threshold keeps false boxes, and it gives more work to the
+          next step.
+  \end{itemize}
+  \source{An experiment of this course.}
+\end{frame}
+
+% ------------------------------------------------------------- duplicates
+\begin{frame}{Measured: 47 candidates for 5 objects}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, scale=0.95,
+      >={Stealth[length=5pt]},
+      bus/.style={darkcyan, line width=0.3pt},
+      per/.style={cardinalred, line width=0.3pt}]
+    \fill[boxgray] (0,0) rectangle (4,4);
+    \draw[coolgray] (0,0) rectangle (4,4);
+    \draw[bus] (0.54,3.15) rectangle (3.46,1.28);
+    \draw[bus] (0.58,3.14) rectangle (3.47,1.27);
+    \draw[bus] (0.57,3.15) rectangle (3.47,1.27);
+    \draw[bus] (0.55,3.15) rectangle (3.48,1.27);
+    \draw[bus] (0.58,3.15) rectangle (3.47,1.28);
+    \draw[bus] (0.56,3.15) rectangle (3.48,1.27);
+    \draw[bus] (0.58,3.15) rectangle (3.46,1.28);
+    \draw[bus] (0.56,3.15) rectangle (3.48,1.27);
+    \draw[bus] (0.58,3.15) rectangle (3.48,1.27);
+    \draw[bus] (0.57,3.14) rectangle (3.46,1.27);
+    \draw[per] (0.68,2.53) rectangle (1.40,0.65);
+    \draw[per] (0.68,2.53) rectangle (1.40,0.65);
+    \draw[per] (0.68,2.53) rectangle (1.40,0.65);
+    \draw[per] (0.68,2.54) rectangle (1.40,0.65);
+    \draw[per] (0.68,2.53) rectangle (1.39,0.65);
+    \draw[per] (0.68,2.54) rectangle (1.40,0.66);
+    \draw[per] (0.67,2.53) rectangle (1.40,0.65);
+    \draw[per] (0.68,2.53) rectangle (1.40,0.65);
+    \draw[per] (0.67,2.53) rectangle (1.40,0.64);
+    \draw[per] (0.67,2.53) rectangle (1.40,0.64);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.73);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.54) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.73);
+    \draw[per] (2.99,2.54) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.55) rectangle (3.50,0.74);
+    \draw[per] (2.98,2.54) rectangle (3.50,0.74);
+    \draw[per] (1.33,2.50) rectangle (1.78,0.82);
+    \draw[per] (1.32,2.50) rectangle (1.78,0.81);
+    \draw[per] (1.33,2.50) rectangle (1.78,0.81);
+    \draw[per] (1.32,2.50) rectangle (1.78,0.81);
+    \draw[per] (1.33,2.49) rectangle (1.78,0.82);
+    \draw[per] (1.33,2.49) rectangle (1.77,0.82);
+    \draw[per] (1.32,2.50) rectangle (1.78,0.81);
+    \draw[per] (1.32,2.50) rectangle (1.78,0.81);
+    \draw[per] (1.34,2.50) rectangle (1.77,0.80);
+    \draw[per] (0.50,1.96) rectangle (0.74,0.77);
+    \draw[per] (0.50,1.93) rectangle (0.73,0.77);
+    \draw[per] (0.50,1.97) rectangle (0.73,0.78);
+    \draw[per] (0.50,1.93) rectangle (0.74,0.76);
+    \draw[per] (0.50,1.95) rectangle (0.75,0.79);
+    \draw[per] (0.50,1.77) rectangle (0.74,0.77);
+    \draw[per] (0.50,1.72) rectangle (0.76,0.78);
+    \draw[per] (0.50,1.96) rectangle (0.73,0.79);
+    % The cell of each candidate: 10 for the bus, 37 for the persons.
+    \foreach \x/\y in {1.90/2.30, 1.90/2.70, 2.10/2.70, 2.10/2.30,
+                       2.30/2.70, 2.10/2.50, 1.90/2.50, 2.30/2.30,
+                       2.30/2.50, 1.70/2.50} {
+      \fill[darkcyan!70!black] (\x,\y) circle (1.1pt);
+    }
+    \foreach \x/\y in {1.10/1.30, 0.90/1.30, 0.90/1.50, 1.10/1.10,
+                       1.10/1.50, 0.90/1.10, 3.30/1.30, 1.10/1.70,
+                       1.50/1.70, 1.50/1.50, 1.70/1.70, 0.90/1.70,
+                       3.30/1.50, 3.30/1.70, 1.70/1.50, 1.50/1.90,
+                       1.70/1.90, 1.50/1.30, 0.90/1.90, 3.50/1.50,
+                       1.70/1.30, 3.10/1.50, 3.30/1.90, 1.50/2.10,
+                       3.30/1.10, 3.50/1.70, 1.10/1.90, 3.50/1.30,
+                       3.10/1.30, 0.65/1.35, 0.55/1.25, 0.55/1.35,
+                       0.65/1.25, 0.65/1.45, 0.65/1.15, 0.65/1.05,
+                       0.55/1.45} {
+      \fill[cardinalred] (\x,\y) circle (1.1pt);
+    }
+    \node[below] at (2,0) {47 boxes, and the cell of each box};
+    \draw[->, thick, coolgray] (4.35,2) -- (5.45,2);
+    \begin{scope}[xshift=5.8cm]
+      \fill[boxgray] (0,0) rectangle (4,4);
+      \draw[coolgray] (0,0) rectangle (4,4);
+      \draw[darkcyan, thick] (0.54,3.15) rectangle (3.46,1.28);
+      \draw[cardinalred, thick] (0.68,2.53) rectangle (1.40,0.65);
+      \draw[cardinalred, thick] (2.98,2.55) rectangle (3.50,0.74);
+      \draw[cardinalred, thick] (1.33,2.50) rectangle (1.78,0.82);
+      \draw[cardinalred, thick] (0.50,1.96) rectangle (0.74,0.77);
+      \node[below] at (2,0) {5 boxes after the suppression};
+    \end{scope}
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.1em
+  \small
+  \begin{itemize}
+    \item 10 cells predict the bus, and 37 cells predict the 4 persons.
+    \item The cells near the centre of an object give almost the same box.
+    \item These boxes are not errors of the model. The training asks many
+          cells to find each object.
+  \end{itemize}
+  \source{YOLO11n on \texttt{bus.jpg} at 640 pixels, score above 0.25. An
+    experiment of this course.}
+\end{frame}
+
+% --------------------------------------------------------------------- IoU
+\begin{frame}{IoU: the overlap of two boxes}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.55cm, y=0.55cm]
+        \fill[darkcyan!18] (0,1) rectangle (4,5);
+        \fill[darkcyan!18] (2,0) rectangle (6,4);
+        \fill[cardinalred!55] (2,1) rectangle (4,4);
+        \draw[darkcyan, thick] (0,1) rectangle (4,5);
+        \draw[darkcyan, thick] (2,0) rectangle (6,4);
+        \node at (1,4.3) {A};
+        \node at (5,0.7) {B};
+        \node[white] at (3,2.5) {\textbf{I}};
+      \end{tikzpicture}
+      \[
+        \text{IoU} = \frac{\text{area of the intersection}}
+                          {\text{area of the union}}
+      \]
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item IoU: ``intersection over union''.
+        \item The intersection is the area that the two boxes share. The
+              union is the area that one box or the two boxes cover.
+        \item Here A and B have $4 \times 4 = 16$ squares each. The
+              intersection has $2 \times 3 = 6$ squares.
+        \item The union has $16 + 16 - 6 = 26$ squares. The IoU is
+              $6 / 26 = 0.23$.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{IoU = 0} & \textbf{IoU = 0.5} & \textbf{IoU = 1} \\
+    \midrule
+    The boxes do not touch. & Two equal boxes share two thirds of their
+    area. & The boxes are the same. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \keypoint{Two candidates with a high IoU show the same object. Part 2
+    uses the IoU to compare a prediction with a label.}
+\end{frame}
+
+% --------------------------------------------------------------------- NMS
+\begin{frame}{Step 2: non-maximum suppression}
+  \begin{columns}[c]
+    \begin{column}{0.60\textwidth}
+      \small
+      \begin{enumerate}
+        \item Remove the candidates below the score threshold. Sort the
+              other candidates by their score.
+        \item Take the candidate with the highest score. \textbf{Keep it.}
+        \item Calculate its IoU with each other candidate of the same
+              class.
+        \item \textbf{Remove} each candidate with an IoU above the IoU
+              threshold.
+        \item Do steps 2 to 4 again with the candidates that are left,
+              until no candidate is left.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.36cm, y=0.36cm]
+        \fill[boxgray] (0,0) rectangle (10,7);
+        \draw[cardinalred, very thick] (1,1) rectangle (5,6);
+        \draw[coolgray, dashed] (1.5,0.6) rectangle (5.6,5.6);
+        \draw[coolgray, dashed] (0.6,1.5) rectangle (4.6,6.4);
+        \draw[cardinalred, very thick] (6.5,2) rectangle (9.3,5.2);
+        \draw[coolgray, dashed] (6.9,1.6) rectangle (9.6,4.8);
+        \node[cardinalred] at (3,3.5) {0.9};
+        \node[cardinalred] at (7.9,3.6) {0.8};
+        \node[below, align=center] at (5,0)
+          {solid: kept\\dashed: removed};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The method is greedy. It never looks at a decision again.
+    \item It has no weights. It is normal code after the network.
+    \item For $N$ candidates, it calculates up to $N^2 / 2$ values of the
+          IoU.
+  \end{itemize}
+  \keypoint{The suppression keeps the best box of each group.}
+\end{frame}
+
+% -------------------------------------------------------------- thresholds
+\begin{frame}{The two thresholds}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Threshold} & \textbf{Too low} & \textbf{Too high} \\
+    \midrule
+    Score & False boxes stay. The suppression has more work.
+          & The model loses objects with a low score. \\
+    IoU   & Two real objects that are near become one detection.
+          & Two boxes of one object stay. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The test image with the IoU thresholds 0.3, 0.5, and 0.7: 5
+          boxes each time. With 0.9: 8 boxes for 5 objects.
+    \item The package uses 0.25 for the score and 0.7 for the IoU. The
+          arguments are \code{conf} and \code{iou}.
+    \item \code{agnostic\_nms=True} compares boxes of different classes
+          also. Use it when one object gets two classes.
+    \item A crowd needs a higher IoU threshold than objects that stand
+          alone.
+  \end{itemize}
+  \keypoint{The two thresholds are parameters of the product, not of the
+    model. Tune them on images of your application.}
+  \source{An experiment of this course with YOLO11n.}
+\end{frame}
+
+% ------------------------------------------------------------ where it runs
+\begin{frame}{Where the suppression runs, and its cost}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.32\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    \textbf{Model} & \textbf{Where} & \textbf{Thresholds} \\
+    \midrule
+    SSD and EfficientDet files of the lab
+        & In the file, as its last operator
+        & Fixed in the file: IoU 0.6 and 0.5, at most 10 and 25 boxes \\
+    YOLOv8 and YOLO11
+        & In the Python program, after the runtime
+        & Arguments of each call \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item On the work computer, YOLO11n needs 66.7 ms for the network and
+          1.4 ms for the suppression of 47 candidates.
+    \item With the score threshold 0.001, 727 candidates go to the
+          suppression: 43 ms. A validation run uses this low threshold.
+    \item Published for a Raspberry Pi Zero 2 W, YOLO11n in NCNN: 2748 ms
+          for the network and 533 ms for the post-processing.
+  \end{itemize}
+  \keypoint{An exported YOLO network does not include this code. Measure
+    the complete pipeline.}
+  \source{An experiment of this course on an x86 processor. Raspberry Pi:
+    \emph{Edge AI Engineering}, chapter on YOLO.}
+\end{frame}
+
+% ------------------------------------------------------------------ YOLO26
+\begin{frame}{YOLO26: a head with no suppression}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    & \textbf{One-to-many head} & \textbf{One-to-one head} \\
+    \midrule
+    Training    & Many cells learn each object & One cell learns each
+                                                 object \\
+    Output      & Candidates with duplicates   & The final list \\
+    Suppression & Necessary                    & Not necessary \\
+    Models      & YOLOv8, YOLO11               & YOLO26 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item YOLO26n has the two heads. Its one-to-one head gives 300 rows:
+          a box, a score, and a class. For the test image, 5 rows have a
+          score above 0.25: the same 5 objects.
+    \item Published for a Raspberry Pi Zero 2 W in PyTorch: 36 ms of
+          post-processing with the one-to-one head, and 192 ms with the
+          one-to-many head.
+    \item The export to NCNN keeps only the one-to-many head. The export
+          to ONNX keeps the one-to-one head.
+  \end{itemize}
+  \keypoint{Select the model and the export format together.}
+  \source{\emph{Edge AI Engineering}, chapter on YOLO.\\
+    Output of YOLO26n: an experiment of this course.}
+\end{frame}
+
+% --------------------------------------------------------------- comparison
+\begin{frame}{The detectors of the lab}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.15\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.17\textwidth}@{}}
+    \toprule
+    & \textbf{SSD MobileNet V1} & \textbf{EfficientDet-Lite0}
+    & \textbf{YOLO11n} & \textbf{FOMO} \\
+    \midrule
+    Image side  & 300 & 320 & 640 or 320 & 160 \\
+    Box         & Anchors & Anchors & No anchors & No box: a centre \\
+    Candidates  & 1917 & 19\,206 & 8400 or 2100 & 400 cells \\
+    Classes     & 90 & 90 & 80 & 2 \\
+    File        & 3.99 MB & 4.35 MB & 5.35 MB & 55.3 KB \\
+    Weights     & 8 bits & 8 bits & \code{float16} & 8 bits \\
+    Suppression & In the file & In the file & In the program & None \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The first three models know the classes of COCO. FOMO is the
+          model of the kit lab for two objects: a box and a wheel.
+    \item YOLO11n has 2\,616\,248 parameters and 6.5 GFLOP at 640 pixels:
+          about 11 times the MACs of MobileNetV2 at 224 pixels.
+    \item In the lab, Part A runs the SSD model and a YOLO model on test
+          images. Parts B and C train and export a YOLO model.
+  \end{itemize}
+  \source{An experiment of this course. 1 MB is 1024 KB.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{suppression of six boxes by hand}{%
+  \footnotesize
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.36cm, y=-0.36cm]
+        \fill[white] (0,0) rectangle (13,8);
+        \foreach \i in {0,...,13} { \draw[coolgray!35] (\i,0) -- (\i,8); }
+        \foreach \i in {0,...,8}  { \draw[coolgray!35] (0,\i) -- (13,\i); }
+        \foreach \i in {0,2,...,12} { \node[coolgray, above] at (\i,0) {\i}; }
+        \foreach \i in {2,4,6,8} { \node[coolgray, left] at (0,\i) {\i}; }
+        \draw[cardinalred, thick] (1,1) rectangle (5,7);
+        \draw[darkorange, thick]  (2.08,1.08) rectangle (5.92,6.92);
+        \draw[darkcyan, thick]    (3.16,1.16) rectangle (6.84,6.84);
+        \draw[cardinalred, thick] (8,2) rectangle (11,6);
+        \draw[darkorange, thick]  (8.08,3.08) rectangle (10.92,6.92);
+        \draw[treegreen, thick, dashed] (8.18,3.18) rectangle (10.82,5.82);
+        \node[cardinalred] at (1.5,1.6) {A};
+        \node[darkorange]  at (2.6,1.6) {B};
+        \node[darkcyan]    at (6.3,1.7) {C};
+        \node[cardinalred] at (8.5,2.5) {D};
+        \node[darkorange]  at (8.6,6.4) {E};
+        \node[treegreen!70!black] at (9.5,4.5) {F};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \renewcommand{\arraystretch}{1.05}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}llrl@{}}
+        \toprule
+        & \textbf{Class} & \textbf{Score} & $x_1, y_1, x_2, y_2$ \\
+        \midrule
+        A & person & 0.90 & 1, 1, 5, 7 \\
+        B & person & 0.75 & 2, 1, 6, 7 \\
+        C & person & 0.60 & 3, 1, 7, 7 \\
+        D & person & 0.85 & 8, 2, 11, 6 \\
+        E & person & 0.70 & 8, 3, 11, 7 \\
+        F & dog    & 0.55 & 8, 3, 11, 6 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.2em
+  A detector gives these six candidates. All scores are above the score
+  threshold. The drawing moves some lines a little, so that you see each
+  box.
+  \begin{enumerate}
+    \item Apply the suppression for each class, with the IoU threshold 0.5.
+          Write the IoU values that you need. Which boxes stay?
+    \item Which boxes stay with the IoU threshold 0.3?
+    \item Which boxes stay with the threshold 0.5, when the suppression
+          compares boxes of all classes?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{suppression of six boxes by hand}{%
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrL{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Pair} & \textbf{Intersection} & \textbf{Union} & \textbf{IoU}
+    & \textbf{With the threshold 0.5} \\
+    \midrule
+    A and B & $3 \times 6 = 18$ & $24 + 24 - 18 = 30$ & 0.60
+            & A removes B \\
+    A and C & $2 \times 6 = 12$ & $24 + 24 - 12 = 36$ & 0.33
+            & C stays \\
+    D and E & $3 \times 3 = 9$  & $12 + 12 - 9 = 15$  & 0.60
+            & D removes E \\
+    D and F & $3 \times 3 = 9$  & $12 + 9 - 9 = 12$   & 0.75
+            & Different classes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item The order is A, D, B, E, C for the persons. A stays and removes
+          B. D stays and removes E. C stays: its IoU with A is 0.33, and
+          nobody compares it with B, because B is not in the list now. F is
+          the only dog. \textbf{Result: A, C, D, F.}
+    \item The IoU of A and C is 0.33, above 0.3. A removes C also.
+          \textbf{Result: A, D, F.}
+    \item D removes F: the IoU is 0.75. \textbf{Result: A, C, D.}
+  \end{enumerate}
+  \vskip 0.2em
+  \begin{itemize}
+    \item C is a second person next to the first person, or a third box of
+          the same person. The suppression cannot know this. The IoU
+          threshold decides.
+    \item F is a dog in front of a person, or a wrong class for the
+          person. With one class for each object in your application, use
+          the suppression for all classes.
+  \end{itemize}
+}
