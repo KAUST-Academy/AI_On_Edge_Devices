@@ -76,6 +76,7 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `notebook`, `ipykernel`, `jupyter-client` | 7.6.3, 6.31.0, 8.6.3 | `day08`: the same limits as in the Day 7 lab |
 | `flask` | 3.1.3 | `day08` (`pi/live_detect.py`: the web page of the live image) |
 | `torch`, `torchvision` in the test of the scripts of `pi/` | 2.14.1, 0.29.1 (CPU versions) | `day08`: the scripts for the board ran on the work computer in a second environment, with the files that the notebook exported |
+| `ai-edge-litert`, `onnxruntime`, `ncnn`, `numpy` | 2.2.0, 1.23.2, 1.0.20260526, 2.2.6 | `day09` (`pi/bench.py`: the three runtimes of the benchmark harness). `pi/make_report.py` needs no package. |
 
 ## Arduino board cores and libraries
 
@@ -86,7 +87,7 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | Seeed Arduino LSM6DS3 | 2.0.7 | no board name | Days 1 to 5 |
 | U8g2 by oliver | 2.36.19 | no board name | Days 1 to 5 |
 | Harvard_TinyMLx | 1.2.4-Alpha | no board name | Nano 33 backup modules |
-| Chirale_TensorFlowLite | 2.0.0 | no board name | Days 3 and 4 (`HW-02`, `HW-03`) |
+| Chirale_TensorFlowLite | 2.0.0 | no board name | Days 3, 4, and 9 (`HW-02`, `HW-03`) |
 | PubSubClient by Nick O'Leary | 2.8 | no board name | Day 12 (`HW-07`) |
 | Arduino_BMI270_BMM150 | 1.2.4 | no board name | Nano 33 BLE Sense Rev2 (`HW-10`) |
 | ArduinoBLE | 2.1.0 | no board name | Nano 33 module NB-4 (`HW-10`) |
@@ -166,6 +167,16 @@ and `image_classifier` need the Arduino library of an Edge Impulse project.
 They compile with a replacement for that library, so this file gives no
 size. The kit lab of the source names the core 2.0.17 for these libraries.
 Nobody built a real library with the core 3.3.12.
+
+Sketch of `Labs/day09/` (2026-10-02, XIAO ESP32S3, OPI PSRAM):
+
+| Sketch | Flash | RAM |
+|---|---|---|
+| `kit_bench` (student version, Task B1 not complete) | 944 575 bytes | 24 692 bytes |
+| `kit_bench` (solution) | 944 679 bytes | 24 692 bytes |
+| `kit_bench` (solution), PSRAM disabled | 939 421 bytes | 24 208 bytes |
+
+The four models of this sketch have 567 540 bytes of the program.
 
 Sketch of `Labs/day02/` (2026-10-02, XIAO ESP32S3, PSRAM disabled):
 
