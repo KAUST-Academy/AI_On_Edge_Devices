@@ -1,0 +1,20 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A single-stage detector predicts all candidate boxes in one pass of
+          the network. Non-maximum suppression keeps the best box of each
+          object.
+    \item IoU measures the overlap of two boxes. Precision, recall, and mAP
+          come from the IoU matches between the predicted boxes and the
+          labels.
+    \item The labels set the limit of the model. A model learns the errors of
+          its labels, so one labelling rule applies to all images.
+    \item The input resolution, the model scale, and the precision set the
+          latency of the model. Capture, pre-processing, and post-processing
+          add to it.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{A detector on an edge device is a pipeline, not only a model.
+            Measure the frame rate of the complete pipeline, and report the
+            mAP of the model file that you deploy.}
+\end{frame}
