@@ -63,7 +63,13 @@ The licence of each repository above was read from its `LICENSE` file on
 
 ## 3. Reused items
 
-Each deck, lab, and module adds its rows here.
+Each deck, lab, and module adds its rows at the end of this table. The table
+has no empty line and no other text between its rows.
+
+<!-- Example rows. Keep them in this comment.
+| `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |
+| `Labs/day03/sketches/imu_test/imu_test.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/imu_test/imu_test.ino` | Apache-2.0 | sampling rate changed to 50 Hz |
+-->
 
 | File in this repository | Type | Source | Path in the source | Licence | Change |
 |---|---|---|---|---|---|
@@ -107,11 +113,6 @@ Each deck, lab, and module adds its rows here.
 | `LaTeX/images/day01/imu-directions.png` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/images/png/imu-directions.png` | CC BY-NC-SA 4.0 | none |
 | `LaTeX/images/day01/antenna.jpg` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/images/jpeg/antenna.jpg` | CC BY-NC-SA 4.0 | none |
 | `LaTeX/sections/day01_lab/hardware.tex`, `parts.tex` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the parts of the kit, the order of the tests, the antenna steps, and the expected results, rewritten in short sentences. The steps follow `Labs/day01/README.md`. |
-
-<!-- Example rows. Keep them in this comment.
-| `LaTeX/images/day01/paradigms.pdf` | figure | Machine Learning Systems | `slides/vol1/02_ml_systems/images/paradigms.svg` | CC BY-NC-SA 4.0 | SVG file converted to PDF |
-| `Labs/day03/sketches/imu_test/imu_test.ino` | code | XIAO ESP32S3 Sense | `XIAOML_Kit_code/imu_test/imu_test.ino` | Apache-2.0 | sampling rate changed to 50 Hz |
--->
 | `LaTeX/sections/day02/part1.tex` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/setup/setup.qmd` | CC BY-NC-SA 4.0 | the parts of the kit, the memory sizes, the I2C addresses, and the pin numbers of the microphone, rewritten in short sentences. All diagrams are new. The current values of the power modes come from the Seeed Studio wiki, and the frame names it. |
 | `LaTeX/images/day02/imu-directions.png` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/motion_classification/images/png/imu-directions.png` | CC BY-NC-SA 4.0 | none. The frame shows only the right part: the two drawings of the axes. |
 | `LaTeX/images/day02/motion-classes.jpg` | figure | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/motion_classification/images/jpeg/classes_mov_def.jpg` | CC BY-NC-SA 4.0 | none (new file name) |
