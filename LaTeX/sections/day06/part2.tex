@@ -1,8 +1,653 @@
 % Part 2 of Day 6: Knowledge distillation and low-rank methods.
 %
 % Topics of the syllabus: soft targets and temperature; feature distillation;
-% low-rank factorization. Exercise: calculate soft targets at two
-% temperatures.
+% low-rank factorization. Exercise: calculate soft targets at two temperatures.
+%
+% The numbers of the example model are results of experiments of this course
+% on the work computer, with the CNN for Fashion-MNIST of Part 1. Each frame
+% with such a number says so in its source line.
 
 \theorypart{Knowledge distillation and low-rank methods}%
   {calculate soft targets at two temperatures}
+
+% ----------------------------------------------------------------- the idea
+\begin{frame}{A new model in place of a smaller copy}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Pruning (Part 1)}
+        \begin{itemize}
+          \item Starts from the trained model and removes parts.
+          \item The result has the same layer types and the same
+                connections.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Distillation (this part)}
+        \begin{itemize}
+          \item Trains a new model that you design for the device.
+          \item The large model helps in the training. It does not go to
+                the device.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The large model is the \textbf{teacher}. The small model is the
+          \textbf{student}.
+    \item The student can have a different depth, a different width, and
+          different layer types.
+    \item The result is a normal dense model. Each runtime runs it with no
+          change.
+  \end{itemize}
+  \keypoint{Distillation moves knowledge from one model to a different
+    model. It does not move weights.}
+\end{frame}
+
+\begin{frame}{Teacher and student}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.1cm, minimum height=0.95cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (x) at (0,-0.75) {Training\\input};
+    \node[b, draw=darkcyan, minimum width=2.6cm] (t) at (3.3,0)
+      {Teacher\\trained, fixed};
+    \node[b, draw=cardinalred, minimum width=2.6cm] (s) at (3.3,-1.5)
+      {Student\\in training};
+    \node[b, minimum width=1.5cm] (l) at (6.6,-0.75) {Loss};
+    \node[b, minimum width=1.5cm] (y) at (8.9,-0.75) {Label};
+    \draw[->] (x.east) -- (t.west);
+    \draw[->] (x.east) -- (s.west);
+    \draw[->] (t.east) -| node[pos=0.25, above, lab] {soft targets}
+      (l.north);
+    \draw[->] (s.east) -| node[pos=0.25, below, lab] {output} (l.south);
+    \draw[->] (y) -- (l);
+    \draw[->, cardinalred, dashed] (6.9,-1.25) -- (6.9,-2.3) -|
+      node[pos=0.25, below, lab, text=cardinalred] {gradient: only to the
+      student} (3.3,-1.98);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item The teacher and the student get the same input.
+    \item The student learns from two sources: the label of the dataset,
+          and the output of the teacher.
+    \item The training changes only the student.
+    \item After the training, the device runs the student alone.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Hard labels and soft targets}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.36\textwidth}rr@{}}
+        \toprule
+        \textbf{Class} & \textbf{Label} & \textbf{Teacher} \\
+        \midrule
+        Shirt     & 1 & 0.909 \\
+        Pullover  & 0 & 0.070 \\
+        T-shirt   & 0 & 0.011 \\
+        Coat      & 0 & 0.010 \\
+        Trouser   & 0 & 0.000 \\
+        5 other classes & 0 & 0.000 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item The label says one thing: ``this is a shirt''.
+        \item The teacher says more: ``a shirt, a little like a pullover,
+              and not like a trouser''.
+        \item The small values tell which classes look similar. The label
+              cannot tell this.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{The output of the teacher for one image holds more information
+    than its label. The student gets this information for each training
+    image.}
+  \source{The output of the example model of Part 1 for one test image of
+    Fashion-MNIST.}
+\end{frame}
+
+\begin{frame}{The temperature}
+  \[
+    p_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}
+  \]
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.14\textwidth}rrrrrr@{}}
+    \toprule
+    & \textbf{Shirt} & \textbf{Pullover} & \textbf{T-shirt} & \textbf{Coat}
+    & \textbf{Trouser} & \textbf{Others} \\
+    \midrule
+    $T = 1$ & 0.909 & 0.070 & 0.011 & 0.010 & 0.000 & 0.000 \\
+    $T = 2$ & 0.658 & 0.183 & 0.072 & 0.069 & 0.009 & 0.008 \\
+    $T = 4$ & 0.403 & 0.212 & 0.134 & 0.131 & 0.048 & 0.072 \\
+    $T = 8$ & 0.250 & 0.181 & 0.144 & 0.142 & 0.086 & 0.196 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item $z_i$ is the logit of class $i$: the output before the softmax.
+          $T = 1$ is the normal softmax.
+    \item A higher $T$ makes the distribution flatter. The order of the
+          classes stays, and the small values become visible.
+  \end{itemize}
+  \source{The same test image. The column ``Others'' is the sum of the 5
+    other classes.}
+\end{frame}
+
+\begin{frame}{The distillation loss}
+  \[
+    L = \alpha \cdot L_{\text{hard}} + (1 - \alpha) \cdot T^2 \cdot
+        L_{\text{soft}}
+  \]
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.12\textwidth}L{0.80\textwidth}@{}}
+    \toprule
+    $L_{\text{hard}}$ & The cross-entropy between the label and the output
+        of the student at $T = 1$. It is the normal loss. \\
+    $L_{\text{soft}}$ & The difference between the output of the teacher and
+        the output of the student, the two at the same temperature $T$.
+        The measure is the Kullback-Leibler divergence. \\
+    $\alpha$ & The weight of the label, from 0 to 1. A typical value is
+        0.1: the teacher counts most. \\
+    $T^2$ & A correction. The gradient of the soft part becomes smaller by
+        the factor $1/T^2$. The factor $T^2$ keeps the two parts in
+        balance. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The temperature is a tool of the training. On the device, the
+          student uses the normal softmax, or no softmax.
+  \end{itemize}
+  \source{Hinton et al., ``Distilling the Knowledge in a Neural Network'',
+    2015; \emph{Machine Learning Systems}, Volume I, chapter 10.}
+\end{frame}
+
+\begin{frame}[fragile]{The loss in Keras}
+\begin{lstlisting}[style=python]
+def distillation_loss(T, alpha):
+    def loss(y_true, z_student):
+        labels = ops.cast(y_true[:, 0], "int32")    # the label
+        z_teacher = y_true[:, 1:]                   # the teacher logits
+        hard = keras.losses.sparse_categorical_crossentropy(
+            labels, z_student, from_logits=True)
+        p_teacher = ops.softmax(z_teacher / T)
+        log_p_student = ops.log_softmax(z_student / T)
+        soft = ops.sum(p_teacher * (ops.log(p_teacher + 1e-9)
+                                    - log_p_student), axis=-1)
+        return alpha * hard + (1 - alpha) * T * T * soft
+    return loss
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The teacher runs one time over the training set. Its logits go
+          into the target array, next to the label.
+    \item The student has no softmax layer in the training: it gives
+          logits.
+    \item The training loop is the normal loop: \code{student.fit(x, y)}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Distillation step by step}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center}]
+    \node[b, draw=darkcyan] (a) at (0,0)    {Train the\\teacher};
+    \node[b] (b) at (2.15,0) {Design the\\student};
+    \node[b] (c) at (4.3,0)  {Teacher\\outputs};
+    \node[b, draw=cardinalred] (d) at (6.45,0) {Train the\\student};
+    \node[b] (e) at (8.6,0)  {Quantize,\\deploy};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item \textbf{The teacher} is the best model that you can train. Its
+          size is not important: it never goes to the device.
+    \item \textbf{The student} comes from the budgets of the device: flash,
+          RAM, and time.
+    \item \textbf{The teacher outputs} need no labels. You can use more
+          data than the labelled training set.
+    \item \textbf{Always train the same student with the labels only.} This
+          is the baseline. The distillation must be better.
+  \end{itemize}
+  \keypoint{Distillation costs training time: one run of the teacher over
+    the data, and one training of the student. It costs nothing on the
+    device.}
+\end{frame}
+
+% --------------------------------------------------------------- the results
+\begin{frame}{Measured: distillation with all labels}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.46\textwidth}rr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Parameters} & \textbf{Accuracy} \\
+    \midrule
+    Teacher: 32, 64, and 128 filters             & 93\,962 & 90.3 \\
+    Student: 8, 16, and 32 filters, labels only  & 6218    & 86.9 \\
+    Student, distillation with $T = 1$           & 6218    & 87.1 \\
+    Student, distillation with $T = 2$           & 6218    & 86.6 \\
+    Student, distillation with $T = 4$           & 6218    & 85.8 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The student has 15 times fewer parameters than the teacher. It
+          trains with all 60\,000 labelled images.
+    \item The gain of the distillation is 0.2 points at $T = 1$. The three
+          runs of one setting differ by 0.4 points: this is no clear
+          gain.
+  \end{itemize}
+  \keypoint{With many labels, a very small student is limited by its own
+    size. The teacher cannot help it much.}
+  \source{An experiment of this course: $\alpha = 0.5$, mean of three runs,
+    accuracy in percent.}
+\end{frame}
+
+\begin{frame}{Measured: distillation with few labels}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.70\textwidth}r@{}}
+    \toprule
+    \textbf{Training data of the student} & \textbf{Accuracy} \\
+    \midrule
+    1000 labelled images, labels only                      & 77.4 \\
+    The same 1000 images, distillation with $T = 2$        & 78.9 \\
+    60\,000 images with no label, outputs of the teacher only & 85.3 \\
+    \midrule
+    For comparison: 60\,000 labelled images, labels only   & 86.9 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item With 1000 labelled images, the soft targets give 1.5 points: each
+          image carries more information.
+    \item The large gain comes from the third row. The teacher gives a
+          target for each image that has no label: 7.9 points more.
+    \item A label costs the time of a person. Raw sensor data costs almost
+          nothing.
+  \end{itemize}
+  \keypoint{For an edge product, the strongest use of a teacher is this:
+    it turns raw data from the field into training data for the small
+    model.}
+  \source{The same experiment. The teacher learned from all labelled
+    images. Mean of three runs.}
+\end{frame}
+
+\begin{frame}{The temperature in practice}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        & \textbf{All labels} & \textbf{1000 labels} \\
+        \midrule
+        Labels only & 86.9 & 77.4 \\
+        $T = 1$     & 87.1     & 78.4 \\
+        $T = 2$     & 86.6     & 78.9 \\
+        $T = 4$     & 85.8     & 77.5 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item For this teacher, the best temperature is 1 or 2.
+        \item The mean of its largest probability is 0.921. Its
+              outputs are soft at $T = 1$ already.
+        \item A teacher that gives 0.999 for almost each image needs a
+              higher temperature.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Many texts name a temperature of 4 or 5 as the typical value. The
+          table shows that such a value is not a rule.
+    \item Find $T$ and $\alpha$ with a small search: three temperatures,
+          two values of $\alpha$, and the same student each time.
+  \end{itemize}
+  \source{The same experiment: $\alpha = 0.5$, mean of three runs,
+    accuracy in percent.}
+\end{frame}
+
+\begin{frame}{The limits of distillation}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{The student}
+        \begin{itemize}
+          \item A student that is too small cannot hold the function of the
+                teacher. The gain becomes small.
+          \item A very large gap between teacher and student can make the
+                result worse.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{The teacher}
+        \begin{itemize}
+          \item The student copies the errors of the teacher also.
+          \item A teacher that is too sure gives soft targets near the
+                labels. They carry little.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The data of the distillation must be like the data of the device.
+          The student learns the teacher only where it sees examples.
+    \item The values of $T$ and $\alpha$ come from experiments. No rule
+          gives them.
+  \end{itemize}
+  \keypoint{Distillation is not a compression with no loss. The student is
+    limited by its own size, by the teacher, and by the data.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 10.}
+\end{frame}
+
+\begin{frame}{Feature distillation}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.5cm, minimum height=0.8cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[lab, anchor=east] at (-1.1,0.6) {teacher};
+    \node[lab, anchor=east] at (-1.1,-1.2) {student};
+    \foreach \k/\x in {1/0, 2/2.1, 3/4.2} {
+      \node[b, draw=darkcyan] (t\k) at (\x,0.6) {Layers};
+      \node[b, draw=cardinalred] (s\k) at (\x,-1.2) {Layers};
+    }
+    \node[b] (to) at (6.6,0.6) {Output};
+    \node[b] (so) at (6.6,-1.2) {Output};
+    \draw[->] (t1) -- (t2); \draw[->] (t2) -- (t3); \draw[->] (t3) -- (to);
+    \draw[->] (s1) -- (s2); \draw[->] (s2) -- (s3); \draw[->] (s3) -- (so);
+    \node[b, minimum width=1.2cm, minimum height=0.55cm, font=\scriptsize]
+      (ad) at (3.15,-0.3) {adapter};
+    \draw[<->, darkcyan] (3.15,0.6) -- (ad.north);
+    \draw[->, cardinalred] (3.15,-1.2) -- (ad.south);
+    \draw[<->, coolgray] (to) -- node[right, lab] {soft\\targets} (so);
+    \node[lab, anchor=west] at (3.9,-0.3) {feature loss};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The student also learns to copy a feature map inside the teacher,
+          not only its output.
+    \item The two feature maps have different numbers of channels. A small
+          adapter layer, for example a convolution of $1 \times 1$, makes
+          the shapes equal. The adapter is not in the deployed model.
+    \item The loss is the mean squared difference between the two feature
+          maps.
+    \item It helps most for deep students and for tasks with a small
+          output, for example two classes: the output alone says little.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Distillation and pruning in comparison}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.33\textwidth}L{0.33\textwidth}@{}}
+    \toprule
+    & \textbf{Distillation} & \textbf{Pruning} \\
+    \midrule
+    Architecture   & You design it & The architecture of the trained
+                                     model \\
+    Training cost  & One run of the teacher, and a complete training of
+                     the student & Some epochs of fine-tuning \\
+    Result         & A dense model & Dense (structured), or with zeros
+                                     (unstructured) \\
+    Works on normal kernels & Yes & Only the structured result \\
+    Typical use    & A change to a different model family
+                   & A model that is some percent too large \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A known result: DistilBERT has 40 percent fewer parameters than
+          BERT, is 60 percent faster, and keeps 97 percent of its language
+          performance.
+  \end{itemize}
+  \source{Comparison and DistilBERT numbers: \emph{Machine Learning
+    Systems}, Volume I, chapter 10.}
+\end{frame}
+
+% ------------------------------------------------------------------ low rank
+\begin{frame}{Low-rank factorization: the idea}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]}]
+    \draw[coolgray, fill=darkcyan!35] (0,0) rectangle (2.4,2.4);
+    \node at (1.2,1.2) {$W$};
+    \node[below, font=\scriptsize] at (1.2,0) {$n$ columns};
+    \node[left, font=\scriptsize] at (0,1.2) {$m$ rows};
+    \node at (3.1,1.2) {$\approx$};
+    \draw[coolgray, fill=cardinalred!35] (3.8,0) rectangle (4.5,2.4);
+    \node at (4.15,1.2) {$U$};
+    \node[below, font=\scriptsize] at (4.15,0) {$k$};
+    \node at (4.9,1.2) {$\cdot$};
+    \draw[coolgray, fill=cardinalred!35] (5.3,1.7) rectangle (7.7,2.4);
+    \node at (6.5,2.05) {$V^{T}$};
+    \node[below, font=\scriptsize] at (6.5,1.7) {$n$ columns, $k$ rows};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \[
+    W \approx U \, V^{T} \qquad m \cdot n \ \text{values become} \
+    k \cdot (m + n) \ \text{values}
+  \]
+  \begin{itemize}
+    \item A weight matrix with $m$ rows and $n$ columns becomes the product
+          of two thin matrices. $k$ is the rank.
+    \item The layer $y = W x$ becomes two layers:
+          $y = U \, (V^{T} x)$. The device never calculates $W$.
+    \item The method saves values only when
+          $k < \dfrac{m \cdot n}{m + n}$.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 10.}
+\end{frame}
+
+\begin{frame}{How to find the two factors}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.052cm, y=0.24cm]
+        \draw[->, coolgray] (0,0) -- (70,0);
+        \node[coolgray] at (35,-2.6) {number of the part};
+        \draw[->, coolgray] (0,0) -- (0,12.5);
+        \node[anchor=west, coolgray] at (1,12.6) {singular value};
+        \foreach \x in {16,32,64} {
+          \draw[coolgray] (\x,0) -- (\x,-0.3) node[below] {\x};
+        }
+        \foreach \y in {5,10} {
+          \draw[coolgray] (0,\y) -- (-1,\y) node[left] {\y};
+        }
+        \draw[cardinalred, line width=1pt] plot coordinates {(1,11.17) (4,8.59) (7,7.40) (10,6.45) (13,5.62)
+          (16,5.10) (19,4.51) (22,4.10) (25,3.73) (28,3.47) (31,3.09)
+          (34,2.89) (37,2.58) (40,2.41) (43,2.20) (46,2.06) (49,1.85)
+          (52,1.68) (55,1.49) (58,1.30) (61,1.11) (64,0.71)};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \small
+      \begin{itemize}
+        \item The singular value decomposition (SVD) writes $W$ as a sum
+              of parts. Each part has a singular value: its weight in the
+              sum.
+        \item Keep the $k$ parts with the largest singular values. This is
+              the best approximation of $W$ with the rank $k$.
+        \item If the singular values fall fast, a small $k$ is enough.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The figure shows the third convolution of the example model as a
+          matrix of $288 \times 64$. Its singular values fall slowly: from
+          11.2 to 0.7.
+  \end{itemize}
+  \source{Singular values: the example model of Part 1. Method: the
+    Eckart-Young theorem.}
+\end{frame}
+
+\begin{frame}{Low rank on the example model}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.14\textwidth}rrr@{}}
+    \toprule
+    \textbf{Rank $k$} & \textbf{Values of the factors}
+    & \textbf{Against 18\,432} & \textbf{Accuracy} \\
+    \midrule
+    64 (full) & 22\,528 & 122 percent & 89.1 \\
+    48        & 16\,896 & 92 percent  & 89.0 \\
+    32        & 11\,264 & 61 percent  & 85.5 \\
+    16        & 5632    & 31 percent  & 78.7 \\
+    8         & 2816    & 15 percent  & 51.7 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Only the third convolution changes. It is the matrix of
+          $288 \times 64$ with 18\,432 weights.
+    \item The method saves values only below a rank of 52:
+          $18\,432 / (288 + 64) = 52.4$.
+    \item A small layer of a small model is not low rank: each of its
+          filters does a different job.
+    \item Low-rank methods pay for large layers with redundancy, for
+          example the layers of a language model.
+  \end{itemize}
+  \source{An experiment of this course with the example model of Part 1.
+    Accuracy in percent, with no fine-tuning.}
+\end{frame}
+
+\begin{frame}{A large matrix, and the cost on the device}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.48\textwidth}r@{}}
+        \toprule
+        \textbf{Matrix $4096 \times 4096$} & \textbf{Values} \\
+        \midrule
+        Dense        & 16\,777\,216 \\
+        Rank 128     & 1\,048\,576 \\
+        \midrule
+        Dense, \code{float32} & 64 MB \\
+        Rank 128, \code{float32} & 4 MB \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item The factors need 16 times fewer values and 16 times fewer
+              MACs.
+        \item This is true only if the matrix has this redundancy. You
+              must measure the accuracy.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item One layer becomes two layers. The device needs one more
+          activation tensor with $k$ values and one more kernel call.
+  \item A convolution of $3 \times 3$ becomes a convolution of
+          $3 \times 3$ with $k$ filters and a convolution of
+          $1 \times 1$.
+    \item After the factorization, fine-tune the model, as after pruning.
+  \end{itemize}
+  \source{Example of the matrix: \emph{Machine Learning Systems}, Volume I,
+    chapter 10.}
+\end{frame}
+
+\begin{frame}{The methods of Parts 1 and 2}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.15\textwidth}L{0.24\textwidth}L{0.24\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    & \textbf{Structured pruning} & \textbf{Distillation}
+    & \textbf{Low rank} \\
+    \midrule
+    Start       & A trained model & A trained teacher & A trained model \\
+    The result  & The same model with fewer filters
+                & A new model that you design
+                & The same model with two thin layers for one layer \\
+    Training    & Fine-tuning & A complete training & Fine-tuning \\
+    Best for    & A model that is somewhat too large
+                & A large step in size
+                & Large layers with redundancy \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The three methods give a dense model. After each of them, the
+          quantization of Day 4 gives a factor of 4 more in the flash.
+  \end{itemize}
+  \keypoint{Compare the methods on one plot: accuracy against size and
+    against latency. The lab does this.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{soft targets at two temperatures}{%
+  \small
+  A teacher gives these logits for one image:
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Class} & Shirt & Pullover & Coat & Sandal \\
+    \midrule
+    \textbf{Logit $z$} & 4.0 & 2.0 & 0.0 & $-2.0$ \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.2em
+  \[
+    p_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}
+  \]
+  Values: $e^{4} = 54.60$, $e^{2} = 7.39$, $e^{1} = 2.72$,
+  $e^{0.5} = 1.65$, $e^{0} = 1$, $e^{-0.5} = 0.61$, $e^{-2} = 0.14$.
+  \begin{enumerate}
+    \item Calculate the four probabilities for $T = 1$.
+    \item Calculate the four probabilities for $T = 4$.
+    \item Compare the classes ``Coat'' and ``Sandal'' in the two results.
+          What does the student learn at $T = 4$ that it cannot learn at
+          $T = 1$?
+    \item What is the result for a very large $T$? Is this useful?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{soft targets at two temperatures}{%
+  \small
+  \begin{enumerate}
+    \item $T = 1$: the sum is $54.60 + 7.39 + 1.00 + 0.14 = 63.13$.
+    \item $T = 4$: the logits become 1.0, 0.5, 0.0, and $-0.5$. The sum is
+          $2.72 + 1.65 + 1.00 + 0.61 = 5.98$.
+          \vskip 0.2em
+          {\footnotesize
+          \renewcommand{\arraystretch}{1.05}
+          \begin{tabular}{@{}lrrrr@{}}
+            \toprule
+            & \textbf{Shirt} & \textbf{Pullover} & \textbf{Coat}
+            & \textbf{Sandal} \\
+            \midrule
+            $T = 1$ & 0.865 & 0.117 & 0.016 & 0.002 \\
+            $T = 4$ & 0.455 & 0.276 & 0.167 & 0.102 \\
+            \bottomrule
+          \end{tabular}}
+    \item At $T = 1$, the two classes have 0.016 and 0.002: almost no
+          signal in the loss. At $T = 4$, they have 0.167 and 0.102. The
+          student now learns that a shirt is more like a coat than like a
+          sandal. The order of the classes is the same in the two rows.
+    \item Each class gets 0.25. All information is lost: the target is the
+          same for each image. A very high temperature is not useful.
+  \end{enumerate}
+}
