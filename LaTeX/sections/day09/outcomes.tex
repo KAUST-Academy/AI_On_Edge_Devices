@@ -1,0 +1,32 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 9 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item Days 3 to 8 gave many numbers: a latency, a model size, an accuracy,
+          a frame rate. A number is useful only when a second person can
+          measure it again and get the same value.
+    \item One timed inference is not a measurement. The first inferences are
+          slower than the later ones, the latency changes from run to run, and
+          a mean hides the slow inferences. A fair benchmark has a warm-up,
+          many repetitions, fixed inputs, and percentiles.
+    \item A battery device has an energy budget. The energy of one inference
+          and the duty cycle give the battery life. A hot processor reduces
+          its clock frequency, so a short run gives a latency that a long run
+          does not keep.
+    \item In the lab you write the benchmark protocol first. Then you measure
+          keyword spotting and image classification on the XIAOML Kit, and
+          image classification and object detection on the Raspberry Pi 5. You
+          write one report for the two boards.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Define latency percentiles, throughput, peak memory, and energy per
+          inference.
+    \item Design a fair benchmark with warm-up, repetitions, and fixed inputs.
+    \item Measure one task on two boards and explain the differences.
+    \item Explain thermal throttling and its effect on results.
+  \end{itemize}
+\end{frame}
