@@ -1,0 +1,68 @@
+% Goal and plan of the Day 7 lab.
+% The parts and the times come from the Day 7 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has a runtime comparison on the
+          Raspberry Pi 5: the latency of one model for each runtime, thread
+          count, and precision.
+    \item \textbf{Board:} the Raspberry Pi 5 with the camera.
+    \item \textbf{Deliverable:} the latency table and the Decision Log in
+          the file \code{report.md}.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the reasons: SIMD kernels, threads, the three layers of
+    a runtime, and the graph optimizer. All its numbers are from an x86
+    processor. In the lab, you export the same model, you look at its
+    graphs, and you measure it on the board.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{Predict each number before you measure it. A wrong prediction
+    teaches more than a correct one.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (35,0.8);
+    \fill[treegreen!60]   (35,0)  rectangle (70,0.8);
+    \fill[darkorange!55]  (70,0)  rectangle (115,0.8);
+    \fill[cardinalred!55] (115,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (35,0) -- (35,0.8) (70,0) -- (70,0.8)
+      (115,0) -- (115,0.8) (150,0) -- (150,0.8);
+    \node at (17.5,0.4)  {\textbf{A}: 35};
+    \node at (52.5,0.4)  {\textbf{B}: 35};
+    \node at (92.5,0.4)  {\textbf{C}: 45 min};
+    \node at (132.5,0.4) {\textbf{D}: 35};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,35,70,115,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Setup: start the Raspberry Pi, connect with SSH, and test the
+        camera & 35 min \\
+    B & First inference: MobileNetV2 with LiteRT on a test image and on
+        the camera & 35 min \\
+    C & Export and inspect: one PyTorch model to ONNX and to LiteRT, and
+        the graphs in Netron & 45 min \\
+    D & Measure: the latency for each runtime, thread count, and
+        precision & 35 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

@@ -1,0 +1,291 @@
+% The four parts of the Day 7 lab. The steps follow Labs/day07/README.md.
+%
+% Hardware status: not tested on hardware. A value that only the board can
+% give is written as "..." and the students measure it. The deck does not
+% show a result that the students must predict.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: setup (35 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Start the board, and connect with SSH & 10 min \\
+    2 & Check the system with the script of the course card & 10 min \\
+    3 & Test the camera, and look at the photo on the laptop & 10 min \\
+    4 & Copy the lab folder to the board & 5 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+ssh edge@pi-NN.local                      # NN is the number of your group
+bash ~/HW-04/check_pi.sh                  # each line: PASS, FAIL, or INFO
+rpicam-hello --list-cameras
+rpicam-jpeg --output test.jpg --width 640 --height 480
+scp -r day07 edge@pi-NN.local:~/edgeai/   # on the laptop, in the folder Labs/
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You record:} the model, the release of the operating
+          system, the Python version, the RAM, and the temperature.
+    \item Open a second SSH connection and start \code{htop}. Keep it open:
+          it shows the load of each of the 4 cores.
+    \item Tell the instructor if a line of the check shows \code{FAIL}.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: the first inference (35 min)}
+  \small
+  Get the cat photo of the kit lab, and run the model of the kit lab:
+\begin{lstlisting}[style=shell]
+wget -P images https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg
+python pi/classify_image.py images/Cat03.jpg
+\end{lstlisting}
+\begin{lstlisting}
+Model:  models/mobilenet_v2_1.0_224_quant.tflite (3577760 bytes)
+Image:  images/Cat03.jpg, threads: 4
+Input:  shape [1, 224, 224, 3], type uint8
+Output: 1001 values, type uint8
+Load: ... ms. First inference: ... ms. Median of the next runs: ... ms.
+Task B1: not complete. The list shows the raw output values.
+\end{lstlisting}
+  \begin{itemize}
+    \item The model is MobileNetV2 in \code{uint8}, with 1001 classes.
+    \item The script reads the shape and the type of the input from the
+          file, and prepares the image for them.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction.} With one MAC in each clock cycle, this model needs
+    125 ms on the board. Which median latency do you expect with 4 threads?
+    Write your number in the report. Then run the script.
+  \end{exerciseblock}
+  \source{Photo: Fir0002, Wikimedia Commons, GFDL 1.2. Nobody measured the
+    three times on a board.}
+\end{frame}
+
+\begin{frame}{Part B: Task B1 and the camera}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1, 2 & Get the photo, and run the model & 15 min \\
+    3 & Task B1: from the raw outputs to probabilities & 10 min \\
+    4 & Classify photos of the camera, and compare 1 thread with 4 threads
+      & 10 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item \textbf{Task B1} is the function \code{dequantize\_and\_softmax}
+          in \code{pi/classify\_image.py}. The mapping of Day 4 gives the
+          real value: $r = S\,(q - Z)$. Then apply the softmax.
+    \item The check: the script prints \code{Task B1: complete}, and a cat
+          class is first. On the work computer, the first class has 39
+          percent.
+    \item The camera:
+          \code{python pi/classify\_camera.py --count 3 --interval 3}.
+          Point it at a keyboard, a mouse, a cup, or a bottle.
+    \item \textbf{You record:} the five classes of the cat photo, and for
+          each camera photo the object, the first class, and the median
+          latency.
+  \end{itemize}
+  \keypoint{The file gives the scale and the zero point of its output. Read
+    them from the output details. Do not write them into the code.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}{Part C: export and inspect (45 min)}
+  \small
+  Work on the laptop, in the notebook \code{export\_inspect.ipynb}.
+  \vskip 0.2em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.12\textwidth}L{0.66\textwidth}L{0.11\textwidth}@{}}
+    \toprule
+    \textbf{Section} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    0 and 1 & Setup, and the layers of the PyTorch model & 3 min \\
+    2 & \textbf{Task 1:} export to ONNX with a static shape & 7 min \\
+    3 & \textbf{Task 2:} export with a dynamic batch size, and a comparison
+        of the two files & 8 min \\
+    4 & Export to LiteRT, and the operators of the file & 5 min \\
+    5 & The graph for each optimization level, and the files in Netron
+      & 12 min \\
+    6 & \textbf{Task 3:} fold a batch normalization by hand & 7 min \\
+    7 and 8 & The same result in each runtime, and the files for the
+        board & 3 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The cell after a task prints \code{Task N: complete} or
+          \code{not complete}.
+    \item The last cell prints \code{Tasks complete: 1, 2, 3}.
+    \item At the end, copy four files to the board with the \code{scp}
+          command of section 8.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part C: Tasks 1 and 2, the two exports}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.25\textwidth}L{0.56\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{Function} & \textbf{You write} \\
+    \midrule
+    1 & \code{export\_static} & The call of \code{torch.onnx.export}, with
+        the names and the options of the notebook \\
+    2 & \code{export\_dynamic} & The same call with \code{dynamic\_shapes}:
+        dimension 0 of the input gets the name \code{batch} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The checks: the static file has the input shape 1, 3, 224, 224.
+          The dynamic file accepts 3 images. The outputs agree with
+          PyTorch.
+    \item \textbf{You record:} the layers of the PyTorch model, the nodes
+          of the ONNX file, and the layer type that has no node.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction,} before the cell that compares the two files:
+    \begin{itemize}
+      \item Is the dynamic file slower for one image?
+      \item What does the static file do with 2 images?
+      \item Is a batch of 4 faster for each image than 4 runs with one
+            image?
+    \end{itemize}
+  \end{exerciseblock}
+\end{frame}
+
+\begin{frame}{Part C: the graphs in Netron}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      g/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=0.6cm, align=center},
+      q/.style={draw=cardinalred, rounded corners=2pt, fill=cardinalred!10,
+                minimum width=1.9cm, minimum height=0.6cm, align=center}]
+    \node[coolgray, anchor=east] at (-1.2,0)    {the PyTorch model};
+    \node[g] (a) at (0,0)   {Conv2d};
+    \node[g] (b) at (2.4,0) {BatchNorm2d};
+    \node[g] (c) at (5.1,0) {ReLU6};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c);
+    \node[coolgray, anchor=east] at (-1.2,-0.9) {in each file};
+    \node[q] (d) at (0,-0.9)   {?};
+    \node[q] (e) at (2.4,-0.9) {?};
+    \node[q] (f) at (5.1,-0.9) {?};
+    \draw[->] (d) -- (e); \draw[->] (e) -- (f);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.36\textwidth}L{0.56\textwidth}@{}}
+    \toprule
+    \textbf{File in \code{models/}} & \textbf{Question of the report} \\
+    \midrule
+    \code{mnv2\_level\_basic.onnx} & Which node is gone? Which new input
+                                     does the first \code{Conv} have? \\
+    \code{mnv2\_level\_extended.onnx} & What is the name of the first node?
+                                     Which attribute holds the activation? \\
+    \code{mnv2.tflite} & Which property of the first \code{Conv2D} holds the
+                         activation? Which operator comes before it, and
+                         why? \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Drag a file into the page \code{netron.app}. Click a node to see
+          its inputs and its attributes.
+    \item \textbf{You record:} the table of the four levels with the nodes
+          and the latency of your laptop. Write your prediction first:
+          which level gives the largest gain?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part C: Task 3, fold a batch normalization}
+  \[
+    s = \frac{\gamma}{\sqrt{\sigma^2 + \varepsilon}} \qquad
+    W' = s\,W \qquad b' = \beta - s\,\mu
+  \]
+  \small
+  \begin{itemize}
+    \item The function \code{fold\_batch\_norm} gets the weight of the first
+          convolution and the four tensors of its batch normalization. It
+          returns $W'$ and $b'$.
+    \item The convolution has no bias, so $b = 0$ in the formula of the
+          lecture.
+    \item Each output channel has its own $s$. The weight has the shape
+          (output channels, input channels, height, width). Use
+          \code{s[:, None, None, None]} to multiply each filter by its
+          value.
+    \item The check runs the two operators of PyTorch, and then one
+          convolution with your $W'$ and $b'$. The task is complete when
+          the largest difference is below 0.0001.
+    \item \textbf{You record:} the largest difference, and the number of
+          values that the model loses and gets.
+  \end{itemize}
+  \keypoint{This is the exercise of the lecture, for 32 filters in place of
+    one. The basic level of ONNX Runtime did it for all 52 layers.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}[fragile]{Part D: measure (35 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Predict: write your answer for each question of the report
+      & 5 min \\
+    2 & Task D1: the function \code{median\_latency\_ms} in
+        \code{pi/bench.py} & 5 min \\
+    3 & Measure: run the script two times & 10 min \\
+    4 & Fill the latency table, and calculate the three ratios & 10 min \\
+    5 & Compare with your predictions, and write the Decision Log
+      & 5 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}
+runtime      file             type     threads   load ms  median ms
+litert       mnv2.tflite      float32        1       ...        ...
+...
+onnxruntime  mnv2_int8.onnx   int8           4       ...        ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \code{python pi/bench.py} measures 6 files with 1, 2, and 4
+          threads: 18 lines. It also writes \code{results.csv}.
+    \item Task D1: some calls to warm up, then one time for each call, then
+          the median.
+  \end{itemize}
+  \source{Nobody measured the values on a board.}
+\end{frame}
+
+\begin{frame}{Part D: predict, measure, compare}
+  \begin{exerciseblock}
+    \textbf{Prediction,} before you run the script:
+    \begin{itemize}
+      \item \code{float32}: which runtime is faster, LiteRT or ONNX
+            Runtime?
+      \item The gain from 1 thread to 4 threads: 4, more than 3, or less
+            than 3?
+      \item LiteRT: is \code{int8} faster than \code{float32}? By which
+            factor?
+      \item ONNX Runtime: is the dynamic file slower than the static file?
+    \end{itemize}
+  \end{exerciseblock}
+  \small
+  \begin{itemize}
+    \item Close each other program, and keep \code{htop} open. Use the
+          second run for the table.
+    \item \textbf{You record:} the latency table, the temperature, the busy
+          cores in \code{htop}, and three ratios: threads, precision, and
+          runtime.
+    \item If you have time: \code{python pi/bench.py --levels} measures
+          the four optimization levels of ONNX Runtime on the board.
+  \end{itemize}
+  \keypoint{A latency is valid for one model, one runtime, one setting, and
+    one device. Write all four next to each number.}
+\end{frame}

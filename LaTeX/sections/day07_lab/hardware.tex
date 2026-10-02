@@ -1,0 +1,73 @@
+% Hardware, software, and the two computers of the Day 7 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item Raspberry Pi 5 (8 GB) with the active cooler and the card of
+              your group: \code{pi-NN}.
+        \item Power supply, 27 W.
+        \item Camera Module 3 with its cable.
+        \item Laptop in the Wi-Fi \code{edgeai-lab}.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \textbf{Software}
+      \begin{itemize}
+        \item On the board: the environment \code{\textasciitilde/tflite\_env}
+              with LiteRT and ONNX Runtime.
+        \item On the laptop: a new environment with the file
+              \code{requirements.txt}, for the notebook.
+        \item Netron: \code{netron.app} in a browser.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
+    Lab files & \code{Labs/day07/} on the laptop,
+                \code{\textasciitilde/edgeai/day07/} on the board \\
+    Each new terminal on the board &
+                \code{cd \textasciitilde/edgeai/day07} and
+                \code{source \textasciitilde/tflite\_env/bin/activate} \\
+    The camera cable & Do not connect or remove it when the power is on. \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Two computers, one model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {PyTorch\\model};
+    \node[b, draw=darkorange] (b) at (2.15,0) {Export\\(Part C)};
+    \node[b] (c) at (4.3,0)  {Model\\files};
+    \node[b, draw=darkcyan] (d) at (6.45,0) {Runtime\\(Parts B, D)};
+    \node[b, draw=cardinalred] (e) at (8.6,0)  {Latency\\table};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {MobileNetV2,\\141 layers};
+    \node[lab] at (2.15,-0.95) {static, dynamic,\\LiteRT};
+    \node[lab] at (4.3,-0.95)  {\texttt{.onnx}, \texttt{.tflite},\\copy with \texttt{scp}};
+    \node[lab] at (6.45,-0.95) {LiteRT,\\ONNX Runtime};
+    \node[lab] at (8.6,-0.95)  {threads,\\precision};
+    \draw[coolgray, dashed] (-1.0,0.75) rectangle (5.32,-1.45);
+    \draw[coolgray, dashed] (5.43,0.75) rectangle (9.6,-1.45);
+    \node[lab] at (2.15,1.0) {the laptop};
+    \node[lab] at (7.5,1.0)  {the Raspberry Pi};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The export needs PyTorch and the converters. They stay on the
+          laptop. The board needs only the two runtimes.
+    \item The folder \code{models/} already has three files: the model of
+          the kit lab in \code{uint8}, and the model of Part C in
+          \code{int8} for each runtime.
+    \item You make the \code{float32} files in Part C and copy them to the
+          board.
+  \end{itemize}
+  \keypoint{This is the path of each deployment: train and export on a
+    large computer, run a small file on the device.}
+\end{frame}
