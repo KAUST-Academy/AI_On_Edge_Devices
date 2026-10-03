@@ -46,8 +46,8 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `ai-edge-litert` | 2.2.0 | `HW-02` (check of the sine model) |
 | `numpy` | 2.2.6 | `HW-02`, `HW-06` |
 | `opencv-python-headless` | 5.0.0.93 | `HW-06` |
-| `paho-mqtt` | 2.1.0 | `HW-07`, `HW-08`, `HW-09`, Day 12 lab (`decide.py`, `forwarder.py`, `cloud_check.py`) |
-| `psutil` | 7.2.2 | `HW-08` |
+| `paho-mqtt` | 2.1.0 | `HW-07`, `HW-08`, `HW-09`, Day 12 lab (`decide.py`, `forwarder.py`, `cloud_check.py`), Day 13 lab (`pi/monitor.py`, `pi/alert.py`, `dashboard/dashboard.py`) |
+| `psutil` | 7.2.2 | `HW-08`, Day 13 lab (`pi/monitor.py`: CPU, RAM, memory of the process) |
 | `prometheus-client` | 0.26.0 | `HW-08` |
 | `ollama` | 0.6.3 | `HW-05` |
 | `pyserial` | 3.5 | `HW-01` (`check_rate.py --port`), `day02` (`logger.py --port`, tested with a simulated serial port) |
@@ -81,6 +81,7 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `ai-edge-litert`, `onnxruntime`, `ncnn`, `numpy` | 2.2.0, 1.23.2, 1.0.20260526, 2.2.6 | `day09` (`pi/bench.py`: the three runtimes of the benchmark harness). `pi/make_report.py` needs no package. |
 | `ollama` (Python library), `pydantic` | 0.6.3, 2.13.5 | `day10` (all scripts). The models `llama3.2:1b`, `llama3.2:3b`, `nomic-embed-text`, and `llava-phi3:3.8b` of the Ollama library, read on 2026-10-03. |
 | `opencv-python`, `ultralytics` in the Day 8 environment | 5.0.0.93, 8.4.171 | `day11` (`stream_detect.py`: the reader with `cv2.CAP_PROP_N_THREADS` and the Day 8 detector). `mjpeg_rate.py` needs no package. |
+| `ultralytics`, `ncnn`, `opencv-python`, `flask` in `~/yolo` | 8.4.171, 1.0.20260526, 5.0.0.93, 3.1.3 | `day13` (`pi/monitor_detect.py`: the Day 8 detector with an NCNN folder, the statistics of a frame, and the Day 8 web page with `--web`). `pi/reference.py` needs no package. |
 
 ## Arduino board cores and libraries
 
