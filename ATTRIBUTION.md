@@ -33,6 +33,7 @@ the licence of its own source. Section 1 gives the licence of each source.
 | Ollama (documentation) | Ollama | `github.com/ollama/ollama` | MIT |
 | Llama 3.2 model files of the Ollama library | Meta | `ollama.com/library/llama3.2` | Llama 3.2 Community License: facts only |
 | LiteRT-LM (README) | Google LLC | `github.com/google-ai-edge/LiteRT-LM` | Apache-2.0 |
+| MediaMTX (documentation) | aler9 and the MediaMTX contributors (bluenviron) | `github.com/bluenviron/mediamtx` | MIT |
 
 Conditions:
 
@@ -265,3 +266,7 @@ has no empty line and no other text between its rows.
 | `LaTeX/sections/day11/part1.tex` | data | Raspberry Pi documentation | `documentation/asciidoc/computers/raspberry-pi/introduction.adoc` (Raspberry Pi 5) | CC BY-SA 4.0 | the Ethernet rate (1 Gb/s) and the Wi-Fi standard and rate (802.11ac, 300 Mb/s) of the Raspberry Pi 5, in a new table |
 | `LaTeX/sections/day11/part1.tex` | data | Data sheet of the ESP32-S3 (Espressif Systems, version 2.2) | Section "Wi-Fi" | Not open: facts only | the Wi-Fi standards (802.11 b/g/n), the band (2.4 GHz), and the highest data rate (150 Mbps), in a new table |
 | `LaTeX/sections/day11/part1.tex` | text | This repository | `Labs/hardware/HW-09/README.md`, `Labs/hardware/HW-06/mediamtx_cam.yml` | GPL-3.0 | the lab network, the address plan, and the ports of the course, as a new diagram, a new table, and example outputs of `ip`, `ss`, and `ping`. The setting `rtspAddress` of the exercise comes from the MediaMTX file. |
+| `LaTeX/sections/day11/part2.tex` | data | XIAO ESP32S3 Sense (code) | `images/xiao_esp32s3_led.MOV` | Apache-2.0 | the camera video is the test input of the experiment `tools/experiments/day11_video.py` of the course repository: the centre band at 1280 x 720 and 640 x 360. Only the measured bit rates, frame sizes, and PSNR values are on the frames. No frame of the video is in this repository. |
+| `LaTeX/sections/day11/part2.tex` | code | XIAO ESP32S3 Sense (code) | `Streeming_Video/Streeming_Video.ino` | Apache-2.0 | the content type, the boundary, and the part headers of the MJPEG stream, as an example HTTP answer in a listing; the settings `PIXFORMAT_JPEG` and `jpeg_quality = 12` in the text |
+| `LaTeX/sections/day11/part2.tex` | text | Raspberry Pi documentation | `documentation/asciidoc/computers/camera/rpicam_vid.adoc`, `documentation/asciidoc/computers/camera/streaming.adoc` | CC BY-SA 4.0 | the sentence "Raspberry Pi 5 uses software video encoders." as a quote, and the option `--low-latency` that suppresses B-frames, in new sentences |
+| `LaTeX/sections/day11/part2.tex` | text | MediaMTX (documentation) | `README.md`, `docs/2-features/26-rtsp-specific-features.md`, `docs/2-features/28-decrease-packet-loss.md`, `docs/3-publish/14-raspberry-pi-cameras.md` (release v1.21.1) | MIT | the list of protocols, the conversion between protocols, the two quotes on UDP and TCP, the write queue, and the secondary MJPEG stream of a Raspberry Pi camera, in new sentences and a new table. The RTSP messages and the RTP values on the frames come from a session with MediaMTX v1.21.1 on the work computer. |
