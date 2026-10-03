@@ -1,0 +1,28 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 13 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item On Days 8 to 12 you built applications that detect objects, stream
+          video, and send results with MQTT. A deployed application runs for
+          weeks with no person in front of it.
+    \item A deployed model can fail with no error message. The light changes,
+          a new object appears, a sensor gets dirty, or the board gets hot.
+          The program still runs, but its answers get worse.
+    \item Monitoring makes such failures visible. The device measures itself,
+          writes logs that fit its storage, and sends metrics to a dashboard.
+          An alert tells a person before the users see the problem.
+    \item In the lab you add measurements and logs to the Day 8 detector, show
+          them on a live dashboard, cause a drift event, detect it from the
+          confidence values, and test one alert rule.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Select metrics for model health and for system health.
+    \item Write structured logs on a device with small storage.
+    \item Build a live dashboard for an edge device.
+    \item Detect data drift without labels.
+  \end{itemize}
+\end{frame}
