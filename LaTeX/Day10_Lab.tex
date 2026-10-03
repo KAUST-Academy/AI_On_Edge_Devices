@@ -1,0 +1,30 @@
+% Lab deck of Day 10. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day10_Lab.tex
+%
+% Hardware status: not tested on hardware (prepared on 2026-10-03). The lab
+% files are in Labs/day10/. Labs/day10/TEST_NOTES.md gives the test steps.
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 10 lab]{Day 10 lab: small language models on the Raspberry Pi}
+
+% Name only the sources that this deck uses.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditraspi
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day10_lab/goal}
+\input{sections/day10_lab/hardware}
+\input{sections/day10_lab/parts}
+\input{sections/day10_lab/check}
+\input{sections/day10_lab/problems}
+\input{sections/credits}
+
+\end{document}

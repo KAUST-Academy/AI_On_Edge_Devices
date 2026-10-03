@@ -1,0 +1,39 @@
+% Fallbacks and common problems of the Day 10 lab. The rows come from
+% Labs/day10/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.42\textwidth}L{0.53\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    \code{No module named 'ollama'}
+      & \code{source \textasciitilde/ollama/bin/activate} \\
+    \code{Failed to connect to Ollama}
+      & \code{sudo systemctl start ollama} \\
+    \code{SKIP llama3.2:3b: not downloaded}
+      & Ask the instructor. \code{ollama pull} needs the network and some
+        minutes. \\
+    The first request needs many seconds
+      & Ollama loads the model. The scripts do not count this request. \\
+    The rate falls during a long run
+      & Check the cooler and \code{vcgencmd get\_throttled}. Write the
+        value in the report. \\
+    The board is very slow, \code{free -m} shows swap
+      & Use a smaller context or the 1B model \\
+    \code{not valid} for an answer
+      & The answer reached the token limit. Check the limits of the task. \\
+    A valid answer is wrong
+      & A schema makes the output valid, not correct. Write the case in the
+        report. \\
+    Option 2 is too slow
+      & Run two images with \code{--image}, and write this in the report \\
+    A task is not complete in time
+      & Use the file of \code{solutions/}, and write this in the report \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  \small
+  The README of the lab has the complete list.
+\end{frame}
