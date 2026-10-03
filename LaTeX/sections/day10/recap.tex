@@ -1,0 +1,20 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item The weights of a model need parameters times bits per weight. The KV
+          cache grows with the context length. The operating system and the
+          other programs need the rest of the RAM.
+    \item The prompt rate and the generation rate are two numbers. On a CPU,
+          the memory bandwidth limits the generation rate.
+    \item A runtime such as Ollama or llama.cpp runs a quantized model file in
+          the GGUF format. The size of the model and its quantization level
+          set the speed and the quality.
+    \item Structured output, function calls, and retrieval make a language
+          model useful in a program. A classifier or a rule is the better tool
+          when the task has fixed classes.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Select the smallest model that does the task. Measure its tokens
+            per second, its RAM, and its temperature on the device, and check
+            its answers.}
+\end{frame}

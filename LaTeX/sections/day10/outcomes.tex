@@ -1,0 +1,33 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 10 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item Days 1 to 9 used models with thousands or millions of parameters. A
+          small language model has billions of parameters. Its weights fill a
+          large part of the RAM of the Raspberry Pi 5.
+    \item A language model writes one token after the other. The speed of a
+          chat is the number of tokens in each second, and the memory
+          bandwidth limits it more than the arithmetic.
+    \item A local model keeps the data on the device and works with no
+          network. It can also give a wrong answer with confidence, and it
+          uses much power and heat.
+    \item In the lab you run two models of different size with Ollama, measure
+          them with the method of Day 9, call a model from Python with
+          structured output, and build one small application.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Estimate the RAM that a small language model needs from its
+          parameters, its precision, and its context length.
+    \item Run small language models on the Raspberry Pi and measure tokens per
+          second.
+    \item Call a small language model from Python with structured output and
+          function calling.
+    \item Explain retrieval-augmented generation and vision-language models at
+          the edge.
+    \item State when a small language model is the wrong tool.
+  \end{itemize}
+\end{frame}
