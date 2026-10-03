@@ -1,4 +1,4 @@
-##  (2026-10-02)
+##  (2026-10-03)
 
 
 ### Features
@@ -44,7 +44,22 @@
 * **day08:** add theory part 1 on detection models ([c4b9302](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/c4b9302f821a112569dce605c9645e734aeabd3b))
 * **day08:** add theory part 2 on metrics and data ([a46db0c](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/a46db0c0f3187b6a39a57d687784ebd22284ecd2))
 * **day08:** add theory part 3 on deployment ([3b8feef](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/3b8feefe40813606e4e424e0b04fb2c8931b4958))
+* **day09-lab:** add benchmark lab files for two boards ([f95d5f0](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/f95d5f05953c6b3c0b01352010c43c3e57dba04c))
+* **day09-lab:** add lab deck for Day 9 ([9388409](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/9388409b9b1783f6cb7fd3e5e136aa1252d86408))
 * **day09:** add theory part 1 on what to measure ([7db8c82](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/7db8c82904af88513f049cc0ec840e28078240fd))
+* **day09:** add theory part 2 on the measurement method ([6b6b466](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/6b6b466c3c953122023ec201577bdf94da969ef8))
+* **day09:** add theory part 3 on power, energy, and temperature ([a9a9123](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/a9a9123186b954ba7d5fbb46894c923203a9eb87))
+* **day10-lab:** add lab deck for Day 10 ([a827b42](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/a827b42630fb315b1746e868c5eed7ca3b2e8848))
+* **day10-lab:** add lab files for Day 10 ([45b9137](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/45b91375a643424cdb65dc0cb58ce67b9569b9bf))
+* **day10:** add theory part 1 on small language models ([3e97206](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/3e972067abdf549e9dc291aaebe87337738da65c))
+* **day10:** add theory part 2 on tools and runtimes ([ba301e8](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/ba301e870ec5fd8c0bb7b87753333a113ae2c183))
+* **day10:** add theory part 3 on applications and limits ([21964ab](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/21964ab1579ddb0afc608157f3f14606a30093db))
+* **day11-lab:** add lab deck ([429c2e7](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/429c2e78195ac5ffe8fce6bab5cd20962d5aaa1f))
+* **day11-lab:** add network stream lab files ([64ae94f](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/64ae94f9a0b2730af18eaa01402be63f5f4179b6))
+* **day11:** add theory part 1 on networking for edge devices ([9c145f4](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/9c145f487e56e194a7eb147d7e1cad3662513a0c))
+* **day11:** add theory part 2 on video streaming ([d2a3214](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/d2a32143b1d2a41b3321c8394e646e27adf3c27b))
+* **day11:** add theory part 3 on stream architectures ([317b239](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/317b2394e589ebc9e7a7af2adace2604bda3ea4f))
+* **day12:** add theory part 1 on local decision-making ([e5742cc](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/e5742cc91a12bf88bf926da48f7619751dee5b46))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
 * **release:** Version 1 ([85acb78](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/85acb78cf1fad575d1648cf150593335fee4b255))
 
