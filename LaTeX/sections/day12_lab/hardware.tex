@@ -1,0 +1,112 @@
+% Hardware, software, and the setup of the Day 12 lab.
+% The values come from Labs/day12/README.md.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item XIAOML Kit and a USB-C cable.
+        \item Raspberry Pi 5 with the active cooler, the card of your group,
+              and the 27 W power supply.
+        \item Laptop in the lab network \code{edgeai-lab}.
+        \item For the class: the instructor laptop with a Mosquitto broker
+              at \code{X.10}.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \small
+      \textbf{Software}
+      \begin{itemize}
+        \item Card: Mosquitto and its clients, the environment
+              \code{\textasciitilde/yolo} with \code{paho-mqtt}.
+        \item Laptop: Python 3 with \code{paho-mqtt} 2.x, the Arduino IDE
+              with the esp32 core 3.3.12, PubSubClient 2.8, U8g2.
+        \item The ZIP library of your Day 5 keyword project.
+        \item MicroPython v1.29.0, \code{esptool}, \code{mpremote}
+              (HW-01).
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
+    Lab files & \code{Labs/day12/} on the laptop, and a copy in
+                \code{\textasciitilde/edgeai/} on the Raspberry Pi. \\
+    Names     & \code{gNN} is your group: \code{pi-NN},
+                \code{X.(100+NN)}. The examples use \code{g07} and \code{X}
+                = \code{192.168.8}. \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{The setup}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.8cm, text width=1.8cm}]
+    \draw[darkcyan, dashed, rounded corners=3pt] (1.45,-1.35) rectangle
+      (6.25,1.15);
+    \node[darkcyan, anchor=south west] at (1.5,1.15) {Raspberry Pi
+      (\texttt{pi-07})};
+    \node[box, fill=cardinalred!12, text width=1.4cm] (x) at (-0.45,0.5)
+      {\textbf{XIAOML Kit}\\ keyword model};
+    \node[box, fill=boxgray] (lb) at (2.65,0.5) {Mosquitto};
+    \node[box, fill=boxgray] (d) at (2.65,-0.75) {\texttt{decide.py}};
+    \node[box, fill=boxgray] (f) at (5.05,0.5) {\texttt{forwarder.py}};
+    \node[box, fill=boxgray] (q) at (5.05,-0.75) {queue on disk};
+    \node[box, fill=darkcyan!20, text width=1.7cm] (c) at (8.3,0.5)
+      {\textbf{Instructor laptop}\\ cloud broker};
+    \draw[->] (x.east |- 0,0.65) -- node[above] {events} (lb.west |- 0,0.65);
+    \draw[->, darkcyan] (lb.west |- 0,0.35) -- node[below] {\texttt{cmd}}
+      (x.east |- 0,0.35);
+    \draw[<->] (lb) -- (d);
+    \draw[->] (lb) -- (f);
+    \draw[<->] (f) -- (q);
+    \draw[->] (f) -- node[above] {link} (c);
+    \node[cardinalred, font=\normalsize] at (6.8,0.48) {$\times$};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The XIAO, the broker, and \code{decide.py} form the local system.
+          The LED command needs no link to the laptop.
+    \item \code{forwarder.py} writes each decision and each summary to a
+          queue on the disk, and sends it to the cloud broker with QoS 1.
+    \item On the group laptop, \code{cloud\_check.py} counts the messages of
+          the group on the cloud broker.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The topics of the lab}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.6cm}L{1.6cm}L{3.2cm}L{1.3cm}@{}}
+    \toprule
+    \textbf{Topic} & \textbf{From} & \textbf{Payload} & \textbf{QoS,
+      retained} \\
+    \midrule
+    \texttt{edgeai/g07/xiao/imu} & XIAO (B1) & one IMU reading each 200 ms
+      & 0, no \\
+    \texttt{edgeai/g07/xiao/result} & XIAO & one keyword event & 0, no \\
+    \texttt{edgeai/g07/xiao/stats} & XIAO & each 10 s: windows, events,
+      memory & 0, no \\
+    \texttt{edgeai/g07/xiao/status} & XIAO & \texttt{online}, will
+      \texttt{offline} & 1, yes \\
+    \texttt{edgeai/g07/xiao/cmd} & Raspberry Pi & \texttt{led=1},
+      \texttt{led=0} & 1, no \\
+    \texttt{edgeai/g07/pi/decision} & Raspberry Pi & one change of state &
+      1, no \\
+    \texttt{edgeai/g07/pi/summary} & Raspberry Pi & each 10 s: the state and
+      the counts & 1, no \\
+    \texttt{edgeai/g07/pi/status} & Raspberry Pi & \texttt{online}, will
+      \texttt{offline} & 1, yes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The forwarder sends \code{pi/decision}, \code{pi/summary}, and
+  \code{xiao/stats} to the cloud. Each message with JSON has a sequence
+  number \code{seq}.
+\end{frame}

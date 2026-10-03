@@ -1,0 +1,45 @@
+% Check criterion, deliverable, and the Decision Log question of Day 12.
+% The criterion comes from the Day 12 section of the syllabus and from
+% Labs/day12/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{decide.py} prints \code{Task C1: complete}, and
+          \code{cloud\_check.py} prints \code{Task D1: complete}.
+    \item \cmark\ Link connected: a spoken ``yes'' turns the LED on, ``no''
+          turns it off, and the decision appears on the cloud broker.
+    \item \cmark\ Link cut: the LED follows the keywords, and the queue of
+          the forwarder grows.
+    \item \cmark\ After the link returns, \code{cloud\_check.py} prints
+          \code{RESULT: PASS - no lost message}.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md} with the topic tree and the
+  table of \code{cloud\_check.py}.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  \begin{exerciseblock}
+    A cold store has five temperature sensors, a door contact, and a fan.
+    The cloud is behind a mobile modem, which loses the link for up to 2
+    hours each day.
+    \begin{itemize}
+      \item Which decisions stay on the device?
+      \item What does each device send, how often, with which QoS, and
+            which messages are retained?
+      \item How large must the queue of the forwarder be, and what happens
+            when it is full?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log (about 100 words):
+  \begin{itemize}
+    \item gives your measured message rate, the queue length during your
+          cut, and the time until the queue was empty,
+    \item calculates the queue for 2 hours from these numbers,
+    \item names what you lose: for example detail of the data against the
+          size of the queue.
+  \end{itemize}
+\end{frame}
