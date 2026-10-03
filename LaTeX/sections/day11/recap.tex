@@ -1,0 +1,21 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item TCP gives a reliable, ordered byte stream and resends lost data. UDP
+          sends single datagrams with no resend. Video and time data often use
+          UDP, because an old packet has no value.
+    \item Bandwidth, latency, and jitter are three different numbers. Measure
+          them with iperf3 and ping, and find the addresses and the open ports
+          with ip and ss.
+    \item An H.264 stream sends a keyframe and then only the changes, so it
+          needs much less bandwidth than MJPEG. RTSP controls the session, RTP
+          carries the video, and RTCP reports the quality.
+    \item The end-to-end latency is the sum of capture, encoding, network,
+          buffers, decoding, and inference. A reader that keeps only the
+          newest image gives a low latency and drops old images.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Measure the age of the image that the model sees, not only the
+            latency of the model. Select the place of the inference from the
+            bandwidth, the latency, and the privacy of the video.}
+\end{frame}
