@@ -1,0 +1,298 @@
+% The four parts of the Day 9 lab. The steps follow Labs/day09/README.md.
+%
+% Hardware status: not tested on hardware. A value that only a board can
+% give is written as "..." and the students measure it. The deck does not
+% show a result that the students must predict.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}{Part A: the protocol (20 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Read the plan: three groups of measurements in the tables of Parts B
+        and C of \code{report.md} & 5 min \\
+    2 & Fill the protocol table of Part A: the seven parts of a benchmark
+        for the two boards & 10 min \\
+    3 & Write a prediction with a reason for each question of the
+        prediction table & 5 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Decide the warm-up runs and the timed runs. The sketch has 3 and
+          20 at the start, because one inference on the kit can need more
+          than 1 second. The script of the Raspberry Pi has 20 and 200.
+    \item The statistics: the median and the 95th percentile. The window:
+          the model only. The input: one fixed input for each model.
+    \item Do not change the protocol after a result. If you must change
+          the method, write the change and the reason.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Predictions.} Is \code{int8} faster than \code{float32} on the
+    kit? How many times faster is the Raspberry Pi for the same file? Which
+    board uses less energy for one keyword inference? Give a number and a
+    reason for each question.
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}{Part B: the microcontroller (45 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Build and upload \code{sketches/kit\_bench/kit\_bench.ino} & 10 min \\
+    2 & Task B1: the function \code{percentileUs} in
+        \code{bench\_stats.h} & 10 min \\
+    3 & Measure the four models, copy the lines \code{CSV}, measure again
+      & 10 min \\
+    4 & The clock: \code{CPU\_MHZ} 80, then 240 again & 10 min \\
+    5 & Compare with the published results and with Day 5 & 5 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Board \code{XIAO\_ESP32S3}, and \code{Tools > PSRAM > OPI PSRAM}.
+          Set \code{WARMUP\_RUNS} and \code{TIMED\_RUNS} at the top of the
+          sketch to the values of your protocol.
+    \item The first build needs some minutes. Do Task B1 during the build:
+          the nearest-rank rule, with integer arithmetic.
+    \item \textbf{You record:} the two lines \code{Sketch uses ... bytes}
+          and \code{Global variables use ... bytes} of the build.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: the output of the sketch}
+  \small
+  The Serial Monitor at 115\,200 baud shows \code{Task B1: complete}, and
+  then for each of the four models:
+\begin{lstlisting}
+--- kws int8 ---
+model: 53936 bytes
+arena: ... bytes used of 32768, in the internal RAM
+first inference: ... us
+timed runs: 20, after 3 inferences to warm up
+min ... us, median ... us, p95 ... us, max ... us
+output: class 8 (LiteRT: 8), largest difference ... Same result as LiteRT: yes
+chip temperature: ... C
+CSV,kit,kws,int8,53936,...
+\end{lstlisting}
+  \begin{itemize}
+    \item Make the file \code{results\_kit.csv} in \code{Labs/day09/}. Copy
+          each line that starts with \code{CSV} into it.
+    \item \code{Same result as LiteRT: yes} checks the model: the kit gives
+          the output of the laptop for the same input.
+    \item Send a character in the Serial Monitor: the sketch measures again.
+          The difference of the two medians is your noise.
+    \item \textbf{You record:} for each model the flash, the arena and its
+          memory, the first inference, the median, the p95, and the
+          maximum.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part B: the clock and the published results}
+  \small
+  \textbf{Step 4.} Set \code{CPU\_MHZ} to 80. Upload, and copy the new
+  lines \code{CSV} into \code{results\_kit.csv}, after the first lines.
+  Then set \code{CPU\_MHZ} to 240 again.
+  \vskip 0.4em
+  \textbf{Step 5.} The same two \code{int8} reference models in MLPerf Tiny
+  v1.2:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.36\textwidth}rr@{}}
+    \toprule
+    \textbf{Board} & \textbf{Processor} & \textbf{Keywords}
+    & \textbf{Images} \\
+    \midrule
+    NUCLEO-L4R5ZI   & Cortex-M4 at 120 MHz  & 43.2 ms & 165.1 ms \\
+    NUCLEO-U575ZI-Q & Cortex-M33 at 160 MHz & 29.1 ms & 111.1 ms \\
+    NUCLEO-H7A3ZI-Q & Cortex-M7 at 280 MHz  & 11.3 ms & 40.8 ms \\
+    Your XIAO ESP32S3 & Xtensa LX7 at 240 MHz & ... & ... \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The three boards use an inference tool of their vendor. Your kit
+          uses portable kernels of TensorFlow Lite Micro.
+    \item If you have your report of Day 5, write the two times of your own
+          keyword model. Which parts of today's protocol did Day 5 not
+          have?
+  \end{itemize}
+  \source{MLPerf Tiny v1.2, closed division (MLCommons).\\
+    The latency is 1000 divided by the published rate.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: the Raspberry Pi (50 min)}
+  \small
+  \renewcommand{\arraystretch}{1.02}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Copy the folder, connect, and check the files of Days 7 and 8
+      & 5 min \\
+    2 & Task C1: the function \code{percentile} in \code{pi/bench.py}
+      & 5 min \\
+    3 & Idle: the temperature and the power with no load & 5 min \\
+    4 & The kit models and MobileNetV2 & 10 min \\
+    5 & The detector, in the second environment & 10 min \\
+    6 & A sustained run of 180 seconds & 10 min \\
+    7 & Copy the results to the laptop & 5 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+scp -r day09 edge@pi-NN.local:~/edgeai/      # on the laptop, in Labs/
+ssh edge@pi-NN.local                         # then on the board
+cd ~/edgeai/day09
+source ~/tflite_env/bin/activate
+ls ../day07/models ../day08/models
+python pi/bench.py --idle 30
+\end{lstlisting}
+  \begin{itemize}
+    \item You must see \code{mnv2.tflite} and \code{mnv2\_static.onnx} of
+          Day 7, and the three \code{cupbottle\_320} files of Day 8.
+    \item \textbf{Task C1:} the same rule as Task B1, in Python.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: three suites}
+\begin{lstlisting}[style=shell]
+python pi/bench.py --suite tiny              # the four models of the kit
+python pi/bench.py --suite classification    # MobileNetV2 of Day 7
+deactivate
+source ~/yolo/bin/activate                   # this environment has NCNN
+python pi/bench.py --suite detection         # your detector of Day 8
+\end{lstlisting}
+  \small
+  The script prints one line for each case, and adds one row to the file
+  \code{results\_pi.csv}:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Column} & \textbf{Content} \\
+    \midrule
+    task, model, runtime, type & The case: one file with one runtime \\
+    threads                    & 1 and 4 (the suite \code{tiny}: 1) \\
+    first, median, p95, max    & Times in ms: the first inference alone,
+                                 then the timed runs \\
+    RSS MB, temp, watt         & Peak RAM of the process, highest
+                                 temperature, estimated power \\
+    check                      & \code{tiny}: \code{same as the kit sketch} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item Each case runs in a new process. Use \code{--warmup} and
+          \code{--runs} for other values than 20 and 200.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: the sustained run}
+\begin{lstlisting}[style=shell]
+python pi/bench.py --sustain 180 --threads 4 \
+    --model ../day08/models/cupbottle_320.tflite
+\end{lstlisting}
+\begin{lstlisting}
+  second inferences  median ms     p95 ms   temp C clock MHz  throttled    watt
+      10        ...        ...        ...      ...       ...        ...     ...
+      ...
+     180        ...        ...        ...      ...       ...        ...     ...
+Median latency: ... ms in the first window, ... ms in the last window (...).
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item One line for each 10 seconds. The script writes the lines into
+          \code{sustain.csv}.
+    \item \code{throttled}: \code{0x0} means no event since the start of the
+          board. Part 3 of the lecture gives the other values.
+    \item \textbf{You record:} the first window and the last window: the
+          median, the p95, the temperature, the clock, and the power.
+    \item Then copy \code{results\_pi.csv} and \code{sustain.csv} to the
+          laptop with \code{scp} (step 7 of the README).
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction.} Does the latency of the last window differ from
+    the latency of the first window? Write your answer before the run.
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}{Part D: the report (35 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & The power of each board in \code{power.csv} & 10 min \\
+    2 & Tasks D1 and D2 in \code{pi/make\_report.py} & 5 min \\
+    3 & Run \code{python3 pi/make\_report.py} on the laptop & 5 min \\
+    4 & The accuracy table, the answers, and the Decision Log & 15 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item \textbf{Power meter:} read the board with no load and during a
+          run. Write the value and the method in \code{power.csv}.
+    \item \textbf{No meter:} keep the data sheet values for the kit (217,
+          157, and 0.79 mW). For the Raspberry Pi, keep the row
+          \code{pi,active} empty: the script uses the estimate of the board.
+    \item \textbf{Task D1:} energy = power $\times$ latency. \textbf{Task
+          D2:} the mean power of a duty cycle.
+    \item The script prints four tables and writes them into
+          \code{report\_tables.md}: the kit, the Raspberry Pi, the same file
+          on the two boards, and a battery estimate.
+  \end{itemize}
+  \keypoint{An energy value needs its boundary and its instrument: the chip
+    or the board, the data sheet or the meter.}
+\end{frame}
+
+\begin{frame}{Part D: the accuracy of each model}
+  \small
+  You do not measure the accuracy today. Use these values, with their
+  source:
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.33\textwidth}L{0.15\textwidth}L{0.42\textwidth}@{}}
+    \toprule
+    \textbf{Model} & \textbf{Accuracy} & \textbf{Test set and source} \\
+    \midrule
+    Image classification, \code{float32} & 87.2 percent
+        & 10 000 test images of CIFAR-10, this course \\
+    Image classification, \code{int8}    & 87.0 percent
+        & 10 000 test images of CIFAR-10, this course \\
+    Keyword spotting, \code{int8}        & 91.6 percent
+        & Speech Commands, published by MLCommons \\
+    Keyword spotting, \code{float32}     & not measured
+        & \code{models/README.md} \\
+    MobileNetV2: \code{float32}, \code{int8} & 77.4 and 75.2 percent
+        & 500 images of Imagenette, the Day 7 lab \\
+    Your detector                        & your values
+        & Your notebook of Day 8 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The two image files give the same accuracy on the 200 test images
+          of MLPerf Tiny: 87.0 percent. The interval of 200 images is plus
+          and minus 4.7 points.
+    \item A latency with no accuracy can reward the wrong file. Each row of
+          your report needs the two numbers.
+  \end{itemize}
+  \source{Image classification: an experiment of this course.\\
+    Keyword spotting: Banbury et al., 2021.}
+\end{frame}

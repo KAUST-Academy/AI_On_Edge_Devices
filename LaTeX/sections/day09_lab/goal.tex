@@ -1,0 +1,67 @@
+% Goal and plan of the Day 9 lab.
+% The parts and the times come from the Day 9 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has one benchmark report for the XIAOML
+          Kit and the Raspberry Pi 5.
+    \item \textbf{Boards:} the XIAOML Kit and the Raspberry Pi 5.
+    \item \textbf{Deliverable:} the file \code{report.md} with the protocol,
+          the result tables, and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the method: the seven parts of a benchmark, the
+    warm-up, the timed runs, the percentiles, the window, the energy, and
+    the temperature. All its measured values are from an x86 computer or
+    from other boards. Today you measure your two boards.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{Each number of your report has its method: the warm-up runs,
+    the timed runs, the input, the statistic, and the window.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (20,0.8);
+    \fill[treegreen!60]   (20,0)  rectangle (65,0.8);
+    \fill[darkorange!55]  (65,0)  rectangle (115,0.8);
+    \fill[cardinalred!55] (115,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (20,0) -- (20,0.8) (65,0) -- (65,0.8)
+      (115,0) -- (115,0.8) (150,0) -- (150,0.8);
+    \node at (10,0.4)  {\textbf{A}};
+    \node at (42.5,0.4) {\textbf{B}: 45 min};
+    \node at (90,0.4)  {\textbf{C}: 50 min};
+    \node at (132.5,0.4) {\textbf{D}: 35};
+    \node at (165,0.4) {check};
+    \foreach \t in {0,20,65,115,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Protocol: write the method of each measurement before you measure
+      & 20 min \\
+    B & Microcontroller: keyword spotting and image classification on the
+        kit, in \code{float32} and in \code{int8} & 45 min \\
+    C & Raspberry Pi: image classification and object detection, two
+        runtimes, two thread counts, and the temperature & 50 min \\
+    D & Report: latency, RAM, flash, accuracy, and estimated energy
+      & 35 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

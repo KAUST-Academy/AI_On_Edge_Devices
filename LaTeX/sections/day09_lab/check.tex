@@ -1,0 +1,52 @@
+% Check criterion, deliverable, and the Decision Log question of Day 9.
+% The criterion and the deliverable come from the Day 9 section of the
+% syllabus and from Labs/day09/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ Part A has the protocol and the predictions, and no
+          prediction looks like a result.
+    \item \cmark\ The Serial Monitor shows \code{Task B1: complete}, and
+          \code{Same result as LiteRT: yes} for each of the four models.
+    \item \cmark\ \code{python pi/bench.py --suite tiny} prints
+          \code{Task C1: complete} and \code{same as the kit sketch} for the
+          four models.
+    \item \cmark\ \code{python3 pi/make\_report.py} prints
+          \code{Tasks D1 and D2: complete}.
+    \item \cmark\ Each number of the report has a method: the warm-up runs,
+          the timed runs, the input, the statistic, and the window.
+    \item \cmark\ The report compares the same model file on the two
+          boards: the latency and the energy.
+    \item \cmark\ The report has the temperature of the sustained run.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}, with the four tables of
+  \code{report\_tables.md}.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    A company wants a keyword detector that runs from a battery for one
+    month, and a camera that counts cups on a desk with 10 frames in each
+    second.
+    \begin{itemize}
+      \item Which board do you select for each product?
+      \item Which precision, which runtime, and how many threads?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives each number with its method: the runs, the window, and the
+          instrument of the power,
+    \item uses the battery table of Part D for the keyword detector,
+    \item names what you lose with your decision. Example: the kit cannot
+          run the detector fast enough, and the Raspberry Pi cannot run for
+          one month from a small battery.
+  \end{itemize}
+\end{frame}
