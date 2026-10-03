@@ -4,6 +4,662 @@
 % stay local; rules, state machines, hysteresis; safe behaviour when a part
 % fails. Exercise: write the state machine for a door monitor with two
 % sensors.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. A simulation of this course: tools/experiments/day12_decisions.py,
+%    values in tools/data/day12/day12_decisions.json. The signals are
+%    synthetic: no sensor and no model made them. The plots use the stored
+%    values (seed 0); the table of the rules uses the mean of 100 seeds.
+% 2. The textbook (hybrid patterns), the kit lab (the cascade of a voice
+%    assistant), and the ESP32-S3 data sheet (watchdog timers).
+% 3. Values of Day 11 (the round trip to a server on the internet, the
+%    resend time of TCP on Linux).
 
 \theorypart{Local decision-making}%
   {write the state machine for a door monitor with two sensors}
+
+% ------------------------------------------------------------------ decision
+\begin{frame}{A model gives a score, a program decides}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.75cm, minimum height=0.95cm}]
+    \node[st] (s) at (0,0) {Sensor};
+    \node[st, fill=cardinalred!12] (m) at (2.45,0) {Model\\ a score each
+      window};
+    \node[st, fill=darkcyan!20, text width=2.2cm] (d) at (5.15,0)
+      {Decision layer\\ rules, states, timers};
+    \node[st] (a) at (7.85,0.55) {Action};
+    \node[st] (n) at (7.85,-0.55) {Message};
+    \draw[->] (s) -- (m); \draw[->] (m) -- (d);
+    \draw[->] (d) -- (a); \draw[->] (d) -- (n);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A model gives a score for each window: ``person 0.62''. It does
+          not say what the system must do.
+    \item The decision layer turns the scores into actions: switch on a
+          light, stop a motor, send an alert.
+    \item It is ordinary code: rules, a state machine, and timers. You can
+          read it, test it, and change it with no new training.
+    \item The scores change from window to window. The decision layer must
+          stay stable when a score jumps for one window.
+  \end{itemize}
+  \keypoint{A good model with a bad decision layer gives a bad system.}
+\end{frame}
+
+% ------------------------------------------------------------------ patterns
+\begin{frame}{Hybrid architecture patterns}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.19\textwidth}L{0.23\textwidth}L{0.25\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    \textbf{Pattern} & \textbf{Trade-off} & \textbf{Choose when} &
+      \textbf{In this course} \\
+    \midrule
+    Train-serve split & Training cost against inference latency &
+      Training needs scale that inference does not need & Train on a
+      laptop, run on the XIAO (Days 3 to 5) \\
+    Hierarchical processing & Local autonomy against global optimization &
+      The data is more than the link carries; decisions on several time
+      scales & XIAO, then Raspberry Pi, then a central computer (this
+      lab) \\
+    Progressive deployment & Model quality against deployment reach & The
+      same model at several capability levels & One detector in
+      \code{float32} and \code{int8} (Day 8) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A hybrid system puts each stage on the tier where it meets its
+          limits best: the time, the energy, the memory, or the data.
+    \item The tiers must agree on the model version, the features, and the
+          pre-processing. Else the same input gives two answers.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter ``ML
+    Systems'', section ``Hybrid Architectures''.}
+\end{frame}
+
+% ------------------------------------------------------------------ hierarchy
+\begin{frame}{Decisions on three time scales}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      tier/.style={draw=coolgray, rounded corners=2pt, align=center,
+                   text width=2.3cm, minimum height=1.25cm}]
+    \node[tier, fill=cardinalred!12] (x) at (0,0)
+      {\textbf{XIAOML Kit}\\ a class each 0.5 s\\ decides in ms};
+    \node[tier, fill=darkcyan!15] (p) at (4.0,0)
+      {\textbf{Raspberry Pi}\\ rules for a room\\ decides in s};
+    \node[tier, fill=boxgray] (c) at (8.0,0)
+      {\textbf{Central computer}\\ logs, reports\\ minutes to days};
+    \draw[->, line width=1pt] ([yshift=4pt]x.east) -- node[above] {results}
+      ([yshift=4pt]p.west);
+    \draw[->, line width=1pt] ([yshift=4pt]p.east) -- node[above]
+      {summaries} ([yshift=4pt]c.west);
+    \draw[->, darkcyan] ([yshift=-4pt]p.west) -- node[below] {commands}
+      ([yshift=-4pt]x.east);
+    \draw[->, darkcyan] ([yshift=-4pt]c.west) -- node[below] {settings}
+      ([yshift=-4pt]p.east);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each tier decides what it can decide alone, and sends less data
+          upward: a class, not the audio; a count, not the classes.
+    \item A higher tier changes the rules of a lower tier: a threshold, a
+          schedule, a model version. It does not take each decision.
+    \item When the link to a higher tier fails, the lower tiers continue.
+          This is the lab of today.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ cascade
+\begin{frame}{A cascade: a small model wakes a large one}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, align=center,
+                 text width=2.3cm, minimum height=1.0cm}]
+    \node[st, fill=boxgray] (mic) at (0,0) {Microphone\\ always on};
+    \node[st, fill=cardinalred!12] (s1) at (3.2,0) {\textbf{Stage 1}\\
+      keyword model on a small processor};
+    \node[st, fill=darkcyan!15] (s2) at (7.0,0) {\textbf{Stage 2}\\ large
+      model, only after the keyword};
+    \draw[->] (mic) -- (s1);
+    \draw[->] (s1) -- node[above] {keyword} (s2);
+    \draw[->, coolgray] (s1) -- ++(0,-1.0) node[below] {no keyword: nothing
+      leaves the device};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A voice assistant listens all the time with a keyword model on a
+          small processor. Only after the keyword does it send the audio
+          to a large model.
+    \item The small stage runs all the time, so it must use little energy.
+          The large stage runs seldom, so it can be slow and expensive.
+    \item The first stage also protects privacy: most audio never leaves
+          the device.
+    \item Errors of stage 1 set the behaviour: a missed keyword ignores the
+          user; a false keyword sends audio for nothing.
+  \end{itemize}
+  \source{Kit lab ``Keyword Spotting'' of \emph{Machine Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------------ local
+\begin{frame}{Which decisions must stay local}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Reason} & \textbf{Question} & \textbf{Example} \\
+    \midrule
+    Deadline & Is the deadline shorter than the round trip to the server,
+      with resends? & Stop a motor within 50 ms \\
+    No network & Must the decision work when the link fails? & Open a
+      door for a person \\
+    Safety & Can a late or a missing decision hurt somebody? & Switch off
+      a heater that is too hot \\
+    Privacy & Does the decision need data that must not leave? & Count
+      the people in a room from the video \\
+    Volume & Is the input much larger than the result? & Classify 16 000
+      audio samples each second \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item One ``yes'' is enough: the decision stays on the device.
+    \item On Day 11, a server on the internet answered in 69 ms. A lost
+          TCP segment waits at least 200 ms on Linux. A deadline of 50 ms
+          cannot use the internet.
+    \item The cloud keeps the decisions that need much data and no fast
+          answer: reports, retraining, new thresholds.
+  \end{itemize}
+  \source{Day 11, Part 1.}
+\end{frame}
+
+% ------------------------------------------------------------------ rules
+\begin{frame}[fragile]{Rules on the output of a model}
+\begin{lstlisting}[style=python]
+def decide(scores):                   # scores: {"person": 0.62, ...}
+    label = max(scores, key=scores.get)
+    if scores[label] < 0.5:           # not sure: no action
+        return "none"
+    if label == "fire":               # a dangerous class wins
+        return "alarm"
+    if label == "person":
+        return "light_on"
+    return "none"
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \textbf{A threshold}: act only when the score is high enough.
+          The threshold sets the balance of missed events and false
+          events.
+    \item \textbf{A priority}: a dangerous class wins over a normal class,
+          also with a lower score.
+    \item \textbf{A default}: ``no action'' when the model is not sure, or
+          when the class is unknown.
+    \item A rule on one window reacts to each noisy window. The next frames
+          show the effect and two fixes: hysteresis and filters in time.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ threshold sim
+\begin{frame}{A noisy reading near one threshold}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize]
+    \draw[->, coolgray] (0,0) -- (9.3,0) node[right] {s};
+    \draw[->, coolgray] (0,0) -- (0,3.3);
+    \node[coolgray, anchor=west] at (0.1,3.3) {degrees};
+    \foreach \t in {0,100,...,600} {
+      \draw[coolgray] ({\t*0.015},0) -- ({\t*0.015},-0.08)
+        node[below] {\t};
+    }
+    \foreach \v in {24,25,26} {
+      \draw[coolgray] (0,{(\v-23.5)*1.1}) -- (-0.08,{(\v-23.5)*1.1})
+        node[left] {\v};
+    }
+    \draw[cardinalred, dashed] (0,1.65) -- (9.0,1.65) node[right]
+      {25.0};
+    \draw[darkcyan, line width=0.6pt] plot coordinates {(0.000,0.571) (0.060,0.491) (0.120,0.493) (0.180,0.254) (0.240,0.577) (0.300,0.675)
+      (0.360,0.876) (0.420,0.680) (0.480,0.758) (0.540,0.706) (0.600,0.636) (0.660,0.916)
+      (0.720,1.199) (0.780,0.931) (0.840,1.032) (0.900,0.919) (0.960,1.074) (1.020,1.153)
+      (1.080,1.244) (1.140,0.998) (1.200,1.168) (1.260,0.955) (1.320,1.070) (1.380,1.153)
+      (1.440,1.280) (1.500,1.366) (1.560,1.456) (1.620,0.970) (1.680,1.358) (1.740,1.635)
+      (1.800,1.560) (1.860,1.437) (1.920,1.395) (1.980,1.577) (2.040,1.779) (2.100,1.632)
+      (2.160,1.659) (2.220,1.503) (2.280,1.525) (2.340,1.744) (2.400,1.808) (2.460,2.053)
+      (2.520,2.054) (2.580,1.962) (2.640,1.597) (2.700,1.836) (2.760,1.827) (2.820,1.987)
+      (2.880,2.137) (2.940,1.775) (3.000,1.907) (3.060,2.179) (3.120,1.998) (3.180,1.975)
+      (3.240,2.133) (3.300,2.150) (3.360,2.110) (3.420,2.144) (3.480,2.450) (3.540,1.989)
+      (3.600,2.525) (3.660,2.630) (3.720,2.316) (3.780,2.574) (3.840,2.318) (3.900,2.341)
+      (3.960,2.485) (4.020,2.281) (4.080,2.416) (4.140,2.579) (4.200,2.677) (4.260,2.148)
+      (4.320,2.556) (4.380,2.797) (4.440,2.673) (4.500,2.948) (4.560,2.793) (4.620,2.759)
+      (4.680,2.952) (4.740,2.617) (4.800,2.807) (4.860,2.908) (4.920,2.761) (4.980,2.857)
+      (5.040,2.803) (5.100,2.578) (5.160,2.709) (5.220,3.029) (5.280,2.685) (5.340,2.690)
+      (5.400,2.523) (5.460,2.615) (5.520,2.624) (5.580,2.871) (5.640,2.905) (5.700,2.571)
+      (5.760,2.619) (5.820,2.584) (5.880,2.716) (5.940,3.013) (6.000,2.691) (6.060,2.529)
+      (6.120,2.686) (6.180,2.697) (6.240,2.677) (6.300,2.505) (6.360,3.098) (6.420,2.928)
+      (6.480,2.907) (6.540,2.502) (6.600,2.873) (6.660,2.928) (6.720,2.842) (6.780,2.890)
+      (6.840,2.603) (6.900,2.535) (6.960,2.926) (7.020,2.700) (7.080,2.718) (7.140,2.685)
+      (7.200,2.840) (7.260,2.633) (7.320,2.973) (7.380,2.786) (7.440,2.715) (7.500,2.963)
+      (7.560,2.953) (7.620,2.869) (7.680,2.660) (7.740,3.068) (7.800,2.806) (7.860,2.872)
+      (7.920,2.733) (7.980,2.695) (8.040,2.489) (8.100,2.704) (8.160,2.883) (8.220,2.892)
+      (8.280,2.809) (8.340,2.697) (8.400,2.609) (8.460,2.723) (8.520,2.926) (8.580,2.927)
+      (8.640,2.718) (8.700,2.970) (8.760,2.732) (8.820,2.579) (8.880,2.755) (8.940,2.579)};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A temperature rises from 24 to 26 degrees in 300 s. One reading
+          each second, with noise of 0.15 degrees. A fan runs above 25.0
+          degrees.
+    \item The true value crosses 25.0 degrees at 150 s. The noisy reading
+          crosses the line many times near this point.
+    \item With one threshold, the fan switches 25 times in 600 s:
+          each switch wears the relay and the motor.
+  \end{itemize}
+  \source{Simulation of this course (synthetic signal, seed 0). One point
+    each 4 s is shown.}
+\end{frame}
+
+% ------------------------------------------------------------------ hysteresis
+\begin{frame}{Hysteresis: two thresholds}
+  \begin{columns}[c]
+    \begin{column}{0.44\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.92cm, y=1.2cm]
+        \draw[->, coolgray] (0,0) -- (3.3,0) node[right] {reading};
+        \draw[->, coolgray] (0,0) -- (0,1.5) node[above] {fan};
+        \node[left, coolgray] at (0,0.2) {off};
+        \node[left, coolgray] at (0,1.1) {on};
+        \draw[cardinalred, line width=1pt] (0.2,0.2) -- (2.0,0.2) -- (2.0,1.1)
+          -- (3.1,1.1);
+        \draw[darkcyan, line width=1pt] (3.1,1.1) -- (1.2,1.1) -- (1.2,0.2);
+        \draw[->, cardinalred] (1.5,0.35) -- (1.8,0.35);
+        \draw[->, darkcyan] (1.8,0.95) -- (1.5,0.95);
+        \draw[coolgray, dotted] (1.2,0) -- (1.2,0.2);
+        \draw[coolgray, dotted] (2.0,0) -- (2.0,0.2);
+        \node[below] at (1.2,0) {off below};
+        \node[below] at (2.0,-0.25) {on above};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}L{1.9cm}rr@{}}
+        \toprule
+        \textbf{Rule} & \textbf{Switches} & \textbf{First on} \\
+        \midrule
+        Threshold 25.0 & 25 & 133 s \\
+        Band $\pm 0.2$      & 1 & 164 s \\
+        Band $\pm 0.4$      & 1 & 187 s \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.2em
+      {\scriptsize The same 600 readings. The true value crosses 25.0 at
+      150 s.\par}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Switch on above the upper threshold, and off only below the lower
+          one. Noise inside the band changes nothing.
+    \item Select the band wider than the noise: here about 2 to 3 times the
+          standard deviation of 0.15 degrees.
+    \item The cost is delay: the band of $\pm 0.4$ switched on 37 s
+          after the true crossing. One threshold switched on 17 s
+          before it, because of the noise.
+  \end{itemize}
+  \source{Simulation of this course (synthetic signal, seed 0).}
+\end{frame}
+
+% ------------------------------------------------------------------ scores sim
+\begin{frame}{Noise in time: the scores of a model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize]
+    \fill[treegreen!15] ({20*0.135},0) rectangle ({35*0.135},2.2);
+    \node[treegreen!60!black] at ({27.5*0.135},2.35) {person present};
+    \draw[->, coolgray] (0,0) -- (8.4,0) node[right] {s};
+    \draw[->, coolgray] (0,0) -- (0,2.5);
+    \node[coolgray, anchor=west] at (0.1,2.6) {score};
+    \foreach \t in {0,10,...,60} {
+      \draw[coolgray] ({\t*0.135},0) -- ({\t*0.135},-0.08) node[below] {\t};
+    }
+    \foreach \v in {0.5,1.0} {
+      \draw[coolgray] (0,{\v*2}) -- (-0.08,{\v*2}) node[left] {\v};
+    }
+    \draw[cardinalred, dashed] (0,1.0) -- (8.1,1.0);
+    \draw[darkcyan, line width=0.5pt] plot coordinates {(0.000,0.122) (0.054,0.466) (0.108,0.078) (0.162,0.354) (0.216,0.000) (0.270,0.836)
+      (0.324,0.234) (0.378,0.324) (0.432,0.698) (0.486,0.816) (0.540,0.268) (0.594,0.254)
+      (0.648,0.374) (0.702,0.728) (0.756,0.580) (0.810,0.256) (0.864,0.220) (0.918,0.158)
+      (0.972,0.480) (1.026,0.470) (1.080,0.122) (1.134,0.604) (1.188,0.516) (1.242,0.142)
+      (1.296,0.328) (1.350,0.704) (1.404,0.434) (1.458,0.372) (1.512,0.700) (1.566,0.530)
+      (1.620,0.506) (1.674,0.686) (1.728,0.844) (1.782,0.308) (1.836,0.048) (1.890,0.000)
+      (1.944,0.256) (1.998,0.582) (2.052,0.730) (2.106,0.538) (2.160,0.222) (2.214,0.908)
+      (2.268,0.218) (2.322,0.000) (2.376,0.544) (2.430,0.110) (2.484,0.358) (2.538,0.234)
+      (2.592,0.146) (2.646,1.682) (2.700,1.300) (2.754,1.742) (2.808,1.358) (2.862,1.264)
+      (2.916,1.498) (2.970,1.476) (3.024,1.350) (3.078,1.358) (3.132,1.862) (3.186,0.970)
+      (3.240,1.890) (3.294,2.000) (3.348,1.402) (3.402,1.820) (3.456,1.300) (3.510,1.288)
+      (3.564,1.498) (3.618,1.076) (3.672,1.266) (3.726,1.510) (3.780,1.636) (3.834,0.620)
+      (3.888,1.308) (3.942,1.692) (3.996,1.412) (4.050,1.860) (4.104,1.578) (4.158,1.516)
+      (4.212,1.868) (4.266,1.258) (4.320,1.604) (4.374,1.788) (4.428,1.520) (4.482,1.694)
+      (4.536,1.596) (4.590,1.188) (4.644,1.426) (4.698,2.000) (4.752,1.436) (4.806,0.180)
+      (4.860,0.000) (4.914,0.034) (4.968,0.122) (5.022,0.000) (5.076,0.382) (5.130,0.576)
+      (5.184,0.418) (5.238,0.496) (5.292,0.294) (5.346,0.270) (5.400,0.684) (5.454,0.072)
+      (5.508,0.270) (5.562,0.392) (5.616,0.658) (5.670,0.116) (5.724,0.516) (5.778,0.678)
+      (5.832,0.188) (5.886,0.492) (5.940,0.662) (5.994,0.282) (6.048,0.858) (6.102,0.358)
+      (6.156,0.120) (6.210,1.792) (6.264,0.862) (6.318,0.420) (6.372,0.380) (6.426,0.062)
+      (6.480,0.444) (6.534,0.148) (6.588,0.320) (6.642,0.540) (6.696,0.216) (6.750,0.436)
+      (6.804,0.482) (6.858,0.638) (6.912,0.450) (6.966,0.154) (7.020,0.250) (7.074,0.562)
+      (7.128,0.598) (7.182,0.348) (7.236,0.208) (7.290,0.264) (7.344,0.630) (7.398,0.628)
+      (7.452,0.150) (7.506,0.258) (7.560,0.000) (7.614,0.626) (7.668,0.582) (7.722,0.832)
+      (7.776,0.376) (7.830,0.254) (7.884,0.182) (7.938,0.762) (7.992,0.202) (8.046,0.578)};
+    \node[anchor=west] at (0,-0.75) {one window};
+    \node[anchor=west] at (0,-1.15) {mean 3, hysteresis};
+    \fill[cardinalred!70] (2.6460,-0.85) rectangle (2.6595,-0.65);
+    \fill[cardinalred!70] (2.7000,-0.85) rectangle (2.9835,-0.65);
+    \fill[cardinalred!70] (2.9970,-0.85) rectangle (3.1860,-0.65);
+    \fill[cardinalred!70] (3.1995,-0.85) rectangle (3.2130,-0.65);
+    \fill[cardinalred!70] (3.2265,-0.85) rectangle (3.8340,-0.65);
+    \fill[cardinalred!70] (3.8475,-0.85) rectangle (4.0905,-0.65);
+    \fill[cardinalred!70] (4.1040,-0.85) rectangle (4.5765,-0.65);
+    \fill[cardinalred!70] (4.5900,-0.85) rectangle (4.7250,-0.65);
+    \fill[cardinalred!70] (4.7520,-0.85) rectangle (4.7655,-0.65);
+    \fill[cardinalred!70] (5.6565,-0.85) rectangle (5.6700,-0.65);
+    \fill[cardinalred!70] (6.0885,-0.85) rectangle (6.1020,-0.65);
+    \fill[cardinalred!70] (6.2100,-0.85) rectangle (6.2235,-0.65);
+    \fill[cardinalred!70] (6.6690,-0.85) rectangle (6.6825,-0.65);
+    \fill[cardinalred!70] (7.0875,-0.85) rectangle (7.1010,-0.65);
+    \fill[cardinalred!70] (7.9785,-0.85) rectangle (7.9920,-0.65);
+    \fill[darkcyan] (2.7270,-1.25) rectangle (4.7385,-1.05);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A ``person'' score, 10 windows each second. A person is present
+          from 20 s to 35 s. With no person, 6 single windows have a false
+          high score.
+    \item The bars show when a rule says ``person''. The rule on one
+          window says it 15 times in this run, 8 times
+          with no person.
+  \end{itemize}
+  \source{Simulation of this course (synthetic scores, seed 0). The line
+    shows one window each 0.4 s; the bars use all windows.}
+\end{frame}
+
+% ------------------------------------------------------------------ rules table
+\begin{frame}{Simulated: five rules on the same scores}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.40\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Rule} & \textbf{Switch-on} & \textbf{False} & \textbf{Delay on}
+      & \textbf{Delay off} \\
+    \midrule
+    One window above 0.5 & 16.11 & 8.60 & 0.04 s & 0.10 s \\
+    Mean of 3 above 0.5 & 2.32 & 1.09 & 0.11 s & 0.09 s \\
+    3 of 5 above 0.5 & 1.07 & 0.00 & 0.21 s & 0.20 s \\
+    Hysteresis, one window & 8.50 & 6.11 & 0.17 s & 0.01 s \\
+    Hysteresis, mean of 3 & 1.06 & 0.06 & 0.17 s & 0.14 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Mean of 100 runs (seeds 0 to 99). Hysteresis: on above 0.6,
+  off below 0.4. The correct result is 1 switch-on and 0 false. A delay is
+  the time after the true start (20 s) or end (35 s).\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Hysteresis alone cuts the switch-on events inside the event from
+          7.51 to 2.39. It does not stop a single false window: such a
+          window is above both thresholds.
+    \item A filter in time (the mean of 3, or 3 of 5) stops single false
+          windows. ``3 of 5'' had no false switch-on in 100 runs, for a
+          delay of about 0.2 s.
+  \end{itemize}
+  \keypoint{Filter the scores in time, and use two thresholds. A delay of
+    some windows is the price.}
+  \source{Simulation of this course (synthetic scores).}
+\end{frame}
+
+% ------------------------------------------------------------------ state machine
+\begin{frame}{State machines}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      s/.style={draw=coolgray, circle, fill=boxgray, minimum size=1.15cm,
+                align=center}]
+    \node[s] (off) at (0,0) {OFF};
+    \node[s, fill=darkcyan!20] (on) at (4.2,0) {ON};
+    \node[s, fill=cardinalred!20] (f) at (8.2,0) {FAULT};
+    \draw[->] (off) to[bend left=20] node[above] {person} (on);
+    \draw[->] (on) to[bend left=20] node[below] {30 s with no person}
+      (off);
+    \draw[->] (on) -- node[above] {no data for 10 s} (f);
+    \draw[->] (f.south) to[bend left=25] node[below] {data again}
+      (off.south);
+    \draw[->] (on) to[loop above, looseness=5] node[above] {person: restart
+      the timer} (on);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A \textbf{state} is what the system does now. An \textbf{event}
+          is an input: a class, a timer, a lost sensor. A
+          \textbf{transition} goes from one state to another for one
+          event.
+    \item Each state has a fixed action: the light is on in ON and off in
+          OFF and in FAULT.
+    \item Write each state and each event in a table. Each pair needs an
+          answer, also ``stay''. A missing pair is a bug.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{A state machine in code}
+\begin{lstlisting}[style=python]
+import time
+state, last_person, last_data = "OFF", 0.0, time.monotonic()
+def step(person, now):                  # called for each new window
+    global state, last_person, last_data
+    if person is None:                  # no input in this window
+        if now - last_data > 10:
+            state = "FAULT"
+        return state
+    last_data = now
+    if person:
+        last_person = now
+    if state == "FAULT":
+        state = "OFF"
+    if state == "OFF" and person:
+        state = "ON"
+    elif state == "ON" and now - last_person > 30:
+        state = "OFF"
+    return state
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The function never waits: no \code{sleep}. It compares times, so
+          it can run next to the model and the network code.
+    \item Use a monotonic clock (\code{time.monotonic()}, \code{millis()}).
+          The clock of the day can jump.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ failures
+\begin{frame}{Safe behaviour when a part fails}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.34\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Failure} & \textbf{How to detect it} & \textbf{Response} \\
+    \midrule
+    Sensor stops & No reading for a fixed time & Safe state, a fault
+      message \\
+    Sensor stuck & The same value for too long, or a value out of range &
+      Ignore the sensor, a fault message \\
+    Model unsure & Low scores for many windows & No action, or ask a person
+      \\
+    Network lost & No answer, a lost connection & Continue the local
+      decisions, keep the messages \\
+    Device crash & No heartbeat; the watchdog timer expires & Restart in the
+      safe state \\
+    Power lost & The device restarts & Start in the safe state, read the
+      saved settings \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each input needs a timeout. A missing value is an event, not a
+          zero.
+    \item Plan the response before the failure, and test it: pull a cable,
+          stop the broker, switch the power off.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The safe state depends on the system}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.28\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{System} & \textbf{Safe state} & \textbf{Reason} \\
+    \midrule
+    Heater & Off & A heater that is on with no control can start a fire \\
+    Conveyor belt & Stopped & A moving belt with no control can hurt a
+      person \\
+    Door of a fire exit & Unlocked & People must leave the building \\
+    Door of a store room & Locked & Goods must stay protected \\
+    Ventilation of a lab & On & Gas must leave the room \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item ``Off'' is not always safe. The safe state comes from the risk of
+          the system, not from the code.
+    \item A safety function that must work in all cases needs a hardware
+          path too: a fuse, a thermal switch, an emergency stop. A model
+          and a program are not enough.
+  \end{itemize}
+  \keypoint{Write the safe state of each output before you write the
+    rules.}
+\end{frame}
+
+% ------------------------------------------------------------------ watchdog
+\begin{frame}{Watchdogs and heartbeats}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \draw[->, coolgray] (0,0) -- (9.3,0) node[right] {time};
+    \foreach \x in {0.5,1.5,2.5,3.5} {
+      \draw[darkcyan, line width=1pt] (\x,0) -- (\x,0.5);
+    }
+    \node[darkcyan, anchor=south] at (2.0,0.55) {the program resets the
+      timer};
+    \draw[cardinalred, dashed] (3.5,0.9) -- (7.0,0.9);
+    \node[cardinalred, anchor=south] at (5.25,0.95) {the program hangs};
+    \draw[->, cardinalred, line width=1pt] (7.0,1.2) -- (7.0,0.05);
+    \node[cardinalred, anchor=west] at (7.1,0.6) {timeout: reset};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A \textbf{watchdog timer} is a counter in the chip. The program
+          resets it in each loop. If the program hangs, the counter
+          expires and resets the chip.
+    \item The ESP32-S3 has three watchdog timers: one in each of the two
+          timer groups and one in the RTC module. Each one can reset the
+          processor or the system.
+    \item A \textbf{heartbeat} is the same idea between devices: a short
+          message each few seconds. No heartbeat for a fixed time means
+          that the device is gone.
+    \item MQTT has a built-in form of this: the keep-alive and the last
+          will message (Part 2).
+  \end{itemize}
+  \source{ESP32-S3 data sheet, version 2.2, section ``Watchdog Timers''.}
+\end{frame}
+
+% ------------------------------------------------------------------ test
+\begin{frame}{Test the decision layer}
+  \small
+  \begin{itemize}
+    \item \textbf{Replay}: record the scores of a real run, then feed the
+          same file to the decision layer. Each change of a rule then has a
+          fair comparison, as in the simulation of this part.
+    \item \textbf{One test for each transition}: a table of the state, the
+          event, and the next state. Each row is one small test.
+    \item \textbf{Fault injection}: stop the sensor, stop the broker, send
+          a value out of range, restart the device. Check the safe state.
+    \item \textbf{Count the switches}: in a test of one hour, how often did
+          the output change? Many changes show a missing filter or a
+          missing hysteresis.
+  \end{itemize}
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}lllL{0.34\textwidth}@{}}
+    \toprule
+    \textbf{State} & \textbf{Event} & \textbf{Next state} & \textbf{Test} \\
+    \midrule
+    OFF   & person         & ON    & one window with a person \\
+    ON    & 30 s, no person & OFF  & a run of 31 s with no person \\
+    ON    & no data, 10 s  & FAULT & stop the input for 11 s \\
+    FAULT & data again     & OFF   & start the input again \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{a state machine for a door}{%
+  \small
+  A door monitor has two sensors: a contact \textbf{D} (door open or
+  closed), and a person detector \textbf{P} (a camera model: a person near
+  the door, or not). It must do this:
+  \begin{enumerate}
+    \item Door closed: nothing to do.
+    \item Door open, and a person near it: normal.
+    \item Door open with no person for 30 s: send one alert.
+    \item The door closes: back to normal, and the alert ends.
+    \item A sensor sends no value for 10 s: send a fault message.
+  \end{enumerate}
+  Write the states, the events, and the transitions as a table. Give the
+  action of each state. Which input needs a filter in time, and which
+  one?
+  \vskip 0.3em
+  Work with your neighbour for 8 minutes.
+}
+
+\begin{frame}{Answer: a state machine for a door}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}llL{0.30\textwidth}@{}}
+    \toprule
+    \textbf{State, event} & \textbf{Next state} & \textbf{Action} \\
+    \midrule
+    CLOSED, D open and P & OPEN\_PERSON & none \\
+    CLOSED, D open, no P & OPEN\_ALONE & start the 30 s timer \\
+    OPEN\_PERSON, no P & OPEN\_ALONE & start the 30 s timer \\
+    OPEN\_ALONE, P & OPEN\_PERSON & stop the timer \\
+    OPEN\_ALONE, timer ends & ALERT & send one alert \\
+    any open state or ALERT, D closed & CLOSED & stop the timer; end the
+      alert \\
+    any state, no value for 10 s & FAULT & send a fault message \\
+    FAULT, both sensors send again & from D and P & the state of the
+      inputs \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item P comes from a model: filter it in time (``3 of 5'' windows), or
+          one false window starts or stops the timer.
+    \item D is a contact: a short debounce of some ms is enough.
+    \item ALERT stays when a person comes: the door was open and alone for
+          30 s. Only the closed door ends it.
+  \end{itemize}
+\end{frame}
