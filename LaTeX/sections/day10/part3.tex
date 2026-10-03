@@ -1,10 +1,574 @@
 % Part 3 of Day 10: Applications and limits.
 %
 % Topics of the syllabus: structured output and function calling;
-% retrieval-augmented generation; vision-language models; language models that
-% control devices; wrong answers, latency, heat, and power. Exercise: decide
-% for four tasks if a classifier, a rule, or a language model is the correct
-% tool.
+% retrieval-augmented generation; vision-language models; language models
+% that control devices; wrong answers, latency, heat, and power. Exercise:
+% decide for four tasks if a classifier, a rule, or a language model is the
+% correct tool.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: Ollama 0.32.6 on the work computer, CPU
+%    only, 4 threads, temperature 0, seed 0 (tools/experiments/day10_apps.py,
+%    values in tools/data/day10/day10_apps.json). The counts of valid and
+%    correct answers depend on the model file and the settings, not on the
+%    computer. The times say nothing about a board.
+% 2. The documentation of Ollama and llama.cpp.
+% 3. Numbers that the authors of the sources published for the Raspberry
+%    Pi 5, and the power ranges of Day 9. Nobody measured a power or a
+%    temperature for this course.
 
 \theorypart{Applications and limits}%
   {decide for four tasks: a classifier, a rule, or a language model}
+
+% ------------------------------------------------------------------ problem
+\begin{frame}{From text to an action}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.9cm, text width=1.8cm}]
+    \node[box, fill=boxgray] (u) at (0,0) {``It is too dark in the bedroom.''};
+    \node[box, fill=darkcyan!15] (m) at (2.6,0) {Language model};
+    \node[box, fill=cardinalred!12, text width=2.5cm] (j) at (5.55,0)
+      {\ttfamily \{"device": "lamp", "action": "on", "room": "bedroom"\}};
+    \node[box, fill=boxgray] (p) at (8.5,0) {Your code: check, then act};
+    \draw[->] (u) -- (m); \draw[->] (m) -- (j); \draw[->] (j) -- (p);
+  \end{tikzpicture}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A program cannot use a free text answer. It needs fields with
+          known names and known values.
+    \item A language model is good at the first step: many ways to say the
+          same command become one meaning.
+    \item Three methods connect the model to a program: a schema for the
+          output, function calls, and retrieval of facts.
+  \end{itemize}
+  \keypoint{Use the model to understand the text. Use your code to decide
+    and to act.}
+  \source{Chapters ``SLM: Basic Optimization Techniques'' and ``Experimenting
+    with SLMs for IoT\\ Control'' of \emph{Edge AI Engineering}.}
+\end{frame}
+
+% ------------------------------------------------------------------ schema
+\begin{frame}[fragile]{Structured output with a schema}
+\begin{lstlisting}
+schema = {"type": "object", "required": ["device", "action", "room"],
+  "properties": {
+    "device": {"type": "string",
+               "enum": ["lamp", "fan", "heater", "door", "pump"]},
+    "action": {"type": "string", "enum": ["on", "off", "open", "close"]},
+    "room":   {"type": "string",
+               "enum": ["kitchen", "bedroom", "garage", "office"]}}}
+r = ollama.generate(model="llama3.2:1b", prompt=text, format=schema,
+                    options={"temperature": 0})
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The runtime changes the schema into a grammar. At each step it
+          allows only the tokens that keep the output valid.
+    \item The output is then valid JSON with the correct keys and allowed
+          values. The model still selects the values.
+    \item llama.cpp: the schema does not go into the prompt. Describe the
+          fields in the prompt too.
+    \item \code{format="json"} is weaker: valid JSON, but any keys.
+  \end{itemize}
+  \source{Ollama API documentation: structured outputs. llama.cpp
+    documentation: GBNF grammars (MIT).}
+\end{frame}
+
+\begin{frame}{Measured: valid JSON and correct JSON}
+  \small
+  20 commands for a home controller. The prompt names the three fields and
+  their values. Number of answers out of 20:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.05}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.08\textwidth}rrr@{}}
+    \toprule
+    \textbf{Mode} & \textbf{Model} & \textbf{Parses as JSON} &
+    \textbf{Valid fields} & \textbf{Correct} \\
+    \midrule
+    Prompt only & 1B & 0 & 0 & 0 \\
+     & 3B & 20 & 20 & 20 \\
+    \code{format="json"} & 1B & 20 & 20 & 18 \\
+     & 3B & 20 & 20 & 20 \\
+    \code{format=schema} & 1B & 20 & 20 & 18 \\
+     & 3B & 20 & 20 & 20 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The 1B model put each answer of the first mode into a Markdown
+          code block. A strict parser rejects all 20. Without the block: 20
+          valid and 17 correct.
+    \item With a format, the 1B model gives 2 wrong values: ``It is too dark
+          in the bedroom'' becomes \code{lamp}, \code{off}. ``The office is
+          cold'' becomes \code{heater}, \code{off}.
+    \item The 3B model is correct 60 times out of 60, and 29 percent
+          slower.
+  \end{itemize}
+  \keypoint{A schema makes the output valid. It does not make it correct.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only,\\ temperature
+    0.}
+\end{frame}
+
+% ------------------------------------------------------------------ tools
+\begin{frame}[fragile]{Function calling}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.8cm, text width=1.9cm}]
+    \node[box, fill=boxgray] (q) at (0,0) {``What is 493 times 761?'' + tool list};
+    \node[box, fill=darkcyan!15, text width=1.2cm] (m1) at (2.35,0) {Model};
+    \node[box, fill=cardinalred!12, text width=2.3cm] (c) at (4.85,0)
+      {\ttfamily multiply(a=493, b=761)};
+    \node[box, fill=boxgray] (f) at (7.6,0) {Your function: 375\,173};
+    \node[box, fill=darkcyan!15, text width=4.0cm] (m2) at (4.85,-1.4)
+      {Model: ``493 times 761 is 375\,173.''};
+    \draw[->] (q) -- (m1); \draw[->] (m1) -- (c); \draw[->] (c) -- (f);
+    \draw[->] (f) |- node[pos=0.25, left] {result, role \code{tool}} (m2);
+  \end{tikzpicture}
+  \vskip 0.4em
+\begin{lstlisting}
+tool = {"type": "function", "function": {"name": "multiply",
+  "parameters": {"type": "object", "required": ["a", "b"],
+    "properties": {"a": {"type": "integer"}, "b": {"type": "integer"}}}}}
+r = ollama.chat(model="llama3.2:1b", messages=msgs, tools=[tool])
+calls = r.message.tool_calls     # name and arguments, or empty
+\end{lstlisting}
+  \small
+  The model selects the function and the arguments. Your code runs the
+  function. A second call of the model can write the answer as text.
+  \source{Ollama API documentation: tool calling. Chapter ``SLM: Basic
+    Optimization Techniques''\\ of \emph{Edge AI Engineering}.}
+\end{frame}
+
+\begin{frame}{Measured: arithmetic with and without a tool}
+  \small
+  Temperature 0. Each task has 20 random problems (seed 7). Number of
+  correct answers out of 20:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.58\textwidth}rr@{}}
+    \toprule
+    \textbf{Task} & \textbf{1B} & \textbf{3B} \\
+    \midrule
+    Sum of two 2-digit numbers, direct answer & 12 & 20 \\
+    Product of two 3-digit numbers, direct answer & 0 & 0 \\
+    Product with the tool \code{multiply}: correct call & 20 & 20 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The wrong products look correct: 151\,120 (3B) for $220 \times
+          684 = 150\,480$.
+    \item The 1B model got 8 of the 20 sums wrong, for example $63 + 18 =
+          843$.
+    \item With the tool, each call had the correct function and the two
+          numbers. In 33 of the 40 calls the numbers came as text
+          (\code{"653"}): convert and check them in your code.
+  \end{itemize}
+  \keypoint{Let the model select the function. Let your code calculate.}
+  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
+    only.}
+\end{frame}
+
+% ------------------------------------------------------------------ RAG
+\begin{frame}{Retrieval-augmented generation}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.75cm, text width=1.9cm}]
+    \node[font=\scriptsize\bfseries, anchor=west] at (-1.1,1.25) {Once};
+    \node[box, fill=boxgray] (d) at (0,0.5) {Documents};
+    \node[box, fill=boxgray] (ch) at (2.6,0.5) {Chunks};
+    \node[box, fill=darkcyan!15] (e1) at (5.2,0.5) {Embedding model};
+    \node[box, fill=cardinalred!12] (db) at (7.8,0.5) {Vector store};
+    \draw[->] (d) -- (ch); \draw[->] (ch) -- (e1); \draw[->] (e1) -- (db);
+    \node[font=\scriptsize\bfseries, anchor=west] at (-1.1,-0.55) {Each question};
+    \node[box, fill=boxgray] (q) at (0,-1.3) {Question};
+    \node[box, fill=darkcyan!15] (e2) at (2.6,-1.3) {Embedding model};
+    \node[box, fill=cardinalred!12] (k) at (5.2,-1.3) {Top $k$ chunks};
+    \node[box, fill=darkcyan!30] (m) at (7.8,-1.3) {Language model};
+    \draw[->] (q) -- (e2); \draw[->] (e2) -- (k); \draw[->] (k) -- (m);
+    \draw[->] (db) -- node[right] {most similar} (db |- k.north) -- (k.north east);
+    \draw[->] (q.south) -- ++(0,-0.35) -| node[pos=0.25, below] {question + chunks} (m.south);
+  \end{tikzpicture}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The facts come from your documents at the time of the question.
+          The model does not need new training.
+    \item An embedding model maps a text to a vector. Similar texts give
+          near vectors: compare them with the cosine similarity.
+    \item Example: \code{nomic-embed-text}, 137M parameters, vectors of
+          768 values. It runs in Ollama on the same board.
+  \end{itemize}
+  \source{Lewis et al., 2020. Chapter ``SLM: Basic Optimization
+    Techniques'' of \emph{Edge AI Engineering}.}
+\end{frame}
+
+\begin{frame}{Measured: a small retrieval test}
+  \small
+  12 facts of a fictional greenhouse controller, 10 questions with a number
+  or a name as the answer. Correct answers out of 10:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.42\textwidth}rrr@{}}
+    \toprule
+    \textbf{Prompt} & \textbf{1B} & \textbf{3B} & \textbf{Prompt tokens} \\
+    \midrule
+    The question only & 0 & 0 & 47 \\
+    The question and the 2 most similar facts & 10 & 10 & 94 \\
+    The question and all 12 facts & 9 & 10 & 309 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The 2 most similar facts contained the answer for all 10
+          questions.
+    \item With no facts, the 1B model said 7 times that it does not know.
+          It invented 3 answers.
+    \item With all 12 facts, the 1B model mixed two facts once: the fan
+          starts at 70 percent, and the model said 60.
+  \end{itemize}
+  \source{Experiment of this course: Ollama 0.32.6, \code{nomic-embed-text},
+    x86 work computer, CPU only.\\ Prompt tokens: mean of the 10 questions.}
+\end{frame}
+
+\begin{frame}{The cost of retrieval on the board}
+  \small
+  Each retrieved chunk makes the prompt longer. The prompt rate of the
+  board sets the time before the first token.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.34\textwidth}rr@{}}
+    \toprule
+    \textbf{Prompt} & \textbf{Tokens} & \textbf{At 19.46 tokens/s} \\
+    \midrule
+    The question only & 47 & 2.4 s \\
+    The question and 2 facts & 94 & 4.8 s \\
+    The question and 12 facts & 309 & 15.9 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item 19.46 tokens/s is the published prompt rate of \code{llama3.2:1b}
+          on the Raspberry Pi 5 with a short prompt. The times are
+          estimates: measure them in the lab.
+    \item Keep the chunks short and $k$ small. Retrieve only what the
+          answer needs.
+    \item The embedding of the question also takes time, but much less: the
+          model is small and the question is short.
+  \end{itemize}
+  \keypoint{Retrieval trades RAM and prompt time for correct facts.}
+  \source{Prompt tokens: the experiment of this course. Rate: lab ``Small
+    Language Models''\\ of \emph{Machine Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------------ VLM
+\begin{frame}{Vision-language models}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth,
+          box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                      minimum height=0.6cm, text width=2.4cm}]
+        \node[box, fill=boxgray] (i) at (0,0) {Image};
+        \node[box, fill=darkcyan!15] (e) at (0,-0.9) {Image encoder};
+        \node[box, fill=boxgray] (t) at (0,-1.8) {Image tokens + text tokens};
+        \node[box, fill=darkcyan!30] (m) at (0,-2.7) {Language model};
+        \node[box, fill=cardinalred!12] (o) at (0,-3.6) {Text: a caption, boxes, or JSON};
+        \draw[->] (i) -- (e); \draw[->] (e) -- (t); \draw[->] (t) -- (m);
+        \draw[->] (m) -- (o);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \small
+      \begin{itemize}
+        \item The image becomes many tokens. They are a long prompt for the
+              language model.
+        \item One model does many tasks: a caption, detection, text in the
+              image (OCR). A prompt selects the task.
+        \item Florence-2: 232M and 771M parameters. LLaVA-Phi-3: 3.8B
+              parameters.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.55\textwidth}r@{}}
+    \toprule
+    \textbf{Published on the Raspberry Pi 5} & \textbf{Time} \\
+    \midrule
+    Florence-2 base: caption                  & 16 to 17 s \\
+    Florence-2 base: object detection          & 20 to 41 s \\
+    Florence-2 base: segmentation              & 83 to 207 s \\
+    LLaVA-Phi-3: describe one image            & almost 4 min \\
+    \bottomrule
+  \end{tabular}
+  \source{Chapter ``Vision-Language Models at the Edge'' of \emph{Edge AI
+    Engineering}. Lab ``Small\\ Language Models'' of \emph{Machine Learning
+    Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------------ devices
+\begin{frame}{A language model that controls devices}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.8cm, text width=1.5cm}]
+    \node[box, fill=boxgray] (s) at (0,0) {Sensors and a button};
+    \node[box, fill=boxgray, text width=2.1cm] (p) at (2.3,0) {Prompt: readings, rules, command};
+    \node[box, fill=darkcyan!15] (m) at (4.6,0) {Language model};
+    \node[box, fill=cardinalred!12] (c) at (6.6,0) {JSON, then a check};
+    \node[box, fill=boxgray, text width=0.9cm] (l) at (8.4,0) {LEDs};
+    \draw[->] (s) -- (p); \draw[->] (p) -- (m); \draw[->] (m) -- (c); \draw[->] (c) -- (l);
+  \end{tikzpicture}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The chapter connects a temperature sensor, a pressure sensor, a
+          button, and three LEDs to the Raspberry Pi 5.
+    \item The prompt has the readings and the rules in order of priority:
+          the button (an alarm) first, then the temperature, then normal
+          operation.
+    \item The model answers with a JSON object that names one LED. If the
+          program cannot parse the answer, the LEDs keep their state.
+    \item A person can also give a command in a natural language, for
+          example ``turn on the yellow LED if the temperature is above 20
+          degrees''.
+  \end{itemize}
+  \keypoint{The rules of the prompt are a request, not a guarantee. Put the
+    safety rules into your code.}
+  \source{Chapter ``Experimenting with SLMs for IoT Control'' of \emph{Edge AI
+    Engineering}.}
+\end{frame}
+
+\begin{frame}{Guard every action}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.60\textwidth}@{}}
+    \toprule
+    \textbf{Guard} & \textbf{Example} \\
+    \midrule
+    A list of allowed actions & Only the functions and values of the schema
+                                exist \\
+    A check of each argument  & The heater accepts 5 to 30 degrees, not 300 \\
+    A rule for safety         & The alarm button turns the red LED on, with
+                                no model in the path \\
+    A person confirms         & Opening a door needs a ``yes'' from the
+                                user \\
+    A time limit              & No answer in 10 s: keep the state, write a
+                                log line \\
+    A log                     & Each prompt, answer, and action, with the
+                                time \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Never run the text of a model as code or as a shell command.
+    \item A document or a web page can contain an instruction, and the
+          model can follow it. Your code checks each output.
+  \end{itemize}
+  \keypoint{The model proposes. The code decides.}
+\end{frame}
+
+% ------------------------------------------------------------------ limits
+\begin{frame}{Wrong answers}
+  \small
+  \begin{itemize}
+    \item A language model writes a probable text. A probable text can be
+          false, and it sounds as sure as a true one.
+    \item Temperature 0 gives the same answer each time. It does not give
+          the correct answer.
+  \end{itemize}
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.05}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.46\textwidth}L{0.14\textwidth}@{}}
+    \toprule
+    \textbf{Question, no facts} & \textbf{Answer of \code{llama3.2:1b}} &
+    \textbf{The fact} \\
+    \midrule
+    Below which light level does the light panel switch on? & ``\ldots usually
+      around 10-20 lux.'' & 3500 lux \\
+    At which humidity does the fan start? & ``\ldots when the relative humidity
+      falls below 40\%.'' & 70 percent \\
+    How long must I hold the RESET button? & ``You don't need to hold any
+      buttons \ldots'' & 8 seconds \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  Countermeasures: retrieval, tools, a schema, and a test set.
+  \keypoint{Measure the accuracy of your application, as for a classifier:
+    a test set, a count, and a target.}
+  \source{Experiment of this course: Ollama 0.32.6, temperature 0. Chapter
+    ``SLM: Basic\\ Optimization Techniques'' of \emph{Edge AI Engineering}.}
+\end{frame}
+
+\begin{frame}{The latency of one request}
+  \small
+  One question with a tool call, \code{llama3.2:1b}. The token counts are
+  measured. The times are estimates for the Raspberry Pi 5 with the
+  published rates: 19.46 tokens/s for the prompt, 8.99 for the answer.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.48\textwidth}rr@{}}
+    \toprule
+    \textbf{Step} & \textbf{Tokens} & \textbf{Time} \\
+    \midrule
+    Call 1: the prompt with the tool list & 165 & 8.5 s \\
+    Call 1: the tool call                 & 26 & 2.9 s \\
+    Your function                         &    & 0.0 s \\
+    Call 2: the new part of the prompt    & 96 & 4.9 s \\
+    Call 2: the answer as text            & 16 & 1.8 s \\
+    \midrule
+    Total                                 &    & 18.1 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The tool list makes the first prompt long: a question of 5 words
+          became 165 tokens.
+    \item Call 2 is not always necessary: your program can show the result
+          of the function. Then the total is 11.4 s.
+  \end{itemize}
+  \source{Token counts: experiment of this course. Rates: lab ``Small
+    Language\\ Models'' of \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{Heat and power}
+  \small
+  \begin{itemize}
+    \item During the generation, all 4 cores of the Raspberry Pi 5 run at
+          almost 100 percent. This is the heavy load of Day 9: 7 to 10 W,
+          70 to 80 $^\circ$C with the active cooler (published ranges).
+    \item With Florence-2, the temperature went above 80 $^\circ$C. A
+          board that throttles loses 20 to 30 percent of its rate.
+  \end{itemize}
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.05}
+  \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+    \toprule
+    \textbf{Estimate: one answer of 100 tokens, \code{llama3.2:1b}} &
+    \textbf{Value} \\
+    \midrule
+    Time at 8.99 tokens/s           & 11.1 s \\
+    Energy at 7 to 10 W             & 78 to 111 J \\
+    Answers from a battery of 3.7 Wh (13\,320 J) & 120 to 171 \\
+    The kit chip of Day 9 at 217 mW for 1 hour & 781 J \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  One hour of the active kit chip uses the energy of 7 to 10 answers.
+  \keypoint{A language model is the most expensive way to make a decision on
+    the board. Use it where nothing smaller works.}
+  \source{Day 9, Part 3. Lab ``Small Language Models'' of \emph{Machine
+    Learning Systems}. Guide ``SLMs\\ at the Edge'', section 5. Energy:
+    estimates of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------ wrong tool
+\begin{frame}{When a language model is the wrong tool}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.32\textwidth}L{0.22\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{The task} & \textbf{The tool} & \textbf{Example} \\
+    \midrule
+    Fixed classes from a sensor or an image & A classifier (Days 1 to 9)
+      & A keyword, a gesture, a cup or a bottle \\
+    An exact condition & A rule in code & Temperature above 31
+      $^\circ$C: open the window \\
+    A calculation & Code, or a tool & A sum, a mean, a distance \\
+    Free text, many ways to say one thing & A language model
+      & A spoken command, a summary of a log \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A classifier and a rule are fast, cheap, and they give the same
+          answer each time. You can test them completely.
+    \item A language model is flexible, but slow, large, and sometimes
+          wrong.
+    \item A good design often combines them: the model reads the text, a
+          rule checks the result, and a classifier watches the sensor.
+  \end{itemize}
+  \keypoint{Fixed function first. A language model only for the part that
+    needs language.}
+  \source{Chapter ``Classification of AI Applications''\\ of \emph{Edge AI
+    Engineering}.}
+\end{frame}
+
+\begin{frame}{A decision flow}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      q/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                text width=3.0cm, align=center, minimum height=0.8cm},
+      a/.style={draw=coolgray, rounded corners=2pt, fill=darkcyan!15,
+                text width=2.0cm, align=center, minimum height=0.7cm}]
+    \node[q] (q1) at (0,0)     {Can you write the decision as a condition?};
+    \node[a] (r)  at (4.2,0)   {A rule};
+    \node[q] (q2) at (0,-1.4)  {Is the input a signal with fixed classes?};
+    \node[a] (c)  at (4.2,-1.4) {A classifier};
+    \node[q] (q3) at (0,-2.8)  {Is it a calculation or a database query?};
+    \node[a] (t)  at (4.2,-2.8) {Code, or a tool};
+    \node[a, fill=cardinalred!12, text width=3.4cm] (l) at (0,-4.3)
+      {A language model, with a schema, tools, and guards};
+    \draw[->] (q1) -- node[above] {yes} (r);
+    \draw[->] (q2) -- node[above] {yes} (c);
+    \draw[->] (q3) -- node[above] {yes} (t);
+    \draw[->] (q1) -- node[right] {no} (q2);
+    \draw[->] (q2) -- node[right] {no} (q3);
+    \draw[->] (q3) -- node[right] {no} (l);
+  \end{tikzpicture}
+  \vskip 0.4em
+  \small
+  Then check the budget of Part 2: RAM, the rate that the user needs, and
+  the energy.
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{a classifier, a rule, or a language model?}{%
+  \small
+  For each task, select a classifier, a rule, or a language model. Give one
+  reason, and one number that supports it.
+  \begin{enumerate}
+    \item A door sensor sends ``open'' or ``closed''. Send a message when
+          the door is open for more than 5 minutes at night.
+    \item A camera at the door of a shop counts the people who come in.
+    \item A farmer sends a voice note: ``the pump in the east field makes a
+          strange noise since this morning''. Make a maintenance ticket
+          with the device, the place, and the problem.
+    \item A battery sensor node must detect the word ``stop'' for one year
+          on a small battery.
+  \end{enumerate}
+  For task 3, write the JSON schema of the ticket with three fields.
+  \vskip 0.3em
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{a classifier, a rule, or a language model?}{%
+  \small
+  \begin{enumerate}
+    \item A rule: \code{if door == "open" and minutes > 5 and night}. It
+          needs no model, it is exact, and you can test it completely.
+    \item A classifier, as a detector of people (Day 8). It runs at many
+          frames in each second. A language model needs seconds for each
+          image.
+    \item A language model: the text is free, and the same problem has many
+          forms. Schema: \code{device} (enum of the devices), \code{place}
+          (string), \code{problem} (string). One ticket in 10 to 20 s on
+          the board is acceptable.
+    \item A classifier: keyword spotting on the microcontroller (Day 5).
+          The chip of the kit sleeps at 0.79 mW (Day 9). A language model
+          needs 7 to 10 W on the Raspberry Pi.
+  \end{enumerate}
+  \keypoint{The task decides the tool. A language model is one tool among
+    four.}
+}
