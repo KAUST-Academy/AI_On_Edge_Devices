@@ -31,6 +31,7 @@ Each lab adds one row here.
 | Day 9 | One benchmark report for two boards | XIAOML Kit, Raspberry Pi 5 | `day09/` | not tested on hardware. The sketch compiles, and a 32-bit build on an x86 computer ran its four models with the outputs of LiteRT. The two scripts for the board ran on an x86 computer. No power and no throttle state was available there. |
 | Day 10 | Small language models on the Raspberry Pi | Raspberry Pi 5 | `day10/` | not tested on hardware. The five scripts ran on an x86 computer with Ollama 0.32.6, on the CPU. |
 | Day 11 | Inference on a network video stream | Raspberry Pi 5 with the camera, XIAOML Kit | `day11/` | not tested on hardware. The sketch compiles. The two scripts ran on an x86 computer with MediaMTX, an RTSP test stream, and a test server in the format of the sketch. |
+| Day 12 | Local decisions and MQTT | XIAOML Kit, Raspberry Pi 5 | `day12/` | not tested on hardware. The sketch compiles with a replacement for the Edge Impulse library. The Python programs ran on an x86 computer with two Mosquitto brokers, a simulated XIAO, and a cut of the link. |
 
 ## Rules for every lab folder
 

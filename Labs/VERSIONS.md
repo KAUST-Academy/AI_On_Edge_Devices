@@ -26,7 +26,7 @@ installs. The pilot records the versions on the Raspberry Pi.
 | Raspberry Pi OS (64-bit) | record on the pilot | Days 7 to 15 | Raspberry Pi Imager | `HW-04` |
 | Ollama | 0.32.6 on the work computer | Day 10 | `ollama.com/install.sh` | `HW-05` |
 | MediaMTX | v1.21.1 | Day 11 | `github.com/bluenviron/mediamtx` | `HW-06` |
-| Mosquitto | record on the pilot | Days 12 and 13 | `apt` | `HW-07` |
+| Mosquitto | record on the pilot; 2.0.11 on the work computer (Day 12 tests) | Days 12 and 13 | `apt` | `HW-07` |
 | Prometheus | 3.15.0 on the work computer. The `apt` version is older. | Day 13, option A | `apt` | `HW-08` |
 | Grafana | 13.2.3 on the work computer | Day 13, option A | `apt.grafana.com` | `HW-08` |
 
@@ -46,7 +46,7 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `ai-edge-litert` | 2.2.0 | `HW-02` (check of the sine model) |
 | `numpy` | 2.2.6 | `HW-02`, `HW-06` |
 | `opencv-python-headless` | 5.0.0.93 | `HW-06` |
-| `paho-mqtt` | 2.1.0 | `HW-07`, `HW-08`, `HW-09` |
+| `paho-mqtt` | 2.1.0 | `HW-07`, `HW-08`, `HW-09`, Day 12 lab (`decide.py`, `forwarder.py`, `cloud_check.py`) |
 | `psutil` | 7.2.2 | `HW-08` |
 | `prometheus-client` | 0.26.0 | `HW-08` |
 | `ollama` | 0.6.3 | `HW-05` |
@@ -89,10 +89,10 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | esp32 by Espressif Systems | 3.3.12 | `esp32:esp32:XIAO_ESP32S3` | Days 1 to 5, 11, 12 |
 | Arduino Mbed OS Nano Boards | 4.6.0 | `arduino:mbed_nano:nano33ble` | Nano 33 backup modules |
 | Seeed Arduino LSM6DS3 | 2.0.7 | no board name | Days 1 to 5 |
-| U8g2 by oliver | 2.36.19 | no board name | Days 1 to 5 |
+| U8g2 by oliver | 2.36.19 | no board name | Days 1 to 5, 12 |
 | Harvard_TinyMLx | 1.2.4-Alpha | no board name | Nano 33 backup modules |
 | Chirale_TensorFlowLite | 2.0.0 | no board name | Days 3, 4, and 9 (`HW-02`, `HW-03`) |
-| PubSubClient by Nick O'Leary | 2.8 | no board name | Day 12 (`HW-07`) |
+| PubSubClient by Nick O'Leary | 2.8 | no board name | Day 12 (`HW-07`, `Labs/day12/sketches/kws_mqtt`) |
 | Arduino_BMI270_BMM150 | 1.2.4 | no board name | Nano 33 BLE Sense Rev2 (`HW-10`) |
 | ArduinoBLE | 2.1.0 | no board name | Nano 33 module NB-4 (`HW-10`) |
 

@@ -1,0 +1,5 @@
+# Files that the programs of the lab write
+forwarder.db
+forwarder.db-wal
+forwarder.db-shm
+__pycache__/
