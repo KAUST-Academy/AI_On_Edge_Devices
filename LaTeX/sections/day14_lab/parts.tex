@@ -1,0 +1,296 @@
+% The four parts of the Day 14 lab. The steps follow Labs/day14/README.md.
+% The budget values are the examples of the README: the values of Day 14,
+% Part 3 of the lecture. budget.py printed them on the work computer.
+
+% ------------------------------------------------------------------ Part A
+\begin{frame}{Part A: a team and a problem (20 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Form the team (5 min).} Join with a second lab group.
+          Write the names and the two group names in \code{proposal.md}
+          and \code{report.md}.
+    \item \textbf{Select a problem (10 min).} Read Sections 2 and 7 of
+          \code{Docs/capstone.md}. Take one example, change one, or write
+          your own problem.
+    \item \textbf{Name the riskiest assumption (5 min).} Which part has the
+          largest chance to fail? Part D tests it.
+  \end{enumerate}
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.30\textwidth}L{0.24\textwidth}L{0.26\textwidth}@{}}
+    \toprule
+    & \textbf{Example} & \textbf{XIAO} & \textbf{Raspberry Pi} \\
+    \midrule
+    A & Machine monitor & Vibration model, alarm & Persons, dashboard \\
+    B & Voice-controlled camera & Keyword model & Detector for 30 s \\
+    C & Room counter with privacy & Person or no person & Count of persons \\
+    D & Offline lab assistant & Gesture model & Language model, notes \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Part A: the problem, not a solution}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.44\textwidth}L{0.48\textwidth}@{}}
+    \toprule
+    \textbf{A solution (weak start)} & \textbf{A problem (good start)} \\
+    \midrule
+    ``Run YOLO on a camera'' & Nobody should stand near a machine that
+      has an alarm \\
+    ``Use a language model'' & Students need lab answers when the internet
+      is down \\
+    ``Classify sounds'' & A camera should start only when a person asks
+      for it \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The problem names a user, a place, and a benefit. Then the
+          requirements follow from it.
+    \item Keep the scope small: reuse the labs of Days 1 to 13 and add one
+          new part.
+    \item A riskiest assumption is concrete: ``the IMU separates a normal
+          fan from a fan with a weight on one blade''.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ Part B
+\begin{frame}{Part B: write the proposal (50 min)}
+  \begin{columns}[T]
+    \begin{column}{0.54\textwidth}
+      \small
+      \textbf{Steps}
+      \begin{enumerate}
+        \item Problem and requirements (15 min)
+        \item Boards, model, and data (15 min)
+        \item Budgets with \code{budget.py} (15 min)
+        \item The five requirements (5 min)
+      \end{enumerate}
+      \vskip 0.4em
+      One page. Write numbers where the template asks for numbers. Mark
+      each value that you did not measure as ``estimate''.
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{block}{Sections of \texttt{proposal.md}}
+        \small
+        \begin{itemize}
+          \item Problem and user
+          \item Requirements with numbers
+          \item Boards and split of the work
+          \item Model and optimization
+          \item Data
+          \item Local decision and telemetry
+          \item Budgets
+          \item The five requirements
+          \item Riskiest assumption and first test
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Part B: requirements with numbers}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.24\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{No.} & \textbf{Requirement} & \textbf{Number} & \textbf{Test}
+      \\
+    \midrule
+    R1 & Classify the vibration & Recall of ``abnormal'' at least 0.9 & A
+      session that the training does not see \\
+    R2 & Alarm at the machine & Within 3 s of the start & 10 timed events
+      \\
+    R3 & Alarm with no network & Works with the router off & Switch off the
+      Wi-Fi in the demonstration \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Rows of the example proposal (machine monitor,
+          \code{solutions/proposal\_example.md}).
+    \item Each requirement has a number and a test that you can run before
+          the demonstration on Day 15.
+    \item ``Fast'', ``accurate'', and ``small'' are not requirements. Nobody
+          can check them.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: the budgets with \texttt{budget.py}}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+python3 budget.py fit --flash-kb 3264 --ram-kb 298.68 --program-kb 300 \
+    --params 1534 --bits 8 --peak-values 1028
+python3 budget.py latency window=2000 model=100 decision=400 mqtt=100 \
+    --limit-ms 3000
+python3 budget.py power --work-mw 217 --rest-mw 19 --work-ms 50 \
+    --period-ms 2000 --radio-mw 290.4 --radio-s-per-hour 3 --days 30
+\end{lstlisting}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.80\textwidth}@{}}
+    \toprule
+    \textbf{Command} & \textbf{You see (the values of the lecture)} \\
+    \midrule
+    \code{fit} & Flash 308\,734 of 3\,342\,336 bytes, RAM 1028 of
+      305\,848 bytes: fits \\
+    \code{latency} & Total 2600 ms, margin 400 ms (met) \\
+    \code{power} & 24.192 mW, 6.4 days; 30 days need 17.42 Wh (4708 mAh)
+      \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  Two more commands: \code{data} (volume of a message stream) and
+  \code{cost} (one site and all sites). Use your own values, and name the
+  source of each input.
+  \source{Example values of Day 14, Part 3. The program size of 300 KB is
+    an estimate.}
+\end{frame}
+
+\begin{frame}{Part B: check the five requirements}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.38\textwidth}L{0.48\textwidth}@{}}
+    \toprule
+    \textbf{No.} & \textbf{Requirement} & \textbf{In the machine monitor}
+      \\
+    \midrule
+    1 & XIAOML Kit and Raspberry Pi & The XIAO detects the vibration; the
+      Pi sees the persons and runs the dashboard \\
+    2 & One optimized model, size and accuracy before and after & The XIAO
+      model in \code{float32} and \code{int8}, recall on the test session
+      \\
+    3 & One local decision, no internet & The alarm on the XIAO; test with
+      the router off \\
+    4 & Telemetry with MQTT to a dashboard & The broker on the Pi, the
+      dashboard of Day 13 \\
+    5 & Benchmark table: latency, memory, energy & Both models, with the
+      method of Day 9 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  If one requirement is not met, change the design now, not on Day 15.
+\end{frame}
+
+% ------------------------------------------------------------------ Part C
+\begin{frame}{Part C: the design review (40 min)}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \small
+      \textbf{About 8 minutes for each team}
+      \begin{enumerate}
+        \item \textbf{Present (3 min):} the problem, the split of the work,
+              the budgets, the riskiest assumption.
+        \item \textbf{Answer (5 min):} the questions of the instructor,
+              with numbers.
+      \end{enumerate}
+      \vskip 0.3em
+      While you wait: prepare the answers, then prepare the first test of
+      Part D.
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \begin{block}{The seven questions}
+        \footnotesize
+        \begin{enumerate}
+          \item A number and a test for each requirement?
+          \item A value and a source for each budget?
+          \item Does the model fit: flash, RAM, time?
+          \item The data: source, size, labels, test set?
+          \item No network, a failed sensor, a bad update?
+          \item Which data leaves? Who can send a command?
+          \item The riskiest assumption and its first test?
+        \end{enumerate}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Part C: the result of the review}
+  \small
+  \begin{itemize}
+    \item The instructor fills \code{review\_sheet.md}: the five
+          requirements, the seven questions, the scope, and the result.
+    \item \textbf{You record} in \code{report.md}: the result, the changes,
+          and the weak points.
+    \item Make the changes in \code{proposal.md} before Part D.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{exampleblock}{Example result (machine monitor)}
+    \small
+    Approved with changes. (1) The test session of R1 is on a different day
+    or position. (2) The benchmark table needs the measured latency of the
+    XIAO model, not the budget value of 100 ms. Weak point: the battery
+    gives 6.4 days, not 30; the team uses a USB cable.
+  \end{exampleblock}
+  \vskip 0.3em
+  \keypoint{A weak point is a result of the review, not a failure of the
+    team.}
+\end{frame}
+
+% ------------------------------------------------------------------ Part D
+\begin{frame}{Part D: the first test (40 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Plan (5 min):} which board, which lab folder, which data,
+          which number decides.
+    \item \textbf{Run (30 min):} reuse the lab folder of the day that the
+          test needs.
+    \item \textbf{Decide and plan (5 min):} the result, the decision, the
+          plan for Day 15.
+  \end{enumerate}
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.38\textwidth}L{0.46\textwidth}@{}}
+    \toprule
+    & \textbf{Riskiest assumption} & \textbf{First test} \\
+    \midrule
+    A & The IMU separates the two states & Two sessions with the Day 2
+      logger, the Day 3 notebook \\
+    B & Few false starts in a noisy room & 5 minutes of normal speech with
+      the Day 5 model \\
+    C & The XIAO model works in the room light & 20 photos at two times of
+      the day \\
+    D & Short and fast answers & 10 questions, time and length (Day 10) \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Part D: decide, and plan Day 15}
+  \small
+  \textbf{You record:} the test, the result with numbers, the decision
+  (continue or change), and the plan.
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.70\textwidth}r@{}}
+    \toprule
+    & \textbf{Example plan for Day 15 (machine monitor)} & \textbf{Time} \\
+    \midrule
+    1 & Record the test session, train the final model & 30 min \\
+    2 & Convert to \code{int8}, deploy & 30 min \\
+    3 & Connect the programs of Days 12 and 13 & 40 min \\
+    4 & Measure the benchmark table & 40 min \\
+    5 & Rehearse the demonstration with the router off & 20 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Day 15 has 100 minutes in the lecture time and 80 minutes in lab
+          Part A for the build. Plan less than 180 minutes.
+    \item Plan B for the demonstration: a recorded input or a video.
+  \end{itemize}
+\end{frame}
