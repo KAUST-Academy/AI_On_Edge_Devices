@@ -1,0 +1,20 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item Each device knows the version of its model and its program. An
+          update goes to a few devices first, then to more. A device keeps the
+          old version and returns to it when the new one fails.
+    \item The attack surface of an edge device includes its network, its
+          storage, and its physical access. Encrypted transport, a key for
+          each device, signed updates, and data minimization reduce the risks.
+    \item A watchdog restarts a stopped program. A device with a failed part
+          goes to a safe, reduced operation and reports it.
+    \item A design starts from the requirements: the latency, the energy, the
+          privacy, and the cost. They select the paradigm, the boards, the
+          model, and the pipeline. A review finds the weak points before the
+          build.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Plan the updates, the threats, and the budgets before the build,
+            because a deployed device is hard to change.}
+\end{frame}

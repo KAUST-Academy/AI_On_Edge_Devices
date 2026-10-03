@@ -1,0 +1,31 @@
+% Theory deck of Day 14. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day14_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 14]{Day 14: Production edge AI design and capstone start}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditbigpower
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day14/outcomes}
+\input{sections/day14/toc}
+\input{sections/day14/part1}
+\input{sections/day14/part2}
+\input{sections/day14/part3}
+\input{sections/day14/recap}
+\input{sections/day14/further_reading}
+\input{sections/credits}
+
+\end{document}
