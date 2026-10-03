@@ -60,6 +60,7 @@
 * **day11:** add theory part 2 on video streaming ([d2a3214](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/d2a32143b1d2a41b3321c8394e646e27adf3c27b))
 * **day11:** add theory part 3 on stream architectures ([317b239](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/317b2394e589ebc9e7a7af2adace2604bda3ea4f))
 * **day12:** add theory part 1 on local decision-making ([e5742cc](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/e5742cc91a12bf88bf926da48f7619751dee5b46))
+* **day12:** add theory part 2 on MQTT ([f04d0de](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/f04d0de012ffee10b298b8dbfe603918dafe5377))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
 * **release:** Version 1 ([85acb78](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/85acb78cf1fad575d1648cf150593335fee4b255))
 
