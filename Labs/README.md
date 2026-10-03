@@ -34,6 +34,7 @@ Each lab adds one row here.
 | Day 12 | Local decisions and MQTT | XIAOML Kit, Raspberry Pi 5 | `day12/` | not tested on hardware. The sketch compiles with a replacement for the Edge Impulse library. The Python programs ran on an x86 computer with two Mosquitto brokers, a simulated XIAO, and a cut of the link. |
 | Day 13 | A monitored inference application | Raspberry Pi 5 with the camera | `day13/` | not tested on hardware. The programs ran on an x86 computer with image files in place of the camera, a Mosquitto broker, and a simulated drift. |
 | Day 14 | Capstone proposal and start of the build | XIAOML Kit, Raspberry Pi 5 | `day14/` | not tested on hardware. The lab has no new board code. `budget.py` ran on an x86 computer with the values of the lecture. |
+| Day 15 | Capstone build and demonstrations | XIAOML Kit, Raspberry Pi 5 | `day15/` | not tested on hardware. The lab has no new board code. `schedule.py` ran on an x86 computer. |
 
 ## Rules for every lab folder
 
