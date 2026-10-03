@@ -35,6 +35,11 @@ the licence of its own source. Section 1 gives the licence of each source.
 | LiteRT-LM (README) | Google LLC | `github.com/google-ai-edge/LiteRT-LM` | Apache-2.0 |
 | MediaMTX (documentation) | aler9 and the MediaMTX contributors (bluenviron) | `github.com/bluenviron/mediamtx` | MIT |
 | esp32-camera (camera driver, header file) | Espressif Systems | `github.com/espressif/esp32-camera` | Apache-2.0 |
+| MQTT Version 3.1.1 and MQTT Version 5.0 (standards) | OASIS MQTT Technical Committee | `docs.oasis-open.org/mqtt` | OASIS copyright: facts only |
+| Eclipse Mosquitto (broker and manual) | Roger Light and the Eclipse Mosquitto contributors | `mosquitto.org` | EPL-2.0 or EDL-1.0 |
+| Eclipse Paho Python client (paho-mqtt) | The Eclipse Paho contributors | `eclipse.dev/paho` | EPL-2.0 or BSD-3-Clause |
+| PubSubClient (Arduino library) | Nicholas O'Leary | `github.com/knolleary/pubsubclient` | MIT |
+| micropython-lib (`umqtt.simple`) | The micropython-lib contributors | `github.com/micropython/micropython-lib` | MIT |
 
 Conditions:
 
@@ -53,6 +58,11 @@ Conditions:
 - **CC BY-SA 4.0.** Name the author. Material that you adapt keeps this
   licence. The course uses facts of the Raspberry Pi documentation (limits,
   bit values) in new text.
+- **OASIS copyright.** The course uses facts of the MQTT standards (packet
+  format, rules, reason codes) in new text. It copies no text of a standard.
+- **EPL-2.0 or EDL-1.0, EPL-2.0 or BSD-3-Clause.** Name the author. The course
+  copies no file of Mosquitto or paho-mqtt. It uses their default values and
+  their behaviour as facts.
 - **MLPerf.** The MLPerf name and logo are trademarks of MLCommons
   Association. The course gives published results of MLPerf Tiny v1.2 (closed
   division) with no change of the values. A latency or a power that the
@@ -286,3 +296,6 @@ has no empty line and no other text between its rows.
 | `LaTeX/sections/day12/part1.tex` | text | Machine Learning Systems | `books/vol1/02_ml_systems/02_ml_systems.qmd` (section "Hybrid Architectures", table "Hybrid Pattern Selection Guide") | CC BY-NC-SA 4.0 | the three hybrid patterns with their trade-off and the conditions that favour them, in a new table with a new column for the examples of this course, and the need for the same model version and pre-processing on all tiers, in new sentences |
 | `LaTeX/sections/day12/part1.tex` | text | Machine Learning Systems | `kits/contents/seeed/xiao_esp32s3/kws/kws.qmd` (section on the cascade of a voice assistant) | CC BY-NC-SA 4.0 | the two stages of a voice assistant, as a new diagram and new sentences |
 | `LaTeX/sections/day12/part1.tex` | data | Data sheet of the ESP32-S3 (Espressif Systems, version 2.2) | Section "Watchdog Timers" | Not open: facts only | the three watchdog timers and their resets, in new sentences. The threshold and rule values of the part come from `tools/experiments/day12_decisions.py` of the course repository (synthetic signals). |
+| `LaTeX/sections/day12/part2.tex` | text | MQTT Version 3.1.1 and MQTT Version 5.0 (OASIS) | MQTT 3.1.1 sections 2.2, 3.1.2.4, 3.1.2.5, 3.1.2.10, 3.1.4, 3.3, 3.3.1.3, 3.8.4, 4.2, 4.3, 4.7; MQTT 5.0 section 2.4 | OASIS copyright: facts only | the packet format, the QoS flows, the rules of topics, wildcards, sessions, retained messages, keep-alive, and the last will, and the reason code 0x97, in new sentences, new tables, and new TikZ diagrams |
+| `LaTeX/sections/day12/part2.tex` | text | XIAO: Big Power, Small Board | `chapter_3-5.qmd` (sections "Deep Dive into MQTT", "Telemetry", "Commands", "Lost connection") | GPL-3.0 | publish and subscribe through a broker, telemetry and commands, and commands for a device that is away, in new sentences, a new diagram, and a new table |
+| `LaTeX/sections/day12/part2.tex` | data | Eclipse Mosquitto 2.0.11, PubSubClient 2.8, micropython-lib, paho-mqtt 2.1.0 | `man/mosquitto.conf.5` (`max_inflight_messages`, `max_queued_messages`, `queue_qos0_messages`); `src/PubSubClient.h` (`MQTT_MAX_PACKET_SIZE`, `MQTT_KEEPALIVE`); `micropython/umqtt.simple/umqtt/simple.py`; `paho/mqtt/client.py` (`_messages_reconnect_reset_out`) | EPL-2.0 or EDL-1.0; MIT; MIT; EPL-2.0 or BSD-3-Clause | default values, limits, and the reconnection behaviour, as facts in new tables and sentences. No code is copied. The measured values come from `tools/experiments/day12_mqtt.py` of the course repository. |
