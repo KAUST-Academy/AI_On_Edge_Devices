@@ -4,6 +4,627 @@
 % use; threads; prompt rate and generation rate; model selection for an 8 GB
 % device. Exercise: select a model and a quantization level for three
 % applications.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: Ollama 0.32.6 on the work computer (an
+%    x86 processor with two sockets of 12 cores, CPU only with num_gpu 0),
+%    tools/experiments/day10_runtime.py, values in
+%    tools/data/day10/day10_runtime.json. The values say nothing about a
+%    board. They show the effects that the lab measures on the Raspberry Pi.
+% 2. The documentation of Ollama and llama.cpp (options and defaults).
+% 3. Numbers that the authors of the sources published for the Raspberry
+%    Pi 5. Nobody measured a speed on a board for this course.
 
 \theorypart{Tools and runtimes}%
   {select a model and a quantization level for three applications}
+
+% ------------------------------------------------------------------ overview
+\begin{frame}{Three tools for a language model on a board}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.8cm}]
+    \node[box, fill=boxgray, minimum width=10.2cm] (app) at (0,2.3)
+      {Your program: Python, a shell script, or a web page};
+    \node[box, fill=darkcyan!15, text width=2.7cm] (ol) at (-3.6,0.9)
+      {\textbf{Ollama}\\ service, port 11434};
+    \node[box, fill=darkcyan!15, text width=2.7cm] (ls) at (0,0.9)
+      {\textbf{llama-server}\\ or \code{llama-cli}};
+    \node[box, fill=cardinalred!12, text width=2.7cm] (lm) at (3.6,0.9)
+      {\textbf{LiteRT-LM}\\ Python, C++, CLI};
+    \node[box, fill=darkcyan!30, minimum width=6.3cm] (eng) at (-1.8,-0.4)
+      {Engine: llama.cpp (ggml library)};
+    \node[box, fill=cardinalred!25, text width=2.7cm] (lrt) at (3.6,-0.4)
+      {Engine: LiteRT with XNNPACK};
+    \node[box, fill=boxgray, minimum width=6.3cm] (gg) at (-1.8,-1.7)
+      {Model file: \code{.gguf}};
+    \node[box, fill=boxgray, text width=2.7cm] (lf) at (3.6,-1.7)
+      {Model file: \code{.litertlm}};
+    \foreach \a in {ol, ls, lm} { \draw[->] (app.south -| \a) -- (\a); }
+    \draw[->] (ol) -- (ol |- eng.north);
+    \draw[->] (ls) -- (ls |- eng.north);
+    \draw[->] (lm) -- (lrt);
+    \draw[->] (eng) -- (gg);
+    \draw[->] (lrt) -- (lf);
+  \end{tikzpicture}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Ollama and \code{llama-server} use the same engine and the same
+          GGUF files. They differ in the packaging.
+    \item LiteRT-LM is a second engine with its own file format. A GGUF
+          file does not run in it.
+  \end{itemize}
+  \source{Guide ``SLMs at the Edge'', section 3. Chapter ``LiteRT-LM'' of
+    \emph{Edge AI Engineering}.}
+\end{frame}
+
+% ------------------------------------------------------------------ llama.cpp
+\begin{frame}[fragile]{llama.cpp: the engine}
+  \small
+  \begin{itemize}
+    \item A C and C++ library with no dependencies. It has NEON kernels for
+          Arm and kernels for x86. It reads GGUF files.
+    \item You build it, or you download a release. On the Raspberry Pi 5 a
+          build with 4 jobs needs about 10 minutes.
+    \item No service and no model manager: you download the GGUF file and
+          give its path.
+  \end{itemize}
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
+    \toprule
+    \textbf{Program} & \textbf{Use} \\
+    \midrule
+    \code{llama-cli}    & A prompt or a chat in the terminal \\
+    \code{llama-server} & An HTTP server with an OpenAI-compatible API,
+                          port 8080 \\
+    \code{llama-bench}  & A benchmark of the prompt rate and the generation
+                          rate \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+llama-server -m llama3.2-3b-q4_k_m.gguf -c 4096 -t 4 --port 8080
+\end{lstlisting}
+  \small
+  \code{-c}: the context. \code{-t}: the threads. Give the context
+  yourself: its default 0 means ``the context of the model file''.
+  \source{llama.cpp documentation: README and \code{tools/server} (MIT).
+    Build time: guide\\ ``SLMs at the Edge'', section 5.2.}
+\end{frame}
+
+% ------------------------------------------------------------------ Ollama
+\begin{frame}[fragile]{Ollama: a service with a model library}
+\begin{lstlisting}[style=shell]
+curl -fsSL https://ollama.com/install.sh | sh   # install the service
+ollama pull llama3.2:1b                         # download a model
+ollama run llama3.2:1b --verbose                # chat, print the rates
+ollama ps                                       # loaded models, RAM
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A service in Go around the engine of llama.cpp. It starts with
+          the board and listens on port 11434.
+    \item A model name has a tag: \code{llama3.2:1b} is the 1B model at
+          \code{Q8\_0}, \code{llama3.2:3b} the 3B model at
+          \code{Q4\_K\_M}.
+    \item The service keeps a model in RAM for 5 minutes after the last
+          request (\code{keep\_alive}). The next request does not load it
+          again.
+    \item A REST API for all programs, and a Python library that calls
+          this API.
+  \end{itemize}
+  \keypoint{Ollama is the shortest way from an empty board to a model that
+    answers. The lab uses it.}
+  \source{Ollama documentation: README, API, and FAQ (MIT). Guide ``SLMs at
+    the Edge'', section 3.}
+\end{frame}
+
+% ------------------------------------------------------------------ LiteRT-LM
+\begin{frame}[fragile]{LiteRT-LM}
+  \small
+  \begin{itemize}
+    \item The runtime of Google for language models on LiteRT. LiteRT is
+          the new name of TensorFlow Lite (Days 5 to 9).
+    \item A \code{.litertlm} file holds the weights (\code{int4} or
+          \code{int8}), the tokenizer, and the settings.
+    \item On the Raspberry Pi 5 it runs on the CPU with XNNPACK.
+    \item The Python API has an \code{Engine}, which loads the model once,
+          and a \code{Conversation}, which keeps the KV cache of the chat.
+  \end{itemize}
+\begin{lstlisting}[style=shell]
+uv tool install litert-lm
+litert-lm run --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
+    gemma-3n-E2B-it-int4 --prompt="What is the capital of France?"
+\end{lstlisting}
+  \begin{itemize}
+    \item Published on the Raspberry Pi 5: Gemma 4 E2B gives about 4 to 8
+          tokens/s on the CPU, similar to Ollama with a model of the same
+          size.
+    \item The same runtime runs on phones, in the browser, and on the
+          board. Fewer models than Ollama: about 20.
+  \end{itemize}
+  \source{LiteRT-LM README (Apache-2.0). Chapter ``LiteRT-LM'' of
+    \emph{Edge AI Engineering}.}
+\end{frame}
+
+% ------------------------------------------------------------------ compare
+\begin{frame}{Compare the three tools}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.23\textwidth}L{0.23\textwidth}L{0.23\textwidth}@{}}
+    \toprule
+    & \textbf{Ollama} & \textbf{llama.cpp} & \textbf{LiteRT-LM} \\
+    \midrule
+    Setup         & One command     & A build or a release & \code{pip} or
+                                                             \code{uv} \\
+    Models        & A library with many tags & Any GGUF file
+                                             & About 20 \code{.litertlm} files \\
+    Interface     & CLI, REST API, Python library & CLI, HTTP server, C
+                    library & Python, C++, Kotlin, Swift, CLI \\
+    Control       & Options in each request & All settings & Engine and
+                                                            conversation \\
+    Measurement   & \code{--verbose}, timing fields & \code{llama-bench}
+                  & Your own timer \\
+    Good for      & A fast start, a service for programs & Control, a small
+                    memory, new models & One runtime from the board to a
+                    phone \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The guide: on the Raspberry Pi 5, Ollama first, and llama.cpp
+          ``for the last 10 percent''.
+    \item A published test on the Raspberry Pi 5: llama.cpp was a little
+          faster than Ollama (14.4 against 13.8 tokens/s, one 1.1B model).
+  \end{itemize}
+  \source{Guide ``SLMs at the Edge'', sections 3, 5.2, and 8. Chapter
+    ``LiteRT-LM'' of \emph{Edge AI Engineering}.}
+\end{frame}
+
+% ------------------------------------------------------------------ server
+\begin{frame}{Server use and library use}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.7cm}]
+    \node[font=\small\bfseries] at (-3.3,1.9) {Server};
+    \node[box, fill=boxgray] (a1) at (-4.6,1.0) {Program 1};
+    \node[box, fill=boxgray] (a2) at (-2.0,1.0) {Program 2};
+    \node[box, fill=darkcyan!15, minimum width=3.6cm] (sv) at (-3.3,-0.5)
+      {Service: model in RAM};
+    \draw[<->] (a1) -- node[left] {HTTP} (a1 |- sv.north);
+    \draw[<->] (a2) -- node[right] {HTTP} (a2 |- sv.north);
+    \node[font=\small\bfseries] at (3.3,1.9) {Library};
+    \node[box, fill=cardinalred!12, minimum width=3.6cm, minimum height=2.2cm,
+          text depth=1.2cm] (pr) at (3.3,0.25) {Your process};
+    \node[box, fill=darkcyan!15] at (3.3,-0.1) {Engine: model in RAM};
+  \end{tikzpicture}
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    & \textbf{Server} & \textbf{Library} \\
+    \midrule
+    Examples & Ollama, \code{llama-server} & LiteRT-LM \code{Engine}, the C
+               library of llama.cpp \\
+    Good     & One model for many programs; change the runtime and keep the
+               code & No second process; full control of the memory \\
+    Cost     & One more process, the HTTP time & The model loads with your
+               program \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  The Python library \code{ollama} is a client: the model runs in the
+  service, not in your Python process.
+\end{frame}
+
+% ------------------------------------------------------------------ API
+\begin{frame}[fragile]{One request to the Ollama API}
+\begin{lstlisting}[style=shell]
+curl http://localhost:11434/api/generate -d '{
+  "model": "llama3.2:1b", "prompt": "Why is the sky blue?", "stream": false,
+  "options": {"num_ctx": 2048, "num_thread": 4, "temperature": 0, "seed": 0}
+}'
+\end{lstlisting}
+  \small
+  The answer is JSON. It has the text in \code{response} and these
+  counters:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.32\textwidth}L{0.60\textwidth}@{}}
+    \toprule
+    \textbf{Field} & \textbf{Content} \\
+    \midrule
+    \code{total\_duration}       & The time of the complete request, in ns \\
+    \code{load\_duration}        & The time to load the model, in ns \\
+    \code{prompt\_eval\_count}   & The tokens of the prompt \\
+    \code{prompt\_eval\_duration} & The time of the prompt, in ns \\
+    \code{eval\_count}           & The tokens of the answer \\
+    \code{eval\_duration}        & The time of the answer, in ns \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  Generation rate = \code{eval\_count} / \code{eval\_duration} $\times
+  10^9$. The prompt rate is the same calculation with the two prompt
+  fields.
+  \source{Ollama API documentation (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------------ cold
+\begin{frame}{The first request loads the model}
+  \small
+  Two requests with the same prompt (116 tokens) and 64 tokens of answer,
+  \code{llama3.2:1b}, 4 threads:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.30\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Request} & \textbf{Total} & \textbf{Load} & \textbf{Prompt} &
+    \textbf{Answer} \\
+    \midrule
+    First, after an unload & 7.19 s & 2.95 s & 1.44 s & 2.80 s \\
+    Second                 & 4.61 s & 0.58 s & 1.21 s & 2.81 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The load was 41 percent of the first request. The file was already
+          in the page cache of the operating system.
+    \item From a microSD card, a model of 1.5 GB loads in 10 to 20 s; from
+          an NVMe SSD in 2 to 4 s (published).
+    \item A benchmark: send one request first and do not count it, as the
+          warm-up of Day 9.
+    \item A product: keep the model loaded. \code{keep\_alive}: $-1$ keeps it,
+          0 unloads it at once.
+  \end{itemize}
+  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
+    only.\\ Load times of the board: chapter ``LiteRT-LM'' of \emph{Edge AI
+    Engineering}.}
+\end{frame}
+
+% ------------------------------------------------------------------ options
+\begin{frame}{Set the options yourself}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.16\textwidth}L{0.18\textwidth}L{0.20\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Setting} & \textbf{Ollama} & \textbf{llama.cpp} &
+    \textbf{Documented default} \\
+    \midrule
+    Context      & \code{num\_ctx}     & \code{-c}     & Ollama: 4096 in the FAQ,
+                                                       2048 in the Modelfile
+                                                       table. llama.cpp: the
+                                                       context of the model. \\
+    Threads      & \code{num\_thread}  & \code{-t}, \code{-tb} & Set by the
+                                                       runtime \\
+    Answer length & \code{num\_predict} & \code{-n}    & Ollama: $-1$, no limit \\
+    Randomness   & \code{temperature}, \code{seed} & \code{--temp},
+                   \code{--seed} & Ollama: temperature 0.8 \\
+    Stay in RAM  & \code{keep\_alive}  & the server runs & Ollama: 5 minutes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Two pages of one documentation give two defaults for the
+          context. Do not depend on a default: give the value in the
+          request.
+    \item The context of Llama 3.2 is 131\,072 tokens. With the default of
+          llama.cpp, the KV cache of the 3B model needs 15 GB (Part 1).
+    \item Temperature 0 and a fixed seed give the same answer for the same
+          prompt: use them for a benchmark.
+  \end{itemize}
+  \source{Ollama documentation: FAQ, Modelfile, and API (MIT).\\ llama.cpp
+    documentation of the CLI and the server (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------------ context
+\begin{frame}{Measured: the context costs RAM}
+  \small
+  \code{llama3.2:3b}, the RAM of the loaded model in \code{ollama ps}, for
+  three values of \code{num\_ctx}:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}rrrrr@{}}
+    \toprule
+    \textbf{\code{num\_ctx}} & \textbf{KV cache (Part 1)} & \textbf{File +
+    KV cache} & \textbf{Measured} & \textbf{Difference} \\
+    \midrule
+    2048    & 0.235 GB & 2.25 GB & 2.32 GB & 0.07 GB \\
+    8192    & 0.940 GB & 2.96 GB & 3.12 GB & 0.16 GB \\
+    32\,768 & 3.758 GB & 5.78 GB & 5.99 GB & 0.21 GB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The formula of Part 1 predicts the measured RAM. The difference
+          is the buffers of the runtime: they also grow a little with the
+          context.
+    \item From 2048 to 32\,768 tokens, the RAM grows by 119\,262 bytes for
+          each token. The formula gives 114\,688: 4 percent less.
+    \item On the 8 GB board, 32\,768 tokens leave little RAM for the system
+          and your program.
+  \end{itemize}
+  \keypoint{Calculate the RAM before the lab, then check it with
+    \code{ollama ps} and \code{free}.}
+  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
+    only.\\ The RAM of the model does not depend on the computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ threads
+\begin{frame}{Measured: more threads}
+  \begin{columns}[c]
+    \begin{column}{0.52\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.37cm, y=0.31cm]
+        \draw[->, coolgray] (0,0) -- (13.2,0);
+        \draw[->, coolgray] (0,0) -- (0,11.2);
+        \node[coolgray, anchor=west] at (0.2,11.0) {speedup};
+        \node[coolgray] at (6.5,-1.9) {threads};
+        \foreach \x in {1,2,4,8,12} {
+          \draw[coolgray] (\x,0) -- (\x,-0.2) node[below] {\x};
+        }
+        \foreach \y in {2,4,6,8,10} {
+          \draw[coolgray] (0,\y) -- (-0.2,\y) node[left] {\y};
+          \draw[coolgray!40, dotted] (0,\y) -- (12.8,\y);
+        }
+        \draw[coolgray, dashed] (1,1) -- (10.6,10.6);
+        \draw[cardinalred, line width=1.1pt] plot coordinates
+          {(1,1) (2,1.98) (4,3.92) (8,7.27) (12,10.31)};
+        \draw[darkcyan, line width=1.1pt] plot coordinates
+          {(1,1) (2,2.04) (4,3.62) (8,5.75) (12,5.34)};
+        \foreach \x/\y in {1/1, 2/1.98, 4/3.92, 8/7.27, 12/10.31} {
+          \fill[cardinalred] (\x,\y) circle (1.5pt);
+        }
+        \foreach \x/\y in {2/2.04, 4/3.62, 8/5.75, 12/5.34} {
+          \fill[darkcyan] (\x,\y) circle (1.5pt);
+        }
+        \node[cardinalred, anchor=east] at (11.6,10.4) {prompt};
+        \node[darkcyan!80!black, anchor=north] at (10.2,5.0) {generation};
+        \node[coolgray, anchor=east] at (6.4,7.2) {ideal};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \scriptsize
+      \renewcommand{\arraystretch}{1.1}
+      \begin{tabular}{@{}rrr@{}}
+        \toprule
+        \textbf{Threads} & \textbf{Prompt} & \textbf{Generation} \\
+        \midrule
+        1  & 25.5  & 6.2 \\
+        2  & 50.4  & 12.5 \\
+        4  & 99.7  & 22.3 \\
+        8  & 185.0 & 35.4 \\
+        12 & 262.5 & 32.9 \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.2em
+      Tokens/s, \code{llama3.2:1b}, median of 3 requests. The computer
+      has 24 cores.
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The prompt is compute-bound: 12 threads give 10.3 times the rate.
+    \item The generation is memory-bound: its gain stops at 8 threads, and
+          12 threads are slower.
+    \item The Raspberry Pi 5 has 4 cores. The guide: threads = number of
+          cores. Measure 1, 2, 3, and 4 threads in the lab.
+  \end{itemize}
+  \source{Experiment of this course: Ollama 0.32.6,\\ x86 work computer, CPU
+    only.}
+\end{frame}
+
+% ------------------------------------------------------------------ prompt length
+\begin{frame}{Measured: the prompt length}
+  \small
+  \code{llama3.2:1b}, 4 threads, 64 tokens of answer, median of 3 requests:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}rrrr@{}}
+    \toprule
+    \textbf{Prompt tokens} & \textbf{Prompt rate} & \textbf{First token}
+    & \textbf{Generation rate} \\
+    \midrule
+    47  & 128.2 tokens/s & 0.37 s & 23.0 tokens/s \\
+    139 & 93.2 tokens/s  & 1.49 s & 22.7 tokens/s \\
+    553 & 83.3 tokens/s  & 6.64 s & 19.4 tokens/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The time to the first token grows faster than the prompt: a
+          prompt 12 times as long needs 18 times the time.
+    \item The generation is also slower with a long prompt. Each new token
+          reads a larger KV cache.
+    \item Retrieval (Part 3) puts long texts into the prompt. Measure with
+          prompts of your real length.
+  \end{itemize}
+  \keypoint{A prompt rate without its prompt length is not a result. Write
+    the two numbers.}
+  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
+    only.}
+\end{frame}
+
+% ------------------------------------------------------------------ models
+\begin{frame}{Measured: two model sizes on one CPU}
+  \small
+  4 threads, the same prompt of 116 tokens, 64 tokens of answer, median of
+  3 requests:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.22\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Model} & \textbf{File} & \textbf{Prompt rate} & \textbf{Generation
+    rate} & \textbf{File $\times$ rate} \\
+    \midrule
+    \code{llama3.2:1b} & 1.32 GB & 99.8 tokens/s & 22.94 tokens/s & 30.3 GB/s \\
+    \code{llama3.2:3b} & 2.02 GB & 44.0 tokens/s & 13.30 tokens/s & 26.9 GB/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The 3B model generates 1.72 times slower on this computer. The
+          published value of the Raspberry Pi 5 is 1.70 (Part 1).
+    \item The prompt is 2.3 times slower: the prompt follows the
+          operations, and the 3B model has 2.6 times the parameters.
+    \item The rates of the work computer are about 2.5 times the rates of
+          the board. The ratio between the two models is almost the same.
+  \end{itemize}
+  \keypoint{The generation follows the bytes of the file. The prompt follows
+    the parameters.}
+  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
+    only. Rates of the\\ board: lab ``Small Language Models'' of
+    \emph{Machine Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------------ published
+\begin{frame}{Published rates on the Raspberry Pi 5}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.15\textwidth}L{0.34\textwidth}rrL{0.11\textwidth}@{}}
+    \toprule
+    \textbf{Tool} & \textbf{Model and level} & \textbf{Prompt} &
+    \textbf{Generation} & \textbf{Prompt} \\
+    \midrule
+    Ollama      & \code{llama3.2:1b}, \code{Q8\_0}     & 19.46 & 8.99 & 32 tokens \\
+    Ollama      & \code{llama3.2:3b}, about 2 GB       & ? & 5.3 & short \\
+    llama-bench & Qwen3.5 0.8B, \code{Q8\_0}           & about 134 & about 10 & ? \\
+    llama-bench & Gemma 4 E2B, QAT \code{Q4\_K\_M}     & about 37 & about 7 & ? \\
+    LiteRT-LM   & Gemma 4 E2B, \code{int4}             & ? & 4 to 8 & short \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  {\scriptsize Rates in tokens/s. ?: not given in the source.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Gemma 4 E2B through \code{llama-server}: 6.36 tokens/s;
+          \code{llama-bench}: 6.63. A real request has the chat template
+          and a filled KV cache.
+    \item The rows use different models, prompts, and tools. Do not compare
+          two rows as a benchmark.
+  \end{itemize}
+  \keypoint{A published rate is a starting point. Your measurement is the
+    number for your decision.}
+  \source{Lab ``Small Language Models'' of \emph{Machine Learning Systems}.
+    Chapters ``From Ollama to\\ llama.cpp'' and ``LiteRT-LM'' of \emph{Edge AI
+    Engineering}.}
+\end{frame}
+
+% ------------------------------------------------------------------ selection
+\begin{frame}{Model selection for an 8 GB device}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 text width=2.1cm, align=center, minimum height=1.2cm}]
+    \node[st] (a) at (0,0)    {\textbf{1. RAM}\\ (8 $-$ system) $\times$
+      0.7 for the model and the cache};
+    \node[st] (b) at (2.75,0)  {\textbf{2. Speed}\\ chat: 8 to 10 tokens/s;
+      a job: less};
+    \node[st] (c) at (5.5,0)  {\textbf{3. Quality}\\ the task and the
+      language};
+    \node[st, fill=darkcyan!15] (d) at (8.25,0) {\textbf{4. Test}\\ the
+      smallest model that passes your prompts};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+  \end{tikzpicture}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The RAM is a hard limit. If the board swaps, the rate falls: use
+          a smaller model or a smaller level.
+    \item Take the instruct or chat version, not the base model.
+    \item A reasoning model writes many tokens before the answer. On the
+          board, disable the thinking mode or take a model with no
+          thinking.
+    \item Levels: \code{Q8\_0} up to 1B, \code{Q5\_K\_M} near 1B,
+          \code{Q4\_K\_M} from 2B. A QAT or dynamic file is better at the
+          same size.
+    \item Read the licence of the model before a product.
+  \end{itemize}
+  \keypoint{The question at the edge: how small can the model be and still
+    do the task?}
+  \source{Guide ``SLMs at the Edge'', sections 2, 7, and 8.}
+\end{frame}
+
+\begin{frame}{Candidates for the Raspberry Pi 5}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.15\textwidth}rL{0.13\textwidth}L{0.23\textwidth}@{}}
+    \toprule
+    \textbf{Model} & \textbf{Level} & \textbf{RAM} & \textbf{Rate} &
+    \textbf{Note of the guide} \\
+    \midrule
+    SmolLM2 360M             & \code{Q8\_0}       & 0.5 GB & 30 or more & Fast, little depth \\
+    Qwen3.5 0.8B             & \code{Q8\_0}       & 1 GB   & 15 to 25 & Fast and coherent \\
+    Llama 3.2 1B, Gemma 3 1B & \code{Q4\_K\_M}    & 1 GB   & 8 to 20  & The chat class \\
+    Qwen3.5 2B               & dynamic \code{Q4}  & 1.6 GB & 5 to 10  & Better, still usable \\
+    Gemma 4 E2B              & QAT \code{Q4}      & 3 GB   & 4 to 8   & Images too \\
+    Llama 3.2 3B             & \code{Q4\_K\_M}    & 2.2 GB & 2 to 5   & Jobs, slow for a chat \\
+    8B to 9B models          & \code{Q4\_K\_M}    & 5 GB   & 1 to 2   & Fits, but very slow \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  {\scriptsize Rate: generation in tokens/s, CPU only, short context.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The guide compiled these values from published benchmarks. Your
+          values depend on the cooling, the context, and the prompt.
+    \item The lab measures the two Llama 3.2 models of this table with
+          their Ollama tags.
+    \item Model names change fast. Check the list again before a project.
+  \end{itemize}
+  \source{Guide ``SLMs at the Edge'', section 5.1 (values compiled from
+    published benchmarks).}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{select a model for three applications}{%
+  \small
+  Use the candidates of the guide and the budget of 5.3 GB on a Raspberry
+  Pi 5 with 8 GB. For each application, select a model and a quantization
+  level. Give the rate that you need and the RAM.
+  \begin{enumerate}
+    \item \textbf{Home assistant.} A person speaks a short question and
+          reads the answer on a screen. A speech model and a voice model
+          run on the same board.
+    \item \textbf{Night report.} Each night the board summarizes the log of
+          20 sensors: about 6000 tokens of text. Nobody waits for it.
+    \item \textbf{Robot commands.} A command such as ``move to the red box
+          and stop'' becomes a JSON object with 3 fields. The robot must
+          start to move in less than 5 seconds.
+  \end{enumerate}
+  For application 2, calculate the KV cache of Llama 3.2 3B for a context
+  of 8192 tokens (Part 1: 114\,688 bytes for each token).
+  \vskip 0.3em
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{select a model for three applications}{%
+  \small
+  \begin{enumerate}
+    \item Qwen3.5 0.8B at \code{Q8\_0}, or Llama 3.2 1B. A chat needs 8 to
+          10 tokens/s, and these models give 8 to 25. About 1 GB leaves RAM
+          for the speech and voice models.
+    \item Llama 3.2 3B at \code{Q4\_K\_M}: 2 to 5 tokens/s is enough for a
+          job at night, and the summary is better. KV cache: $114\,688
+          \times 8192 = 0.94$ GB. Total $2.2 + 0.94 = 3.14$ GB, below 5.3
+          GB. A prompt of 6000 tokens takes minutes: this is acceptable
+          at night.
+    \item A model of about 1B at \code{Q5\_K\_M} or \code{Q8\_0}, with
+          temperature 0, a JSON schema (Part 3), and a short
+          \code{num\_predict}. The prompt is short and the answer has about
+          30 tokens: at about 10 tokens/s, 3 s.
+  \end{enumerate}
+  \keypoint{The application sets the rate and the context. Then select the
+    smallest model that passes your test prompts.}
+}
