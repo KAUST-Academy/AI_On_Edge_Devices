@@ -74,6 +74,7 @@
 * **day14:** add theory part 1 on the life cycle in production ([31aabff](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/31aabffc604cba2beabc11191244c3121aebe347))
 * **day14:** add theory part 2 on security, privacy, and reliability ([4ce46fa](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/4ce46fa877a2869bf5eea12e687be1edcf078eba))
 * **day14:** add theory part 3 on the design method ([0dd6e2e](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/0dd6e2e0fca258d1c0dc951c0e913c010c707a45))
+* **day15-lab:** add capstone day lab deck ([ca928fe](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/ca928fe143608dca7a969b6cadd1e72e41ec78bf))
 * **day15-lab:** add capstone report, schedule, and feedback ([96f58f2](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/96f58f20d3c6d240a86c38441fcd34c813e72598))
 * **day15:** add theory part 1 on the course summary ([7ffd429](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/7ffd429b10609d35e4fab0532ad2bbea94f3d88d))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
