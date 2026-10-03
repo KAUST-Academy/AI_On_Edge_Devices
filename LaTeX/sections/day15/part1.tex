@@ -5,6 +5,634 @@
 % work, and the instructor visits each team. The syllabus gives no exercise
 % for Part 1: the exercise prepares the trade-off section of the capstone
 % report.
+%
+% This part repeats no frame of an earlier day. It puts the results of the
+% days side by side. Each value comes from an experiment of the course or
+% from a published source that the day named. The plan of the course
+% repository lists each value with its experiment script. The source line of
+% each frame names the days.
 
 \theorypart{Course summary}%
   {name one capstone trade-off and the number that decides it}
+
+% ------------------------------------------------------------------ map
+\begin{frame}{Fifteen days in one view}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize,
+      wk/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                 align=left, text width=3.0cm, minimum height=2.7cm,
+                 anchor=north}]
+    \node[wk, draw=cardinalred] at (0,0) {%
+      \textbf{Week 1: TinyML on\\ the XIAO}\\[3pt]
+      1 Landscape, budgets\\ 2 Sensors, data\\ 3 Model to the board\\
+      4 Quantization\\ 5 Audio and vision};
+    \node[wk, draw=treegreen] at (3.6,0) {%
+      \textbf{Week 2: optimization,\\ Raspberry Pi}\\[3pt]
+      6 Pruning, distillation\\ 7 Runtimes, graphs\\ 8 Object detection\\
+      9 Benchmarking, energy\\ 10 Language models};
+    \node[wk, draw=darkcyan] at (7.2,0) {%
+      \textbf{Week 3: connected\\ systems}\\[3pt]
+      11 Networks, RTSP\\ 12 Decisions, MQTT\\ 13 Monitoring\\
+      14 Production design\\ 15 Capstone};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Week 1 put one model on one microcontroller. Week 2 made models
+          smaller and faster, and measured them. Week 3 joined devices into
+          one system that runs for a long time.
+    \item Each day measured at least one trade-off. This part puts the
+          measured numbers side by side.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ workflow
+\begin{frame}{The workflow of Day 1, with its days}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.15cm, minimum height=0.8cm}]
+    \foreach \i/\n/\d in {0/Collect data/{2, 5, 8}, 1/Train/{3, 6, 8},
+        2/Optimize/{4, 6}, 3/Convert/{3, 7}, 4/Deploy/{3, 7, 10, 11, 12},
+        5/Monitor/{13, 14}} {
+      \node[st] (s\i) at (1.75*\i,0) {\n};
+      \node[text=cardinalred, align=center, text width=1.45cm] at
+        (1.75*\i,-0.9) {Days \d};
+    }
+    \foreach \i [evaluate=\i as \j using int(\i+1)] in {0,...,4} {
+      \draw[->] (s\i) -- (s\j);
+    }
+    \draw[->, darkcyan] (s5.north) -- ++(0,0.45) -| node[pos=0.25, above]
+      {new data, new model (Days 13, 14)} (s0.north);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Day 9 measured the stages: latency, memory, energy, accuracy.
+    \item Day 1 said: the device constraints come first. Each later day
+          showed one more constraint: RAM, flash, latency, energy, the
+          network, the time of the people who run the system.
+    \item The loop does not end at the deployment. A deployed model needs
+          monitoring and updates.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ list
+\begin{frame}{The main trade-offs}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.32\textwidth}L{0.30\textwidth}L{0.28\textwidth}@{}}
+    \toprule
+    \textbf{Trade-off} & \textbf{You gain} & \textbf{You pay} \\
+    \midrule
+    Compute on the device & Latency, privacy, data volume & Memory,
+      energy, a smaller model \\
+    Fewer bits, fewer weights & Size, often speed & Accuracy, a
+      calibration step \\
+    Smaller input & Speed & Small objects \\
+    Local decision rules & Fewer false actions & Delay \\
+    Reliable delivery & No lost message & Bytes, double messages \\
+    Monitoring and logs & Early warning & Storage, false alerts \\
+    Security and updates & Safe operation & Bytes, time, work \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  No row has a free choice. The requirements of the product decide which
+  side wins. The next frames give the measured numbers of each row.
+\end{frame}
+
+% ------------------------------------------------------------------ where
+\begin{frame}{Where to compute: the data that leaves}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.75cm, y=0.55cm]
+    % Bar length = log10(bytes in one day).
+    \foreach \x in {3,5,7,9} {
+      \draw[coolgray!50] (\x,-0.4) -- (\x,3.0);
+      \node[below, coolgray] at (\x,-0.4) {$10^{\x}$};
+    }
+    \fill[cardinalred!60] (0,2.1) rectangle (9.442,2.7);
+    \fill[darkcyan!60]    (0,1.1) rectangle (7.320,1.7);
+    \fill[treegreen!60]   (0,0.1) rectangle (3.782,0.7);
+    \node[anchor=west, text=white] at (0.1,2.4) {Raw audio, 16 kHz: 2\,764\,800\,000};
+    \node[anchor=west, text=white] at (0.1,1.4) {A result each 0.5 s: 20\,908\,800};
+    \node[anchor=west, fill=white, inner sep=1pt] at (3.9,0.4) {50 keyword events: 6050};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item Bytes in one day of one microphone (log scale). Local inference
+          sends results, not raw data: a factor of 132 for the results and
+          of about 457\,000 for the events.
+    \item The radio of the ESP32-S3 needs up to 1122 mW to send; the
+          processor needs 217 mW. Each byte that stays costs no radio
+          energy.
+    \item The price: the model must fit the device (next frame).
+  \end{itemize}
+  \source{Day 12, Part 3 (data volumes); Day 9 (ESP32-S3 data sheet 2.2,
+    the power is a calculation).}
+\end{frame}
+
+% ------------------------------------------------------------------ budgets
+\begin{frame}{The three budgets of a model}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\textwidth}rrr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Parameters} & \textbf{MACs} &
+      \textbf{Peak activations} \\
+    \midrule
+    ResNet-18 & 11\,689\,512 & 1\,814\,073\,344 & 1\,003\,520 \\
+    MobileNetV2 & 3\,504\,872 & 300\,774\,272 & 1\,505\,280 \\
+    Small depthwise CNN & 14\,186 & 5\,116\,160 & 110\,592 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The parameters fill the flash, the operations take the time and
+          the energy, and the peak activations fill the RAM.
+    \item The budgets are independent: MobileNetV2 has 3.3 times fewer
+          parameters than ResNet-18, but a 1.5 times larger peak.
+    \item Of the three, only the small depthwise CNN in \code{int8} fits a
+          microcontroller with 256 KB of RAM.
+  \end{itemize}
+  \keypoint{Check all three budgets before you train. A model that misses
+    one budget does not run.}
+  \source{Day 1, lab notebook (calculated, values for one image).}
+\end{frame}
+
+% ------------------------------------------------------------------ bits
+\begin{frame}{Fewer bits: size against accuracy}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.24\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    \textbf{Model} & \textbf{\code{float32}} & \textbf{\code{int8}} \\
+    \midrule
+    Motion model of Day 3 (file) & 26\,732 bytes & 8680 bytes \\
+    MobileNetV2 (accuracy, Imagenette) & 77.4 percent & 75.2 percent \\
+    YOLO11n (mAP50-95, 500 COCO images) & 0.424 & 0.331 \\
+    Raw window model of Day 3, calibration with one class & 100.0 percent
+      & 69.2 percent \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item \code{int8} makes the files 3 to 3.5 times smaller. The loss of
+          accuracy depends on the model: small for a classifier, large for
+          a detector.
+    \item The calibration data decides the ranges. Data of one class gave
+          a large loss.
+    \item Quantization-aware training (Day 4) and \code{int8} weights with
+          \code{float32} activations reduce the loss.
+  \end{itemize}
+  \source{Day 4 (motion model, calibration); Day 7 (MobileNetV2); Day 8
+    (YOLO11n). Work computer, LiteRT.}
+\end{frame}
+
+% ------------------------------------------------------------------ smaller
+\begin{frame}{Fewer weights: what saves what}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.46\textwidth}rrr@{}}
+    \toprule
+    \textbf{Fashion-MNIST CNN (\code{float32})} & \textbf{File} &
+      \textbf{Accuracy} & \textbf{Time} \\
+    \midrule
+    Baseline, filters 16-32-64 & 99\,320 B & 89.1\,\% & 71\,$\mu$s \\
+    90 percent of the weights set to zero & 99\,320 B & 76.4\,\% & no
+      gain \\
+    Filters removed: 8-16-32 & 28\,408 B & 85.6\,\% & 26\,$\mu$s \\
+    Separable layers & 20\,872 B & 86.3\,\% & 27\,$\mu$s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Zeros in a dense file save nothing on a normal processor. Remove
+          whole filters, or design the model small.
+    \item A student trained only on the outputs of a teacher (90.3
+          percent) reached 85.3 percent: the student needs no labels, and a
+          copy of a model needs only its outputs (Day 14).
+  \end{itemize}
+  \source{Day 6, Parts 1 to 3 (work computer, LiteRT, one thread; a time
+    changes by 5 to 10 $\mu$s between two runs).}
+\end{frame}
+
+% ------------------------------------------------------------------ runtime
+\begin{frame}{The runtime matters as much as the model}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.55\textwidth}r@{}}
+    \toprule
+    \textbf{MobileNetV2, one thread, the same weights} & \textbf{Latency} \\
+    \midrule
+    LiteRT with its reference kernels & 362.7 ms \\
+    LiteRT with its built-in kernels & 41.8 ms \\
+    PyTorch & 31.9 ms \\
+    ONNX Runtime with no graph optimization & 26.4 ms \\
+    NCNN & 16.6 ms \\
+    ONNX Runtime & 11.7 ms \\
+    LiteRT with XNNPACK & 11.7 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A factor of 31 between the slowest and the fastest runtime, with
+          the same model.
+    \item Fused operators, a good memory layout, and SIMD kernels make the
+          difference (Day 7, Part 3).
+  \end{itemize}
+  \source{Day 7, Part 2 (x86 processor with AVX2, median of 50 runs). The
+    values say nothing about a board.}
+\end{frame}
+
+% ------------------------------------------------------------------ resolution
+\begin{frame}{A smaller input: speed against small objects}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.62cm, y=4.2cm]
+        \draw[->, coolgray] (0,0) -- (7.2,0);
+        \node[coolgray] at (3.6,-0.17) {GFLOP of one image};
+        \draw[->, coolgray] (0,0) -- (0,0.88);
+        \foreach \y in {0.2,0.4,0.6,0.8} {
+          \draw[coolgray] (-0.08,\y) -- (0,\y) node[left] {\y};
+        }
+        \foreach \x in {2,4,6} {
+          \draw[coolgray] (\x,-0.02) -- (\x,0) node[below=1pt] {\x};
+        }
+        \draw[treegreen, thick] (0.80,0.62) -- (1.62,0.72) -- (3.67,0.77) --
+          (6.54,0.79);
+        \draw[darkcyan, thick] (0.80,0.244) -- (1.62,0.319) -- (3.67,0.391) --
+          (6.54,0.417);
+        \draw[cardinalred, thick] (0.80,0.01) -- (1.62,0.07) -- (3.67,0.16) --
+          (6.54,0.23);
+        \foreach \x/\y in {0.80/0.62, 1.62/0.72, 3.67/0.77, 6.54/0.79,
+            0.80/0.244, 1.62/0.319, 3.67/0.391, 6.54/0.417, 0.80/0.01,
+            1.62/0.07, 3.67/0.16, 6.54/0.23} {
+          \fill (\x,\y) circle (1.2pt);
+        }
+        \node[treegreen, anchor=north east] at (6.6,0.76) {recall, large};
+        \node[darkcyan, anchor=north] at (5.1,0.385) {mAP50-95};
+        \node[cardinalred, anchor=north east] at (6.6,0.205) {recall,
+          small};
+        \foreach \x/\y/\l in {0.80/0.244/224, 1.62/0.319/320, 3.67/0.391/480,
+            6.54/0.417/640} {
+          \node[coolgray, font=\tiny, above=1pt] at (\x,\y) {\l};
+        }
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      \begin{itemize}
+        \item YOLO11n at 640, 480, 320, and 224 pixels (grey numbers).
+        \item From 640 to 320 pixels: 4 times fewer operations; the recall
+              of large objects falls from 0.79 to 0.72, of small objects
+              from 0.23 to 0.07.
+        \item Select the size from the size of the objects in the image,
+              not from the frame rate only.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{Day 8, Parts 2 and 3 (500 COCO validation images; recall at the
+    score threshold 0.25).}
+\end{frame}
+
+% ------------------------------------------------------------------ measurement
+\begin{frame}{How you measure changes the number}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.58\textwidth}r@{}}
+    \toprule
+    \textbf{MobileNetV2, LiteRT, one thread} & \textbf{Value} \\
+    \midrule
+    Mean of the first 5 inferences of a new process & 13.35 ms \\
+    Median of 2000 inferences after a warm-up & 11.621 ms \\
+    p99 alone on the core & 12.264 ms \\
+    p99 with a second program on the core & 27.452 ms \\
+    \midrule
+    95 percent interval of an accuracy, 100 test samples & 8.2 points \\
+    The same, 1000 test samples & 2.6 points \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Warm up, repeat, and give a distribution: the median and a high
+          percentile.
+    \item A second program changes the tail, not the median.
+    \item A small test set cannot show a difference of a few points.
+  \end{itemize}
+  \source{Day 9, Parts 1 and 2 (x86 processor with AVX2).}
+\end{frame}
+
+% ------------------------------------------------------------------ energy
+\begin{frame}{Energy: the rest state decides}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Duty cycle (light sleep between)} & \textbf{100\,\%} &
+      \textbf{10\,\%} & \textbf{1\,\%} & \textbf{0.1\,\%} \\
+    \midrule
+    Mean power of the chip & 217 mW & 22.4 mW & 2.95 mW & 1.01 mW \\
+    Life on 1000 mAh at 3.7 V & 17 h & 6.9 d & 52 d & 153 d \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A faster model saves energy only when the device sleeps after it.
+    \item The board adds its own rest power: 19 mW in light sleep for the
+          XIAO ESP32S3 Sense, 24 times the chip. With Wi-Fi connected, at
+          least 167.2 mW (Day 14).
+    \item A Raspberry Pi 5 needs 3.0 to 3.5 W with no load: a mains
+          supply.
+  \end{itemize}
+  \source{Day 9, Part 3 (ESP32-S3 data sheet 2.2, Seeed board values,
+    \emph{Edge AI Engineering}; the life is a calculation).}
+\end{frame}
+
+% ------------------------------------------------------------------ llm
+\begin{frame}{Language models: memory sets the speed}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.44\textwidth}rr@{}}
+    \toprule
+    & \textbf{\code{llama3.2:1b}} & \textbf{\code{llama3.2:3b}} \\
+    \midrule
+    Format, file & \code{Q8\_0}, 1.32 GB & \code{Q4\_K\_M}, 2.02 GB \\
+    Generation on a Raspberry Pi 5 & 8.99 tokens/s & 5.3 tokens/s \\
+    20 commands to JSON with a schema, correct & 18 & 20 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Each token reads all weights: the file size times the rate is
+          about the memory bandwidth. Fewer bits give more tokens each
+          second.
+    \item The larger model was correct more often. The context costs RAM:
+          the cache of the 3B model needs 3.76 GB at 32\,768 tokens.
+    \item A schema and a tool call fix the form of the output, not the
+          facts.
+  \end{itemize}
+  \source{Day 10 (rates: textbook kit lab; JSON test: Ollama on the work
+    computer; sizes: GGUF headers). 1 GB = $10^9$ bytes.}
+\end{frame}
+
+% ------------------------------------------------------------------ streams
+\begin{frame}{Streams: bit rate, start time, and age}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.55\textwidth}L{0.33\textwidth}@{}}
+    \toprule
+    \textbf{Choice} & \textbf{Measured} \\
+    \midrule
+    MJPEG against H.264, 1280 x 720 & 11.09 against 2.62 Mbit/s \\
+    Keyframe each 1 s against each 10 s: wait of a new reader & median
+      0.50 s against 5.51 s \\
+    Reader in order against newest frame, model of 100 ms & age 6711 ms
+      against 56 ms \\
+    Default decoder threads against 1 thread & 538 ms against 40 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Compression saves bandwidth and costs start time and CPU time.
+    \item A slow model must drop frames. A queue in order makes each
+          decision older and older.
+    \item A default setting can hide a large delay: measure the age of the
+          frame, not only the frame rate.
+  \end{itemize}
+  \source{Day 11, Parts 2 and 3 (work computer, MediaMTX, FFmpeg, OpenCV).}
+\end{frame}
+
+% ------------------------------------------------------------------ decisions
+\begin{frame}{Decisions and delivery}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}rrr@{}}
+    \toprule
+    \textbf{Rule on the scores, 60 s} & \textbf{Switch-ons} & \textbf{False}
+      & \textbf{Delay on} \\
+    \midrule
+    One window above 0.5 & 16.11 & 8.60 & 0.04 s \\
+    3 of 5 windows & 1.07 & 0.00 & 0.21 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{tabular}{@{}L{0.40\textwidth}rrr@{}}
+    \toprule
+    \textbf{MQTT, a link lost for 1.5 s} & \textbf{QoS 0} & \textbf{QoS 1} &
+      \textbf{QoS 2} \\
+    \midrule
+    Bytes of one IMU message & 147 & 193 & 281 \\
+    Lost messages & 51 & 0 & 56 \\
+    Double messages & 0 & 20 & 0 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A rule over several windows removed the false actions for 0.2 s
+          of delay.
+    \item QoS 1 and a sequence number to drop doubles gave no loss. QoS 2
+          lost messages with this client after a reconnection.
+  \end{itemize}
+  \source{Day 12, Parts 1 and 2 (simulation, mean of 100 seeds; Mosquitto
+    2.0.11, paho-mqtt 2.1.0).}
+\end{frame}
+
+% ------------------------------------------------------------------ operations
+\begin{frame}{Monitoring and production}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.52\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Choice} & \textbf{Measured} \\
+    \midrule
+    Alert on the mean of 10 s against 60 s (5 hours) & 4 against 1 false
+      alerts \\
+    Log each frame against a summary each 60 s (1 hour) & 7.89 MB against
+      18.9 KB \\
+    Update of a 9.9 MB folder with restart against resume (100 devices,
+      7 days) & 17 against 0 devices with no file \\
+    MQTT with TLS against plain: connect & 51.9 ms against 2.4 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A fast alert is a noisy alert. A longer window gives fewer false
+          alerts and a later alert.
+    \item A summary with each error keeps the important records for a small
+          part of the storage.
+    \item Each defense costs bytes or time, but much less than the failure
+          that it prevents.
+  \end{itemize}
+  \source{Day 13, Parts 2 and 3 (simulations); Day 14, Parts 1 and 2
+    (simulation, Mosquitto on the work computer).}
+\end{frame}
+
+% ------------------------------------------------------------------ patterns
+\begin{frame}{Patterns that repeat}
+  \small
+  \begin{enumerate}
+    \item \textbf{Send results, not raw data.} Days 1, 5, 11, 12, 14.
+    \item \textbf{Measure on the target.} On the x86 work computer,
+          \code{int8} kernels were 1.6 times slower than \code{float32}
+          (Day 6). On a Raspberry Pi 5, a published \code{int8} model was
+          2.9 times faster (Day 7).
+    \item \textbf{A published number is not your number.} Its board, its
+          settings, and its window are different (Day 9).
+    \item \textbf{Check the defaults.} Decoder threads (Day 11), the
+          context length (Day 10), QoS 2 after a reconnection (Day 12),
+          the calibration data (Day 4).
+    \item \textbf{Test the failure.} Cut the link, darken the image, stop
+          the program, fill the disk (Days 12 to 14).
+    \item \textbf{Predict, then measure, then explain the difference.} The
+          method of each lab.
+  \end{enumerate}
+  \source{Day 7, Raspberry Pi 5, XNNPACK: 10.84 ms and 3.69 ms.\\
+    \emph{EdgeML with Raspberry Pi}, guide for ExecuTorch.}
+\end{frame}
+
+% ------------------------------------------------------------------ decision log
+\begin{frame}{The Decision Log: one decision, one number}
+  \begin{block}{Form (about 100 words)}
+    \small
+    The decision. The options. The measured numbers of each option. The
+    trade-off: what you gain and what you pay. The condition that would
+    change the decision.
+  \end{block}
+  \vskip 0.4em
+  \begin{exampleblock}{Example from Day 14, Part 3}
+    \small
+    We use a window of 2 s. The window is 2.0 s of the alarm budget of
+    2.6 s, against the requirement of 3.0 s. A window of 1 s would leave
+    more margin, but we did not measure its recall. We keep 2 s until a
+    test on the recordings of the site shows the recall of 1 s.
+  \end{exampleblock}
+  \vskip 0.4em
+  \small
+  Your capstone report has a benchmark table and the Decision Log of your
+  main decisions. The demonstration defends them.
+  \source{Method: \emph{Machine Learning Systems}, instructor guide
+    (assessment). Budget values of the Day 14 example.}
+\end{frame}
+
+% ------------------------------------------------------------------ next
+\begin{frame}{After the course}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.42\textwidth}L{0.48\textwidth}@{}}
+    \toprule
+    \textbf{Topic} & \textbf{Backup modules of the course} \\
+    \midrule
+    Low power and sleep modes & MC-9 \\
+    Neural processing units & MC-11 (Grove Vision AI V2), PI-5 \\
+    Other runtimes & PI-2 (ExecuTorch), GA-4 (llama.cpp), GA-5 \\
+    Learning on the device & SY-4 (on-device and federated learning) \\
+    Security in practice & SY-2 (MQTT with TLS), SY-5, SY-7 (OTA) \\
+    Generative applications & GA-1 (retrieval), GA-3 (agents), GA-7
+      (voice) \\
+    Responsible edge AI & SY-6, SY-10 (faults, drift, attacks) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Each module has its own deck and lab. Ask the instructor for the
+          material.
+    \item The textbook (mlsysbook.ai) and the kit labs of the companion
+          books continue each topic.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ today
+\begin{frame}{Today: the capstone build}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}L{1.5cm}L{3.6cm}@{}}
+        \toprule
+        \textbf{When} & \textbf{What} \\
+        \midrule
+        Lecture & Parts 2, 3: build; the instructor visits each team \\
+        Lab, Part A & Build, measure (80 min) \\
+        Lab, Part B & Demonstrations (70 min) \\
+        Lab, Part C & Report, feedback (30 min) \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{A demonstration of 10 minutes}
+        \small
+        \begin{itemize}
+          \item The problem and the requirements
+          \item The system works: live
+          \item The benchmark table: latency, memory, energy
+          \item Two decisions and their numbers
+          \item Questions
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Finish the measurements before the polish. A working system with
+          numbers scores more than a nice system with no numbers.
+    \item Plan B: a recorded input or a video of the system, if the live
+          demonstration fails.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{One trade-off of your capstone}{%
+  For your capstone system:
+  \begin{enumerate}
+    \item Name one trade-off of your design: what you gain and what you
+          pay.
+    \item Name the number that decides it, the unit, and how you measure
+          it (which board, which window, how many runs or samples).
+    \item Write the value that would change your decision.
+  \end{enumerate}
+  \vskip 0.4em
+  Use the form of the Decision Log. You have 10 minutes. Two teams read
+  their answer to the class.}
+
+\answerframe{One trade-off of your capstone}{%
+  \small
+  Example answer for the machine monitor of Day 14:
+  \begin{itemize}
+    \item \textbf{Trade-off}: a battery on the machine (no cable) against
+          the Wi-Fi link that the dashboard needs.
+    \item \textbf{Number}: the mean current of the XIAO, measured with a
+          USB power meter for 10 minutes in each mode. The budget says at
+          least 167.2 mW with Wi-Fi connected (at most 22 h on 1000 mAh) and
+          24.2 mW with light sleep and Wi-Fi each hour (6.4 days).
+    \item \textbf{Change}: if the measured mean is below 5.1 mW, a battery
+          of 1000 mAh lasts 30 days and the cable is not necessary.
+  \end{itemize}
+  A good answer names one number, its unit, its method, and a limit.}
