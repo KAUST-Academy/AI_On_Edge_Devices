@@ -3,6 +3,668 @@
 % Topics of the syllabus: from requirements to paradigm, hardware, model, and
 % pipeline; power and cost budgets; design review exercise; capstone briefing.
 % Exercise: review a given system design and find three weak points.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. Results of earlier days of this course (Days 2 to 14). The plan of the
+%    course repository lists each value with its experiment.
+% 2. Published values: the ESP32-S3 data sheet 2.2 and the Seeed board values
+%    (through Day 9), the Raspberry Pi 5 power of the book "Edge AI
+%    Engineering", the board prices of the kit pages of the textbook, and the
+%    price of the camera on raspberrypi.com (read on 2026-10-03).
+% 3. Example values of this course: the budget script
+%    tools/experiments/day14_design.py of the course repository calculates
+%    each budget and lists each example value. Values in
+%    tools/data/day14/day14_design.json.
+% The design method follows the prototype design process of "XIAO: Big Power,
+% Small Board", chapter 2.1. The capstone requirements and the rubric are the
+% text of Section 7 of the syllabus.
 
 \theorypart{Design method}%
   {review a given system design and find three weak points}
+
+% ------------------------------------------------------------------ why
+\begin{frame}{Design before you build}
+  \small
+  \begin{itemize}
+    \item On Days 1 to 13 each lab gave you the task, the boards, and the
+          model. In a project you select them.
+    \item A change on paper costs minutes. The same change after the build
+          costs days. After the installation of 100 devices, it needs an
+          update of each device (Part 1).
+    \item Most failures of a deployed system come from a requirement that
+          nobody wrote down: the battery life, the light at night, the
+          network of the site.
+    \item A design gives the team one plan with numbers. A review finds the
+          weak points before the build.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{This part}
+    A method in seven steps, applied to one example. Then the budgets for
+    power and cost, the design review, and the capstone project of Days 14
+    and 15.
+  \end{block}
+\end{frame}
+
+% ------------------------------------------------------------------ method
+\begin{frame}{The design method}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.0cm, minimum height=0.95cm}]
+    \node[st, draw=cardinalred] (p) at (0,1.5) {1. Problem and user};
+    \node[st, draw=cardinalred] (r) at (2.7,1.5) {2. Requirements with
+      numbers};
+    \node[st] (a) at (5.4,1.5) {3. Paradigm and split};
+    \node[st] (h) at (8.1,1.5) {4. Hardware};
+    \node[st] (m) at (8.1,0) {5. Model and data};
+    \node[st] (l) at (5.4,0) {6. Pipeline and budgets};
+    \node[st, draw=darkcyan, fill=darkcyan!15] (v) at (2.7,0) {7. Review,
+      then build};
+    \draw[->] (p) -- (r); \draw[->] (r) -- (a); \draw[->] (a) -- (h);
+    \draw[->] (h) -- (m); \draw[->] (m) -- (l); \draw[->] (l) -- (v);
+    \draw[->, cardinalred] (v.north) -- node[left] {a budget fails}
+      (r.south);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each step uses the result of the step before it. The requirements
+          select the paradigm, the paradigm limits the hardware, and the
+          hardware limits the model.
+    \item When a budget fails, go back: change the requirement, the
+          hardware, or the model. Do not hope that the build solves it.
+    \item The steps follow the prototype process of the companion book: the
+          problem, the needs, the hardware, the software, the test.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ problem
+\begin{frame}{Step 1: the problem and the user}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{block}{Four questions}
+        \begin{itemize}
+          \item \textbf{For whom?} The user and the people near the device.
+          \item \textbf{Where?} The place, the power, the network, the light,
+                the temperature.
+          \item \textbf{What?} The function that solves the problem.
+          \item \textbf{Which benefit?} What is better than today?
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Example of this part}
+        A workshop has 20 machines. A bearing that fails makes the machine
+        vibrate. Today a technician hears it, often too late. The owner
+        wants an alarm at the machine and a dashboard for the technician.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Write the problem, not a solution: ``detect a failing bearing'',
+          not ``run YOLO on a camera''.
+    \item Start with a minimum viable product: the smallest system that
+          shows that the idea works.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ requirements
+\begin{frame}{Step 2: requirements with numbers}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.40\textwidth}L{0.33\textwidth}@{}}
+    \toprule
+    \textbf{Vague} & \textbf{With a number} & \textbf{Test} \\
+    \midrule
+    Fast & Alarm within 3 s of the start of the vibration, in 95 percent of
+      the events & Timed events in the lab \\
+    Accurate & Recall of 0.95 for ``abnormal'' on recordings of the site
+      & Test set of the site \\
+    Small & Model and program fit 3 MB of flash and 300 KB of RAM & Build
+      output, arena size \\
+    Long battery & 30 days on one battery & Power budget, then a meter \\
+    Private & No image leaves the device & Read the MQTT topics \\
+    Robust & Local alarm with no network for 24 h & Cut the link \\
+    Cheap & Hardware below a fixed price for each site & Cost budget \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  A requirement with no number cannot fail a test, so nobody can check it.
+  Each requirement needs a test that you can run before the demonstration.
+\end{frame}
+
+% ------------------------------------------------------------------ example reqs
+\begin{frame}{Example: a machine monitor}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.80\textwidth}@{}}
+    R1 & Classify the vibration of each machine as normal or abnormal. \\
+    R2 & Alarm at the machine within 3 s of the start of abnormal
+      vibration. \\
+    R3 & Alarm with no network; the dashboard can wait. \\
+    R4 & Warn when a person is in the zone of a machine with an alarm. \\
+    R5 & Dashboard for the technician: state of each machine, each 10 s. \\
+    R6 & Sensor on a moving part: no cable, if possible. \\
+    R7 & No video leaves the workshop. \\
+    R8 & Model updates for all machines from one place (Part 1). \\
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item R2, R3, and R7 decide where the computation runs.
+    \item R6 is a wish that has a cost: the next frames calculate it.
+  \end{itemize}
+  \source{An example of this course. The values are not from a real
+    workshop.}
+\end{frame}
+
+% ------------------------------------------------------------------ paradigm
+\begin{frame}{Step 3: paradigm and split of the work}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.2cm, minimum height=0.85cm}]
+    \node[st, fill=cardinalred!12] (x) at (0,0) {XIAO on the machine:
+      IMU, model, alarm};
+    \node[st, fill=treegreen!15] (p) at (3.6,0) {Raspberry Pi:\\ camera, broker,\\ logic};
+    \node[st, fill=boxgray] (d) at (7.2,0) {Dashboard of the technician};
+    \draw[->] (x) -- node[above] {MQTT} node[below] {events} (p);
+    \draw[->] (p) -- node[above] {summary} node[below] {each 10 s} (d);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  Apply the filters of Day 1 to each requirement:
+  \begin{itemize}
+    \item R2 and R3: the alarm cannot wait for a network. The decision runs
+          on the XIAO at the machine (TinyML).
+    \item R4 and R7: a camera model needs more than a microcontroller, and
+          the video must stay local. A Raspberry Pi in the workshop runs it
+          (edge ML).
+    \item R5 and R8: a broker, a log, and the updates need a computer that
+          is always on. The Raspberry Pi again.
+    \item No requirement needs the cloud. A cloud copy of the summary is an
+          option.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ hardware
+\begin{frame}{Step 4: hardware}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.33\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    & \textbf{XIAOML Kit} & \textbf{Raspberry Pi 5 (8 GB)} \\
+    \midrule
+    Memory & 512 KB RAM, 8 MB PSRAM, 8 MB flash & 8 GB RAM, microSD
+      card \\
+    Sensors & IMU, microphone, camera & Camera on a cable, USB \\
+    Power & Chip 217 mW at work; Sense board 19 mW in light sleep & 5 to
+      7 W at a moderate load \\
+    Runs well & Small models in \code{int8} (Days 3 to 5) & Detection,
+      language models, Python (Days 7 to 13) \\
+    Price & about \$40 & about \$80 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Criteria: can it do the task, the power, the size, the cost, the
+          life, the tools that the team knows.
+    \item Select the smallest board that meets the requirements with a
+          margin. A larger board costs power and money at each site.
+  \end{itemize}
+  \source{Day 1 (memory); Day 9 (power: ESP32-S3 data sheet 2.2, Seeed,
+    \emph{Edge AI Engineering}); prices: textbook kit pages (2025).}
+\end{frame}
+
+% ------------------------------------------------------------------ model
+\begin{frame}{Step 5: a model that fits the budget}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.14\textwidth}L{0.32\textwidth}L{0.34\textwidth}L{0.08\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{Model} & \textbf{Value} & \textbf{Board} \\
+    \midrule
+    Motion & Features, dense 63, 20, 10, 4 (1534 parameters) & \code{int8}
+      file 4960 bytes, arena 1028 bytes & XIAO \\
+    Keyword & 2 \code{Conv1D}, 1 dense (1556 parameters) & 49 x 13
+      features each 0.5~s & XIAO \\
+    Image & MobileNetV2 0.35, 96 pixels, \code{int8} & Peak 138\,240 bytes
+      of RAM & XIAO \\
+    Detection & YOLO11n, 320 pixels, NCNN & About 80 ms for each image &
+      Pi 5 \\
+    Language & \code{llama3.2:1b}, \code{Q8\_0} & 1.32 GB, 8.99 tokens/s &
+      Pi 5 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Start from a model of the course with known numbers. Check the
+          three budgets of Day 1: flash, RAM, and operations.
+    \item Plan the data: who records it, where, how many sessions, how you
+          label it (Day 2). For R1, record each machine normal and with a
+          known fault.
+  \end{itemize}
+  \source{Days 3, 4, 5, 8, 10 of this course (arena: 32-bit build on the work
+    computer).\\ Pi 5 times: \emph{Edge AI Engineering}, textbook kit lab.}
+\end{frame}
+
+% ------------------------------------------------------------------ pipeline
+\begin{frame}{Step 6: the pipeline of the example}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.45cm, minimum height=0.8cm}]
+    \node[st] (i) at (0,1.3) {IMU 50 Hz};
+    \node[st] (w) at (2.0,1.3) {Window 2 s, stride 0.2 s};
+    \node[st] (f) at (4.0,1.3) {Features, model};
+    \node[st, fill=cardinalred!12] (d) at (6.0,1.3) {3 windows: alarm};
+    \node[st] (q) at (8.0,1.3) {MQTT event};
+    \node[st] (c) at (0,0) {Camera};
+    \node[st] (y) at (2.0,0) {Detector: person};
+    \node[st] (z) at (4.0,0) {Zone test};
+    \node[st, fill=treegreen!15] (l) at (6.0,0) {Logic, log, summary};
+    \node[st] (b) at (8.0,0) {Broker, dashboard};
+    \draw[->] (i) -- (w); \draw[->] (w) -- (f); \draw[->] (f) -- (d);
+    \draw[->] (d) -- (q); \draw[->] (q) -- (b);
+    \draw[->] (c) -- (y); \draw[->] (y) -- (z); \draw[->] (z) -- (l);
+    \draw[<->] (l) -- (b);
+    \node[font=\scriptsize\bfseries, text=cardinalred, anchor=east] at
+      (-0.85,1.3) {XIAO};
+    \node[font=\scriptsize\bfseries, text=treegreen, anchor=east] at
+      (-0.85,0) {Pi};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each box is one step that you can test alone, with a recorded
+          input (Day 12: test the decision layer).
+    \item The alarm path is on the XIAO only. The Pi adds the person test,
+          the log, and the dashboard.
+    \item Write the message format and the topics before the build:
+          \code{edgeai/gNN/<device>/<channel>} (Day 12).
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ latency
+\begin{frame}{Latency budget of the alarm path}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}L{4.4cm}r@{}}
+        \toprule
+        \textbf{Stage} & \textbf{Budget} \\
+        \midrule
+        Fill the window & 2.0 s \\
+        Features and model & 0.1 s \\
+        Two more windows (stride 0.2 s) & 0.4 s \\
+        Event to the Pi (MQTT) & 0.1 s \\
+        \midrule
+        Total & 2.6 s \\
+        Requirement R2 & 3.0 s \\
+        Margin & 0.4 s \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      \begin{itemize}
+        \item The window takes most of the budget, not the model.
+        \item A shorter window is faster, but it can lose accuracy: test
+              both on the data.
+        \item The alarm on the XIAO comes before the MQTT step. The
+              dashboard is not in the path.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  Give each stage a budget, then measure each stage in the lab (Day 9) and
+  compare.
+  \source{Budget values of this example. Window and stride: Day 2. The lab
+    measures the real values.}
+\end{frame}
+
+% ------------------------------------------------------------------ battery
+\begin{frame}{Power budget: the XIAO on a battery}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.46\textwidth}rr@{}}
+    \toprule
+    \textbf{Design (battery 1000 mAh, 3.7 V: 3700 mWh)} & \textbf{Mean
+      power} & \textbf{Life} \\
+    \midrule
+    Wi-Fi always connected (Sense board in modem sleep) & at least 167.2 mW
+      & at most 22 h \\
+    Model 50 ms for each 2 s window, light sleep between, Wi-Fi 3 s each
+      hour & 24.2 mW & 6.4 days \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Mean power: $P = d \cdot P_\text{work} + (1 - d) \cdot
+          P_\text{rest}$ with the duty cycle $d = 50 / 2000 = 2.5$ percent
+          (Day 9).
+    \item In the second design, the light sleep of the Sense board (19 mW)
+          is 77 percent of the energy. The model is not the problem.
+    \item 30 days need 17.4 Wh: a battery of about 4700 mAh. Or change R6:
+          a cable from a USB supply at the machine.
+  \end{itemize}
+  \source{Day 9 values (ESP32-S3 data sheet 2.2; Seeed board values).
+    50 ms and 3 s each hour are example values.}
+\end{frame}
+
+% ------------------------------------------------------------------ mains
+\begin{frame}{Power budget: the Raspberry Pi on mains power}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.42\textwidth}rr@{}}
+    \toprule
+    & \textbf{5 W} & \textbf{7 W} \\
+    \midrule
+    Energy each day & 120 Wh & 168 Wh \\
+    Energy each year & 43.8 kWh & 61.3 kWh \\
+    100 sites, each year & 4380 kWh & 6132 kWh \\
+    Cost at 0.10 USD for each kWh & 438 USD & 613 USD \\
+    Power bank of 10\,000 mAh at 3.7 V (37 Wh) & 7.4 h & 5.3 h \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A Raspberry Pi 5 at work needs a power supply at the site. A
+          battery gives hours, not days.
+    \item The power supply must give the peak: the course uses a 27 W
+          supply. A weak supply gives the undervoltage flag of Day 9.
+    \item Heat: the board throttles above 80 $^\circ$C. A closed box at a
+          warm machine needs the active cooler and air flow.
+  \end{itemize}
+  \source{5 to 7 W at a moderate load: \emph{Edge AI Engineering}, chapter
+    ``Setup''. 0.10 USD for each kWh is an example value.}
+\end{frame}
+
+% ------------------------------------------------------------------ cost hw
+\begin{frame}{Cost budget: the hardware}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.55\textwidth}r@{}}
+    \toprule
+    \textbf{One site: one machine, its own Pi} & \textbf{USD} \\
+    \midrule
+    XIAOML Kit & 40 \\
+    Raspberry Pi 5, 8 GB & 80 \\
+    Camera Module 3 & 25 \\
+    Other parts: power supplies, cooler, card, case, cables & 40 \\
+    \midrule
+    One site & 185 \\
+    100 sites and 15 percent of spares: 115 sets & 21\,275 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The Pi is 43 percent of one site. The workshop: 20 kits and one
+          Pi with one camera cost 945 USD, 20 sites cost 3700 USD. The split
+          of the work changes the cost.
+    \item The hardware is often the smallest part of the cost. The next
+          frame gives the running costs.
+    \item Prices change, the price of memory most. Ask the reseller on the
+          day of the order.
+  \end{itemize}
+  \source{Kit pages of the textbook (2025); raspberrypi.com, ``Camera Module
+    3'' (2026-10-03). Other parts and spares: example values.}
+\end{frame}
+
+% ------------------------------------------------------------------ cost run
+\begin{frame}{Cost budget: running the system}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.50\textwidth}r@{}}
+    \toprule
+    \textbf{Data of one site in 30 days} & \textbf{Volume} \\
+    \midrule
+    Video, H.264 1280 x 720 (2.62 Mbit/s) & 848.4 GB \\
+    Raw IMU at 50 Hz, one JSON message each (147 bytes) & 19.1 GB \\
+    Detections, 10 each second & 4.3 GB \\
+    A count each minute & 5.1 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Running costs: energy, the network, a cloud service, the
+          replacement of failed devices, and the time of the people who
+          watch and update the system.
+    \item One model update (2.9 MB, with resume) for 100 sites: 302 MB.
+          Four each year: 1.2 GB. Small against the video.
+    \item The data that leaves the site sets the cost of the link and of
+          the cloud: send results, not raw data (Day 12).
+  \end{itemize}
+  \source{Day 12, Part 3 (data rates); Day 14, Part 1 (update). Here
+    1 GB = $10^9$ bytes.}
+\end{frame}
+
+% ------------------------------------------------------------------ compare
+\begin{frame}{Compare the options}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}L{0.27\textwidth}cccc@{}}
+    \toprule
+    & \textbf{XIAO only} & \textbf{Pi only} & \textbf{XIAO and Pi} &
+      \textbf{XIAO to cloud} \\
+    \midrule
+    R2: alarm within 3 s & \cmark & \cmark & \cmark & network \\
+    R3: alarm with no network & \cmark & \cmark & \cmark & \xmark \\
+    R4: person in the zone & \xmark & \cmark & \cmark & \xmark \\
+    R5: dashboard & \xmark & \cmark & \cmark & \cmark \\
+    R6: no cable on the machine & battery & \xmark & battery & battery \\
+    R7: no video leaves & \cmark & \cmark & \cmark & \cmark \\
+    Data to the cloud in 30 days & none & none & none & 19.1 GB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item ``Pi only'' needs a sensor cable from each machine to the Pi.
+    \item ``XIAO and Pi'' meets R1 to R5, R7, and R8. R6 needs a battery
+          of about 4700 mAh, or a cable: the team decides with the owner.
+  \end{itemize}
+  \keypoint{Write the options and the reason for your choice. The review
+    checks the reason.}
+\end{frame}
+
+% ------------------------------------------------------------------ risk
+\begin{frame}{Test the riskiest assumption first}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.32\textwidth}L{0.28\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Assumption} & \textbf{First test} & \textbf{Plan B} \\
+    \midrule
+    The IMU separates a failing bearing & Record one machine with a known
+      fault & A microphone; a threshold on the RMS \\
+    The Wi-Fi reaches each machine & Read the signal strength at each
+      machine & A cable; a second access point \\
+    The camera sees the zone in bad light & Test images at night (Day 13)
+      & More light; a second camera \\
+    The battery lasts & Measure the mean current (Day 9) & A larger
+      battery; a cable \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Build the riskiest part first, as a minimum viable product. If it
+          fails, the project changes early.
+    \item A part that the labs already showed (MQTT, the dashboard) has a
+          low risk: build it later.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ review
+\begin{frame}{Design review: what the reviewer checks}
+  \small
+  \begin{enumerate}
+    \item Each requirement has a number and a test.
+    \item Each budget has a value and a source: latency, memory, power,
+          cost. A guess is marked as a guess.
+    \item The model fits the board: flash, RAM, time.
+    \item The data: where it comes from, how many samples, who labels it,
+          and a test set that the training does not see.
+    \item The failure modes: no network, a failed sensor, a bad update
+          (Parts 1 and 2).
+    \item The threats and the data that leaves the device (Part 2).
+    \item The riskiest assumption and its first test.
+  \end{enumerate}
+  \vskip 0.4em
+  The reviewer asks questions; the team answers with numbers. A weak point
+  is a result of the review, not a failure of the team.
+\end{frame}
+
+% ------------------------------------------------------------------ weak points
+\begin{frame}{Weak points that this course measured}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.31\textwidth}L{0.50\textwidth}r@{}}
+    \toprule
+    \textbf{Weak point} & \textbf{What the course measured} & \textbf{Day}
+      \\
+    \midrule
+    Accuracy on training images & mAP50 0.670 on 128 training images, 0.546
+      on 5000 test images & 8 \\
+    Calibration with one class & 69.2 percent in place of 100.0 & 4 \\
+    Radio always on & At most 22 h on 1000 mAh & 9, 14 \\
+    An open broker & A stranger read 1 of 1 messages and switched an LED &
+      14 \\
+    QoS 0 and a lost link & 51 messages lost in a cut of 1.5 s & 12 \\
+    Dark images & 38.4 percent in place of 77.4 percent & 13 \\
+    A list that grows & 65.6 MB each hour & 13 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  A reviewer who knows these numbers asks the right questions. Use them in
+  your own review.
+  \source{Results of Days 4, 8, 9, 12, 13, and 14 of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------ capstone 1
+\begin{frame}{Capstone: the five requirements}
+  \small
+  Your system must:
+  \begin{enumerate}
+    \item Use the XIAOML Kit and the Raspberry Pi.
+    \item Run at least one optimized model, with the size and the accuracy
+          before and after the optimization.
+    \item Make one decision locally, and continue to work without the
+          internet.
+    \item Send telemetry with MQTT to a dashboard.
+    \item Include a benchmark table with latency, memory, and energy.
+  \end{enumerate}
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.70\textwidth}r@{}}
+    \toprule
+    \textbf{Rubric (Day 15)} & \textbf{Weight} \\
+    \midrule
+    The system works in the demonstration & 30 percent \\
+    Integration of the two boards, messages, and monitoring & 25 percent \\
+    Measured results and analysis of trade-offs & 25 percent \\
+    Report and presentation & 20 percent \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% ------------------------------------------------------------------ capstone 2
+\begin{frame}{Capstone: the proposal and the plan}
+  \begin{columns}[T]
+    \begin{column}{0.44\textwidth}
+      \begin{block}{The proposal: one page}
+        \small
+        \begin{itemize}
+          \item The problem and the user
+          \item The boards and the split of the work
+          \item The model and its optimization
+          \item The data: source, size, labels
+          \item The metrics and the budgets, with numbers
+          \item How it meets the five requirements
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}L{1.4cm}L{3.5cm}@{}}
+        \toprule
+        \textbf{When} & \textbf{What} \\
+        \midrule
+        Day 14, A & Teams (20 min) \\
+        Day 14, B & Proposal (50 min) \\
+        Day 14, C & Design review (40 min) \\
+        Day 14, D & Build (40 min) \\
+        Day 15, A & Build, measure (80 min) \\
+        Day 15, B & Demonstration (10 min) \\
+        Day 15, C & Report, feedback \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  Teams of three or four students. Keep the scope small: reuse the labs and
+  add one new part. A small system that works scores more than a large
+  system that does not.
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{Review a parking gate design}{%
+  A team proposes this design:
+  \begin{itemize}
+    \item A XIAOML Kit on a pole at the parking entrance, on a battery of
+          1000 mAh. Wi-Fi stays connected.
+    \item Each second, it sends a camera image of 96 x 96 pixels to a cloud
+          server. YOLO11n at 640 pixels detects cars there.
+    \item The cloud sends ``open'' to the gate when it detects a car.
+    \item Accuracy: 99 percent on the training images.
+    \item The team updates the model with a USB cable. The broker has no
+          password.
+  \end{itemize}
+  Find three weak points. For each one, give a number or a result of the
+  course, and propose a change.}
+
+\answerframe{Review a parking gate design}{%
+  \footnotesize
+  \begin{itemize}
+    \item \textbf{Power}: the Sense board alone needs at least 167.2 mW
+          with Wi-Fi connected: at most 22 h on 1000 mAh, before the camera.
+          Change: mains power, or a local model and light sleep (Day 9).
+    \item \textbf{No internet, no gate}: the decision is in the cloud, so the
+          gate fails with the link (requirement 3). Change: detect on the
+          device, send only events (Day 12).
+    \item \textbf{Accuracy on training images}: Day 8 gave 0.670 on training
+          images and 0.546 on test images. Change: a test set of the site.
+    \item \textbf{Model and images}: YOLO11n at 640 pixels on an image of
+          96 pixels gives no detail; the images can show persons and number
+          plates (privacy, Part 2).
+    \item \textbf{Updates and broker}: a USB cable on a pole does not scale
+          (Part 1); an open broker accepts a false ``open'' (Part 2).
+  \end{itemize}}
