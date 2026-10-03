@@ -4,6 +4,661 @@
 % telemetry; offline buffers and lost connections; time synchronization;
 % device identity. Exercise: calculate the data volume of raw video and of
 % detection results for one day.
+%
+% The numbers of this part have four origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: tools/experiments/day12_edge_cloud.py,
+%    values in tools/data/day12/day12_edge_cloud.json. Steps: data volumes
+%    (calculations), five reporting rules on a synthetic temperature of one
+%    day (seed 0), a cloud outage of 60 s with two Mosquitto 2.0.11 brokers
+%    on one computer, and ten SNTP requests from the work computer.
+% 2. Day 11 measurements: the bit rates of MJPEG and H.264 (1280 x 720,
+%    moving camera). Day 5: one keyword window each 0.5 s.
+% 3. The Mosquitto 2.0.11 manual, RFC 5905 (NTP version 4), the Raspberry Pi
+%    documentation (the RTC of the Raspberry Pi 5).
+% 4. Example values of this course (50 keyword events in one day, a clock
+%    error of 20 ppm). The frames say so.
+% 1 GB = 10^9 bytes and 1 MB = 10^6 bytes in this part, as for a bit rate.
 
 \theorypart{Edge-to-cloud design}%
   {calculate the data of video and of detections for one day}
+
+% ------------------------------------------------------------------ results
+\begin{frame}{Send results, not raw data}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.75cm]
+    \foreach \y/\n/\l/\v/\c in {
+        0/raw/{Raw video}/{331.8 Mbit/s}/cardinalred!45,
+        -0.55/mjpeg/{MJPEG}/{11.1 Mbit/s}/cardinalred!30,
+        -1.1/h264/{H.264}/{2.62 Mbit/s}/cardinalred!20,
+        -1.65/det/{Detections, 10 each s}/{13.1 kbit/s}/darkcyan!30,
+        -2.2/cnt/{Count, 1 each min}/{15.9 bit/s}/darkcyan!20} {
+      \node[anchor=east] at (0,\y) {\l};
+    }
+    \fill[cardinalred!45] (0,-0.17) rectangle (8.521,0.17);
+    \fill[cardinalred!30] (0,-0.72) rectangle (7.045,-0.38);
+    \fill[cardinalred!20] (0,-1.27) rectangle (6.418,-0.93);
+    \fill[darkcyan!30] (0,-1.82) rectangle (4.118,-1.48);
+    \fill[darkcyan!20] (0,-2.37) rectangle (1.200,-2.03);
+    \node[anchor=west] at (8.521,0) {331.8 Mbit/s};
+    \node[anchor=west] at (7.045,-0.55) {11.1 Mbit/s};
+    \node[anchor=west] at (6.418,-1.1) {2.62 Mbit/s};
+    \node[anchor=west] at (4.118,-1.65) {13.1 kbit/s};
+    \node[anchor=west] at (1.200,-2.2) {15.9 bit/s};
+    \draw[coolgray] (0,-2.55) -- (9,-2.55);
+    \foreach \x/\t in {0/1, 3/{10\textsuperscript{3}}, 6/{10\textsuperscript{6}},
+                       9/{10\textsuperscript{9}}} {
+      \draw[coolgray] (\x,-2.55) -- (\x,-2.63) node[below] {\t};
+    }
+    \node[coolgray, anchor=west] at (9.5,-2.55) {bit/s};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item One camera, 1280 $\times$ 720 at 30 frames each second. Each step
+          on the device makes the data smaller. The scale is logarithmic.
+    \item The detection messages need 200 times fewer bits than the H.264
+          stream. No image leaves the device: this also protects privacy.
+    \item The cost: the server cannot look at the video again. Keep a short
+          ring buffer of images on the device, and send a sample when a
+          person must check a result.
+  \end{itemize}
+  \source{MJPEG and H.264: Day 11 measurements. Messages: calculation of
+    this course\\ (164 bytes for each detection message, 119 bytes for each
+    count, with IP and TCP).}
+\end{frame}
+
+% ------------------------------------------------------------------ audio
+\begin{frame}{One day of the keyword model}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{4.4cm}rrr@{}}
+    \toprule
+    \textbf{What the XIAO sends} & \textbf{Messages} & \textbf{Bytes in one
+      day} & \textbf{Raw / this} \\
+    \midrule
+    Raw audio, 16 kHz, 16 bits & & 2\,764\,800\,000 & 1 \\
+    One result each 0.5 s & 172\,800 & 20\,908\,800 & 132 \\
+    Only the keywords (50 in one day) & 50 & 6\,050 & 457\,000 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize One result message: 55 bytes of JSON, 121 bytes with the
+  topic and the MQTT, IP, and TCP headers.\par}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item 2.76 GB of audio in one day does not fit the Wi-Fi budget of a
+          small device, and the server does not need it.
+    \item One result for each window (Day 5: one window each 0.5 s) is
+          useful for a test: you can see each score.
+    \item The application needs only the events. Fewer messages also keep
+          the radio off for longer: this saves energy (Day 9).
+    \item Send more detail for a short time when you look for an error,
+          then go back to the events.
+  \end{itemize}
+  \source{Calculation of this course. 50 keywords in one day is an example
+    value.}
+\end{frame}
+
+% ------------------------------------------------------------------ what
+\begin{frame}{What to send}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.0cm}L{3.3cm}L{4.6cm}@{}}
+    \toprule
+    \textbf{Type} & \textbf{Example} & \textbf{Use} \\
+    \midrule
+    Result & a class and a score for each window & tests, a live view \\
+    Event & ``a person came'', ``door open'' & actions and alerts \\
+    Summary & count, mean, minimum, maximum each minute & trends, reports,
+      dashboards (Day 13) \\
+    Status & online, versions, free memory, temperature & monitoring of the
+      device \\
+    Sample & a few images when the model is not sure & a check by a person,
+      new training data \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Start from the questions of the receiver. Each message type
+          answers one question.
+    \item Raw data stays on the device in a ring buffer: the newest minutes
+          only. A request from the server can get one part of it.
+    \item A sample of the uncertain inputs is the start of the loop back to
+          training (Day 13 and Day 14).
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ how often
+\begin{frame}{How often to send telemetry}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.95cm]
+    \foreach \y/\l in {0/periodic, -0.5/on change, -1.0/summary} {
+      \node[anchor=east] at (-0.1,\y) {\l};
+      \draw[coolgray] (0,\y) -- (9.6,\y);
+    }
+    \foreach \x in {0.6,2.4,...,9.6} {
+      \fill[cardinalred] (\x,0) circle (2pt);
+    }
+    \foreach \x in {0.6,4.1,4.5,4.9,5.3,9.3} {
+      \fill[darkcyan] (\x,-0.5) circle (2pt);
+    }
+    \foreach \x in {3.0,6.0,9.0} {
+      \fill[treegreen] (\x-0.12,-1.12) rectangle (\x+0.12,-0.88);
+    }
+    \draw[coolgray, dashed] (4.0,0.25) -- (4.0,-1.25);
+    \node[coolgray] at (4.7,0.45) {the value changes};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The answer depends on the task. A thermostat needs one reading
+          each few minutes. A machine that can break needs several readings
+          each second.
+    \item Three questions: how fast does the value change? How fast must the
+          receiver act? What does one message cost in bytes and energy?
+    \item Sample fast, send slow. The sampling rate (Day 2) is not the
+          reporting rate. The device can read each second and send each
+          minute.
+    \item \textbf{On change}: send when the value moves more than a band,
+          and a heartbeat after a fixed time with no message. The receiver
+          then knows that the device is alive.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ plot
+\begin{frame}{Simulated: one hour around an event}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize]
+    \draw[->, coolgray] (0,0.3) -- (9.3,0.3) node[right] {time};
+    \foreach \x/\t in {0/13:50, 1.5/14:00, 3/14:10, 4.5/14:20, 6/14:30,
+                       7.5/14:40, 9/14:50} {
+      \draw[coolgray] (\x,0.3) -- (\x,0.22) node[below] {\t};
+    }
+    \draw[->, coolgray] (0,0.3) -- (0,3.45);
+    \node[coolgray, anchor=west] at (0.1,3.45) {degrees};
+    \foreach \v/\y in {22.5/0.6, 23.5/1.8, 24.5/3.0} {
+      \draw[coolgray] (0,\y) -- (-0.08,\y) node[left] {\v};
+    }
+    \draw[black!60, line width=0.6pt] plot coordinates {(0.000,2.861) (0.250,2.868) (0.500,2.874) (0.750,2.880) (1.000,2.886) (1.250,2.892)
+      (1.500,2.898) (1.550,2.498) (1.600,2.100) (1.650,1.702) (1.700,1.302) (1.750,0.904) (1.800,0.504) (2.000,0.509)
+      (2.500,0.520) (3.000,0.529) (3.300,0.534) (3.500,0.698) (4.000,1.106) (4.500,1.514) (5.000,1.921) (5.500,2.328)
+      (6.000,2.735) (6.300,2.977) (6.500,2.980) (7.000,2.984) (7.500,2.988) (8.000,2.992) (8.500,2.995) (9.000,2.998)};
+    \foreach \x/\y in {0.748/2.830, 1.498/2.978, 2.248/0.497, 2.998/0.480,
+        3.748/0.980, 4.498/1.508, 5.248/2.143, 5.998/2.760,
+        6.748/3.016, 7.498/2.980, 8.248/2.816, 8.998/2.916} {
+      \fill[cardinalred] (\x-0.07,\y-0.07) rectangle (\x+0.07,\y+0.07);
+    }
+    \foreach \x/\y in {0.415/2.758, 0.430/3.014, 0.448/2.772, 0.680/3.014,
+        0.685/2.743, 0.740/3.004, 0.785/2.760, 0.790/3.019,
+        0.795/2.771, 0.833/3.014, 0.927/2.760, 0.938/3.072,
+        0.943/2.761, 1.133/3.011, 1.315/2.748, 1.370/3.048,
+        1.413/2.746, 1.423/2.996, 1.518/2.674, 1.555/2.363,
+        1.590/2.122, 1.623/1.866, 1.645/1.559, 1.695/1.297,
+        1.738/1.048, 1.760/0.697, 1.812/0.416, 2.562/0.578,
+        2.607/0.324, 2.618/0.570, 3.368/0.666, 3.645/0.916,
+        3.870/1.160, 3.890/0.914, 3.988/1.162, 4.293/1.416,
+        4.585/1.762, 4.630/1.516, 4.708/1.810, 4.710/1.559,
+        4.753/1.837, 5.115/2.154, 5.133/1.871, 5.168/2.137,
+        5.400/2.401, 5.793/2.677, 6.093/2.924, 6.843/2.994,
+        7.593/2.924, 7.862/3.173, 7.865/2.917, 7.968/3.181,
+        7.970/2.830, 7.975/3.110, 8.040/2.858, 8.047/3.161,
+        8.090/2.917, 8.840/3.011} {
+      \fill[darkcyan] (\x,\y) circle (1.4pt);
+    }
+    \fill[cardinalred] (5.6,1.05) rectangle (5.74,1.19);
+    \node[anchor=west] at (5.8,1.12) {one each 300 s};
+    \fill[darkcyan] (5.67,0.75) circle (1.4pt);
+    \node[anchor=west] at (5.8,0.75) {on change, band 0.2};
+    \draw[black!60, line width=0.6pt] (5.55,1.47) -- (5.79,1.47);
+    \node[anchor=west] at (5.8,1.47) {true value};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item At 14:00 a door opens: the temperature falls by 2 degrees in 2
+          minutes and comes back in 20 minutes.
+    \item The rule ``one each 300 s'' shows the fall only at 14:05. The rule
+          ``on change'' sends a burst during the fall, and few messages when
+          the value is stable.
+  \end{itemize}
+  \source{Simulation of this course (synthetic signal, noise of 0.05
+    degrees, seed 0).}
+\end{frame}
+
+% ------------------------------------------------------------------ rules
+\begin{frame}{Simulated: five rules for one day}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.3cm}rrrr@{}}
+    \toprule
+    \textbf{Rule} & \textbf{Messages} & \textbf{Bytes} & \textbf{Largest
+      error} & \textbf{Event seen} \\
+    \midrule
+    Each reading (1 s) & 86\,400 & 9\,222\,577 & 0.24 & 58 s \\
+    One each 60 s & 1\,440 & 151\,347 & 1.03 & 119 s \\
+    One each 300 s & 288 & 30\,094 & 2.06 & 299 s \\
+    On change (0.2), heartbeat 300 s & 964 & 101\,013 & 0.24 & 58 s \\
+    Summary each 60 s & 1\,440 & 183\,027 & 1.47 & 59 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Error: the last sent value against the true value, in
+  degrees. Event seen: the first message 1 degree below the value before
+  the event. Summary: the error uses the mean, the event uses the
+  minimum.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item ``On change'' sent 90 times fewer messages than ``each reading'',
+          with the same largest error and the same delay.
+    \item A long period saves bytes but hides a short event: 299 s of delay
+          and an error of 2.06 degrees.
+    \item A summary with the minimum and the maximum shows the event after
+          59 s with one message each minute.
+  \end{itemize}
+  \source{Simulation of this course (synthetic signal of one day, seed 0).
+    Bytes with the topic\\ and the MQTT, IP, and TCP headers.}
+\end{frame}
+
+% ------------------------------------------------------------------ lost link
+\begin{frame}{A lost link: three choices}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.4cm}L{3.6cm}L{4.0cm}@{}}
+    \toprule
+    \textbf{Choice} & \textbf{When} & \textbf{Example} \\
+    \midrule
+    Drop & only the newest value matters & the temperature for a
+      thermostat \\
+    Keep the newest & a state or a setting & a retained status, a
+      threshold \\
+    Store and forward & each message matters & counts, events, the data of
+      a trend \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A heating system does not need the temperature of 20 minutes ago.
+          A model that looks for a change in a trend needs each value.
+    \item Commands to a device that is away: drop the old ones, or keep only
+          the newest. Commands that must run in order need a queue with
+          sequence numbers.
+    \item The local decisions continue in all three cases (Part 1). Only
+          the messages to the cloud wait.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ store and forward
+\begin{frame}{Store and forward}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      b/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                align=center, text width=1.6cm, minimum height=0.9cm}]
+    \node[b, fill=cardinalred!12, text width=1.3cm] (x) at (0,0)
+      {XIAOML Kit};
+    \node[b, text width=1.4cm] (l) at (2.05,0) {Local broker};
+    \node[b, fill=darkcyan!20, text width=1.8cm, minimum height=1.5cm] (f)
+      at (4.2,0) {\textbf{Forwarder}\\ queue on disk};
+    \node[b, text width=1.4cm] (c) at (7.0,0) {Cloud broker};
+    \node[b, text width=1.1cm] (r) at (9.0,0) {Receiver};
+    \draw[->] (x) -- (l);
+    \draw[->] (l) -- (f);
+    \draw[->] (f) -- node[above] {QoS 1} (c);
+    \draw[->] (c) -- (r);
+    \node[cardinalred, font=\normalsize] at (5.7,-0.3) {$\times$};
+    \node[below, align=center] at (4.2,-0.85) {1. write\quad 2. send the
+      oldest\quad 3. delete after the PUBACK};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Write each message to the queue before you send it. Delete it
+          only after the PUBACK of the cloud broker.
+    \item A message with no PUBACK is sent again: the receiver can get two
+          copies. It keeps the pair (device, \code{seq}) and drops a second
+          copy.
+    \item After a long cut, the receiver gets old messages. It uses the time
+          stamp of the device, not the time of arrival.
+    \item The queue must be on disk, not only in memory: the device can
+          restart during the cut.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ outage
+\begin{frame}{Measured: a cloud outage of 60 s}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.6cm}rrrr@{}}
+    \toprule
+    \textbf{Way to the cloud} & \textbf{Lost} & \textbf{Double} &
+      \textbf{First after} & \textbf{Oldest age} \\
+    \midrule
+    Python forwarder, SQLite & 0 & 0 & 0.12 s & 60.1 s \\
+    Mosquitto bridge, defaults & 0 & 0 & 20.5 s & 80.5 s \\
+    Bridge, a queue of 200 & 547 & 0 & 14.7 s & 74.7 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize 10 messages each second for 120 s (1200 messages, QoS 1); no
+  link from 20 s to 80 s (600 messages). ``First after'': the first message
+  at the receiver after the link came back.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The forwarder sent the backlog of 600 messages in 0.44 s after
+          the link came back.
+    \item The bridge tries to connect again after a random wait of 5 to 30
+          s (default \code{restart\_timeout}): the backlog waited 20.5 s.
+    \item The bridge keeps messages in memory up to
+          \code{max\_queued\_messages}. With 200, it dropped 547 messages:
+          400 of the cut and 147 of the wait after it.
+  \end{itemize}
+  \source{Experiment of this course: two Mosquitto 2.0.11 brokers and
+    paho-mqtt 2.1.0 on one computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ disk queue
+\begin{frame}{Measured: two traps of a queue on disk}
+  \small
+  \textbf{1. Each commit waits for the disk.}
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{5.6cm}rr@{}}
+    \toprule
+    \textbf{SQLite, one INSERT and one commit} & \textbf{Median} &
+      \textbf{p95} \\
+    \midrule
+    Default settings & 2.8 ms & 3.9 ms \\
+    \code{journal\_mode=WAL}, \code{synchronous=NORMAL} & 0.027 ms &
+      0.035 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item With the defaults, the queue writes at most about 350
+          messages each second on this disk. A microSD card is slower.
+  \end{itemize}
+  \vskip 0.3em
+  \textbf{2. A new row can get the ID of a deleted row.}
+  \begin{itemize}
+    \item The first forwarder of this experiment marked the sent rows by
+          their ID. SQLite gave new messages the IDs of deleted ones: 1160
+          of 1200 messages were never sent.
+    \item Use \code{AUTOINCREMENT}, or a column ``sent'' in the row.
+  \end{itemize}
+  \keypoint{Test the buffer with a real cut of the link, and count each
+    message at the receiver.}
+  \source{Experiment of this course (200 commits for each setting).}
+\end{frame}
+
+% ------------------------------------------------------------------ bridge
+\begin{frame}[fragile]{A Mosquitto bridge on the Raspberry Pi}
+\begin{lstlisting}[style=shell]
+# /etc/mosquitto/conf.d/bridge.conf on pi-07
+connection cloud
+address 192.168.8.10:1883
+topic edgeai/g07/# out 1
+cleansession false
+remote_clientid pi-07-bridge
+max_queued_messages 100000
+persistence true
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The bridge is a client of the cloud broker. It sends each local
+          message of \code{edgeai/g07/\#} with QoS 1 (\code{out}: only
+          from the Pi to the cloud).
+    \item With \code{cleansession false}, the cloud broker keeps the
+          session of the bridge during a cut.
+    \item \code{max\_queued\_messages} is 1000 by default. Set it from the
+          longest cut that you plan for.
+    \item With \code{persistence true}, Mosquitto saves its queue to a file
+          when it stops and each 30 minutes. A power cut loses the newest
+          messages.
+  \end{itemize}
+  \source{Mosquitto 2.0.11 manual (\texttt{mosquitto.conf}). Address of the
+    instructor laptop: hardware folder HW-09.}
+\end{frame}
+
+% ------------------------------------------------------------------ buffer size
+\begin{frame}{Size the buffer}
+  \small
+  \[
+    \text{buffer} = \text{messages each second} \times \text{longest cut}
+      \times \text{bytes of one message}
+  \]
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{3.6cm}L{2.6cm}r@{}}
+    \toprule
+    \textbf{Device} & \textbf{Rate and cut} & \textbf{Buffer} \\
+    \midrule
+    XIAO, results & 2 each s, 10 minutes & 1200 $\times$ 60 B = 72 kB \\
+    Raspberry Pi, detections & 10 each s, 1 day & 864\,000 $\times$ 100 B
+      = 86.4 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Example values of this course. 1 kB = 1000 bytes.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The Raspberry Pi has a microSD card of many GB: one day is easy.
+          The XIAO has 8 MB of PSRAM: some minutes of results, or a summary.
+    \item When the buffer is full, select a rule: drop the oldest, drop the
+          newest, keep one message of each N, or keep only summaries.
+    \item Flash memory wears with each write: write the queue in blocks, not
+          one message at a time.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ clocks
+\begin{frame}{Time: three clocks}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.5cm}L{2.7cm}L{4.8cm}@{}}
+    \toprule
+    \textbf{Clock} & \textbf{Example} & \textbf{Property} \\
+    \midrule
+    Time since boot & \code{millis()}, \code{time.monotonic()} & never
+      jumps; starts at 0 after each restart \\
+    Clock time (UTC) & \code{time.time()} & needs a synchronization; can
+      jump when it is set \\
+    Arrival time & the clock of the server & adds the network delay and the
+      time in a buffer \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Put the time stamp on the message at the source, when the value is
+          measured. After a cut, the arrival time can be minutes late.
+    \item Use UTC in milliseconds: no time zones, no summer time.
+    \item Measure a duration with the time since boot (Part 1). Name an
+          instant with the clock time.
+    \item Order the messages of one device by \code{seq}. A clock that jumps
+          does not change this order.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ ntp
+\begin{frame}{NTP: set a clock over the network}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth]
+        \node[coolgray] at (0,0.3) {client};
+        \node[coolgray] at (2.6,0.3) {server};
+        \draw[coolgray] (0,0.1) -- (0,-2.6);
+        \draw[coolgray] (2.6,0.1) -- (2.6,-2.6);
+        \draw[->, cardinalred] (0,-0.2) node[left] {$t_1$} -- (2.6,-0.9)
+          node[right] {$t_2$};
+        \draw[->, darkcyan] (2.6,-1.4) node[right] {$t_3$} -- (0,-2.1)
+          node[left] {$t_4$};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \small
+      \[ \text{offset} = \frac{(t_2 - t_1) + (t_3 - t_4)}{2} \]
+      \[ \text{delay} = (t_4 - t_1) - (t_3 - t_2) \]
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The formulas assume the same time in the two directions. The
+          error of the offset is at most half of the delay.
+    \item Measured: 10 requests from the work computer to
+          \code{pool.ntp.org}: delay 68 to 98 ms, offset 0.2 to
+          5.1 ms. Its clock was within some ms of the server.
+    \item A device asks again at intervals, because its clock drifts. A
+          clock with an error of 20 ppm (parts per million) drifts 1.7 s
+          each day.
+  \end{itemize}
+  \source{RFC 5905 (NTP version 4), section 8. Measured by this course. 20
+    ppm is an example value.}
+\end{frame}
+
+% ------------------------------------------------------------------ offline time
+\begin{frame}{Time with no internet}
+  \small
+  \begin{itemize}
+    \item In the lab, the internet link can fail. Then no device reaches
+          \code{pool.ntp.org}.
+    \item The Raspberry Pi is the time server of its group: \code{chrony}
+          with the lines \code{allow 192.168.8.0/24} and
+          \code{local stratum 10} serves its clock to the lab network.
+    \item The Raspberry Pi 5 has a real-time clock. With a battery on the
+          connector J5, it keeps the time with no power.
+    \item The XIAO asks the Raspberry Pi at the start and each hour:
+          \code{configTime(0, 0, "192.168.8.107")}.
+    \item The XIAO has no battery for its clock. After a restart, it has no
+          clock time until the first answer.
+    \item Until then, the device sends \code{ms} since the start and a boot
+          counter, and it marks the message ``not synchronized''. The
+          receiver can then calculate the time from a later message.
+  \end{itemize}
+  \source{Raspberry Pi documentation, ``Real Time Clock (RTC)''. Addresses
+    from the hardware folder HW-09.}
+\end{frame}
+
+% ------------------------------------------------------------------ identity
+\begin{frame}[fragile]{Device identity}
+  \small
+  \begin{itemize}
+    \item Each device has one ID that does not change: the MAC address in
+          the eFuse of the ESP32-S3 (\code{ESP.getEfuseMac()}), the serial
+          number of the Raspberry Pi.
+    \item The same ID is in the client ID, in the topic, and in the status.
+          A copied firmware must not copy the ID.
+    \item Each device or group has its own password. The broker then limits
+          each one to its own topics:
+  \end{itemize}
+\begin{lstlisting}[style=shell]
+# Mosquitto ACL file: user g07 can use only edgeai/g07/...
+pattern readwrite edgeai/%u/#
+\end{lstlisting}
+  \begin{itemize}
+    \item The retained status names the device and its versions, so the
+          server knows which model gave each result:
+  \end{itemize}
+\begin{lstlisting}[style=python]
+{"id":"xiao-34851a2b3c4d","fw":"1.2.0","model":"kws-3","boot":17}
+\end{lstlisting}
+  \source{Mosquitto 2.0.11 manual (ACL patterns). Module SY-2 adds the
+    passwords and TLS.}
+\end{frame}
+
+% ------------------------------------------------------------------ lab design
+\begin{frame}{The edge-to-cloud design of the lab}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      b/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                align=center, text width=1.9cm, minimum height=0.8cm}]
+    \draw[darkcyan, dashed, rounded corners=3pt] (1.45,-1.35) rectangle
+      (6.25,1.15);
+    \node[darkcyan, anchor=south west] at (1.5,1.15) {Raspberry Pi
+      (\texttt{pi-07})};
+    \node[b, fill=cardinalred!12, text width=1.4cm] (x) at (-0.45,0.5)
+      {XIAOML Kit};
+    \node[b] (lb) at (2.65,0.5) {Mosquitto};
+    \node[b] (d) at (2.65,-0.75) {Decision\\ program};
+    \node[b] (f) at (5.05,0.5) {Bridge or\\ forwarder};
+    \node[b] (t) at (5.05,-0.75) {Time server};
+    \node[b, fill=darkcyan!20, text width=1.7cm] (c) at (8.3,0.5)
+      {Instructor laptop\\ broker, dashboard};
+    \draw[->] (x.east |- 0,0.65) -- node[above] {results} (lb.west |- 0,0.65);
+    \draw[->, darkcyan] (lb.west |- 0,0.35) -- node[below] {\texttt{cmd}}
+      (x.east |- 0,0.35);
+    \draw[<->] (lb) -- (d);
+    \draw[->] (lb) -- (f);
+    \draw[->] (f) -- node[above] {link} (c);
+    \node[cardinalred, font=\normalsize] at (6.8,0.48) {$\times$};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The XIAO and the Raspberry Pi form the local system: the decision
+          and the command do not need the link to the laptop.
+    \item The link to the laptop is the ``cloud'' of the lab. In Part D you
+          cut it, and the local action must continue.
+    \item After the link comes back, the receiver counts the \code{seq}
+          numbers: no message may be lost.
+  \end{itemize}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{the data of one camera for a day}{%
+  \small
+  A camera node on a Raspberry Pi runs a person detector at 10 frames each
+  second. Calculate the data that it sends in one day (86\,400 s) for each
+  design:
+  \begin{enumerate}
+    \item The H.264 video stream at 2 Mbit/s.
+    \item One result message for each processed frame. One message is 150
+          bytes with all headers.
+    \item One message only when the number of persons changes: 200 changes
+          in one day, 150 bytes each.
+  \end{enumerate}
+  Give each result in bytes, and the ratio of design 1 to designs 2 and 3.
+  Which design would you select for a dashboard of the people in a room?
+  \vskip 0.3em
+  Work with your neighbour for 8 minutes. Use 1 GB = 10\textsuperscript{9}
+  bytes.
+}
+
+\begin{frame}{Answer: the data of one camera for a day}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{3.0cm}L{4.4cm}r@{}}
+    \toprule
+    \textbf{Design} & \textbf{Calculation} & \textbf{One day} \\
+    \midrule
+    1. H.264 video & 2\,000\,000 / 8 $\times$ 86\,400 & 21.6 GB \\
+    2. A result each frame & 10 $\times$ 150 $\times$ 86\,400 & 129.6 MB \\
+    3. Only the changes & 200 $\times$ 150 & 30 kB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Design 1 sends 167 times the data of design 2, and 720\,000 times
+          the data of design 3.
+    \item For a dashboard of the people in a room, design 3 is enough: add a
+          heartbeat, so the dashboard knows that the node is alive.
+    \item Keep design 2 for a short test, and a few images for a check by a
+          person. The video stays on the node.
+  \end{itemize}
+\end{frame}
