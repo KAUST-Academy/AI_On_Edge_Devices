@@ -39,7 +39,11 @@ class LatestFrameReader:
 
     def __init__(self, url):
         self.url = url
-        self.capture = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+        # One decoder thread: each decoder thread of FFmpeg holds one frame.
+        # The default of OpenCV uses up to 16 threads, and each one adds one
+        # frame time to the delay (Day 11, Part 3 of the lecture).
+        self.capture = cv2.VideoCapture(url, cv2.CAP_FFMPEG,
+                                        [cv2.CAP_PROP_N_THREADS, 1])
         if not self.capture.isOpened():
             raise OSError("cannot open the stream %s" % url)
         self.lock = threading.Lock()

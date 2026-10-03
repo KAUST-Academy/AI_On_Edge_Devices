@@ -1,0 +1,5 @@
+# Files that the scripts of the lab write
+results.csv
+latency_*.png
+xiao.jpg
+__pycache__/

@@ -199,6 +199,13 @@ through FFmpeg (640 × 480, 30 frames per second, `libx264`).
 - `latency_clock.py --no-window`: three images saved. Both clocks are easy to
   read. Two images gave 544 ms and 548 ms. This number includes the delay of
   the test program that sent the stream. **It is not a number for the lab.**
+- Correction of 2026-10-03: most of the 544 ms came from the decoder of
+  the reader. OpenCV used 16 decoder threads on the 24 cores of
+  the work computer, and each thread holds one frame (33 ms). With one
+  decoder thread, the age of a frame was 40 ms on the same computer.
+  `rtsp_reader.py` now opens the stream with one decoder thread
+  (`cv2.CAP_PROP_N_THREADS`). An experiment of this course measured this
+  (Part 3 of the Day 11 lecture).
 
 ## Code status
 
