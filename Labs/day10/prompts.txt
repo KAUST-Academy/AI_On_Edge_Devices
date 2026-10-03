@@ -1,0 +1,7 @@
+# Prompts for measure_slm.py (Part A). One prompt on each line.
+# A line that starts with "#" is a comment.
+What is the capital of France?
+What is the distance between Paris and Santiago, Chile?
+What is the latitude and longitude of Paris?
+Explain in three sentences why a small language model can run on a Raspberry Pi.
+A sensor reports 31.5 degrees Celsius and 62 percent humidity. Write one sentence for a status display.

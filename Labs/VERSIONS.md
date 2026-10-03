@@ -77,6 +77,7 @@ versions (Python 3.10.12, 2026-10-01). They are not fixed versions.
 | `flask` | 3.1.3 | `day08` (`pi/live_detect.py`: the web page of the live image) |
 | `torch`, `torchvision` in the test of the scripts of `pi/` | 2.14.1, 0.29.1 (CPU versions) | `day08`: the scripts for the board ran on the work computer in a second environment, with the files that the notebook exported |
 | `ai-edge-litert`, `onnxruntime`, `ncnn`, `numpy` | 2.2.0, 1.23.2, 1.0.20260526, 2.2.6 | `day09` (`pi/bench.py`: the three runtimes of the benchmark harness). `pi/make_report.py` needs no package. |
+| `ollama` (Python library), `pydantic` | 0.6.3, 2.13.5 | `day10` (all scripts). The models `llama3.2:1b`, `llama3.2:3b`, `nomic-embed-text`, and `llava-phi3:3.8b` of the Ollama library, read on 2026-10-03. |
 
 ## Arduino board cores and libraries
 

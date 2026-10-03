@@ -1,0 +1,7 @@
+# The five test questions of rag.py. One question on each line:
+# question | the number or the name of the correct answer
+At which temperature does the GH-7 open the roof window? | 31
+Above which soil moisture does the GH-7 skip the irrigation? | 42
+How long does the backup battery keep the GH-7 running? | 11
+For how many days does the GH-7 keep its log? | 60
+How long must I hold the RESET button? | 8

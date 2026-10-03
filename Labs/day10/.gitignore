@@ -1,0 +1,3 @@
+# Files that the scripts of the lab write
+results.csv
+__pycache__/
