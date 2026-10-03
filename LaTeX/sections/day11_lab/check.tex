@@ -1,0 +1,46 @@
+% Check criterion, deliverable, and the Decision Log question of Day 11.
+% The criterion comes from the Day 11 section of the syllabus and from
+% Labs/day11/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{stream\_detect.py} prints \code{Task C1: complete},
+          and \code{mjpeg\_rate.py} prints \code{Task D1: complete}.
+    \item \cmark\ Live demonstration: the detector draws boxes on the RTSP
+          stream of the Raspberry Pi, on the laptop.
+    \item \cmark\ The report gives the latency (10 values and the median)
+          for two settings of the RTSP stream with the detector, and the bit
+          rate and the frame rate of the XIAO stream.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}. Keep the images
+  \code{latency\_*.png}: the instructor can ask for one.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  About 100 words: one design decision, your measured numbers, one
+  trade-off.
+  \vskip 0.2em
+  \begin{exerciseblock}
+    A shop wants to count the people at its entrance. One camera hangs at
+    the door. A Raspberry Pi 5 stands in the back office, 15 m away, on
+    Wi-Fi. The count must change within 1 second after a person enters, and
+    no image may leave the shop.
+    \begin{itemize}
+      \item Where do you run the detector?
+      \item Which stream settings do you select?
+      \item What leaves the camera, and what leaves the shop?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives your measured latency and processed rate for the setting
+          that you select, with the method (the clock, 10 values),
+    \item compares its bit rate with your Wi-Fi throughput,
+    \item names what you lose: for example image quality against
+          latency.
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,82 @@
+% Hardware, software, and the setup of the Day 11 lab.
+% The values come from Labs/day11/README.md.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item Raspberry Pi 5 with the active cooler, the camera of Day 8,
+              the card of your group, and the 27 W power supply.
+        \item XIAOML Kit with its camera, and a USB-C cable.
+        \item Laptop in the lab network \code{edgeai-lab}.
+        \item Optional: an Ethernet cable and a switch for the Raspberry
+              Pi.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \small
+      \textbf{Software}
+      \begin{itemize}
+        \item Card: MediaMTX v1.21.1 in \code{\textasciitilde/mediamtx},
+              \code{iperf3}, \code{ffmpeg}.
+        \item Laptop: the Day 8 environment
+              \code{\textasciitilde/day08\_env}, the Day 8 lab folder with
+              \code{models/yolo11n.pt}, \code{iperf3}, \code{ffplay} or
+              VLC.
+        \item Arduino IDE with the esp32 core 3.3.12.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
+    Lab files & \code{Labs/day11/} on the laptop. Run the laptop commands
+                in this folder. \\
+    Names     & \code{NN} is your group: \code{pi-NN},
+                \code{X.(100+NN)}. The examples use \code{X} =
+                \code{192.168.8}. \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{The setup}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.8cm, text width=2.1cm}]
+    \node[box, fill=cardinalred!12] (pi) at (0,1.6)
+      {\textbf{pi-NN}\\ camera\\ MediaMTX};
+    \node[box, fill=cardinalred!12] (xi) at (0,-0.2)
+      {\textbf{XIAOML Kit}\\ camera, sketch};
+    \node[box, fill=darkcyan!15, text width=1.9cm] (r) at (4.4,0.7)
+      {\textbf{Router}\\ \code{edgeai-lab}};
+    \node[box, fill=boxgray, text width=2.6cm] (lp) at (8.1,0.7)
+      {\textbf{Laptop}\\ \code{stream\_detect.py}\\ Day 8 detector,
+      clock};
+    \draw[->, line width=1pt, darkcyan] (pi) -- node[above, sloped, pos=0.45]
+      {RTSP, H.264} (r);
+    \draw[->, line width=1pt, darkorange] (xi) -- node[below, sloped, pos=0.45]
+      {HTTP, MJPEG} (r);
+    \draw[->, line width=1pt] (r) -- (lp);
+    \draw[->, coolgray, dashed] (lp.south) to[bend left=25] node[below]
+      {the cameras look at the clock on the screen} (xi.south);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.42\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    & \textbf{Raspberry Pi} & \textbf{XIAO} \\
+    \midrule
+    Address of the stream & \code{rtsp://pi-NN.local:8554/cam}
+                          & \code{http://<address>/} \\
+    Encoder               & H.264 in software (CPU) & JPEG in the camera
+                                                      module \\
+    Start setting         & 1280 $\times$ 720, 30 frames/s, 2 Mbit/s
+                          & 640 $\times$ 480 (VGA), quality 12 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  The model runs on the laptop: the central node of Part 3 of the lecture.
+\end{frame}

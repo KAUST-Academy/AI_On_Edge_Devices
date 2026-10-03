@@ -1,0 +1,39 @@
+% Fallbacks and common problems of the Day 11 lab. The rows come from
+% Labs/day11/README.md. Nobody tested the fixes on the hardware.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.42\textwidth}L{0.53\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    \code{ERROR: cannot open the stream}
+      & Check the log of MediaMTX and \code{ss -tln}. Use the address in
+        place of \code{pi-NN.local}. \\
+    An error for the camera
+      & A second program uses the camera, for example a Day 8 script. Stop
+        it. \\
+    The camera does not work
+      & Send a test image to the path \code{test} (HW-06, step 8) \\
+    \code{ERROR: no file detector.py}
+      & Give the folder: \code{--day08 <path>/day08/pi} \\
+    \code{No module named 'ultralytics'}
+      & Start the script with \code{\$PY}, the Day 8 environment \\
+    Grey areas in the image for a short time
+      & Lost packets with UDP. Use TCP, or write it in the report. \\
+    The latency grows during a run
+      & Use the reader of the lab (no \code{--in-order}) \\
+    \code{mjpeg\_rate.py} waits, the browser shows the stream
+      & The sketch serves one reader at a time: close the browser tab \\
+    The XIAO does not connect, or \code{Camera init failed}
+      & 2.4 GHz and the password. \code{OPI PSRAM}, the camera
+        connector. \\
+    A task is not complete in time
+      & Use the file of \code{solutions/}, and write this in the report \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  \small
+  The README of the lab has the complete list.
+\end{frame}
