@@ -1,0 +1,73 @@
+% Hardware, software, and the models of the Day 10 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \small
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item Raspberry Pi 5 (8 GB) with the active cooler, the card of your
+              group, and the 27 W power supply.
+        \item Laptop in the same network, with an SSH client.
+        \item No XIAOML Kit today.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \small
+      \textbf{Software on the card}
+      \begin{itemize}
+        \item Ollama, installed by \code{Labs/hardware/HW-05/}.
+        \item The environment \code{\textasciitilde/ollama} with the Python
+              packages \code{ollama} and \code{pydantic}.
+        \item The four models of the next frame. The card has them: the lab
+              needs no download.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
+    Lab files & \code{Labs/day10/} on the laptop,
+                \code{\textasciitilde/edgeai/day10/} on the board \\
+    Commands  & On the board, in \code{\textasciitilde/edgeai/day10/}, with
+                \code{\textasciitilde/ollama} active \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{The four models of the lab}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.75cm}]
+    \node[box, fill=boxgray, text width=2.6cm] (py) at (0,0)
+      {Your Python script\\ \code{ollama}, \code{pydantic}};
+    \node[box, fill=darkcyan!15, text width=2.6cm] (ol) at (4.0,0)
+      {Ollama service\\ port 11434};
+    \node[box, fill=cardinalred!12, text width=2.6cm] (m) at (8.0,0)
+      {Model file in RAM\\ \code{ollama ps}};
+    \draw[->] (py) -- node[above] {HTTP} (ol);
+    \draw[->] (ol) -- (m);
+  \end{tikzpicture}
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.24\textwidth}rL{0.26\textwidth}@{}}
+    \toprule
+    \textbf{Model} & \textbf{Type} & \textbf{Download} & \textbf{Used in} \\
+    \midrule
+    \code{llama3.2:1b}      & text, \code{Q8\_0}          & 1.32 GB & Parts A, B, C1 \\
+    \code{llama3.2:3b}      & text, \code{Q4\_K\_M}       & 2.02 GB & Parts A, B, C1 \\
+    \code{nomic-embed-text} & embedding, 768 values       & 0.27 GB & Part C, option 1 \\
+    \code{llava-phi3:3.8b}  & image and text              & 2.93 GB & Part C, option 2 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The Python library \code{ollama} is a client. The model runs in
+          the service (Part 2 of the lecture).
+    \item The first request loads the model from the card. The scripts do
+          not count this request.
+  \end{itemize}
+  \source{Download sizes: the Ollama library, read on 2026-10-01
+    (\code{Labs/hardware/HW-05/}).}
+\end{frame}

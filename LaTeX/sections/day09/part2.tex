@@ -1,0 +1,706 @@
+% Part 2 of Day 9: Measurement method.
+%
+% Topics of the syllabus: warm-up, variance, percentiles; full pipeline time
+% and model-only time; common errors. Exercise: find three errors in a given
+% benchmark script.
+%
+% The measured numbers of this part are results of two experiments of this
+% course: MobileNetV2 in LiteRT with one thread on the work computer (an x86
+% processor with AVX2). The times say nothing about a board. Each frame with
+% such a number says so in its source line. The times of the Raspberry Pi
+% Zero 2 W are numbers that the author of the companion book published.
+
+\theorypart{Measurement method}%
+  {find three errors in a given benchmark script}
+
+% ------------------------------------------------------------------ question
+\begin{frame}{Two students, one model, two numbers}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lL{0.56\textwidth}r@{}}
+    \toprule
+    & \textbf{Method} & \textbf{Result} \\
+    \midrule
+    Student A & Start the program. Run the model 5 times. Report the mean.
+              & 13.35 ms \\
+    Student B & Start the program. Run the model 20 times with no
+                measurement. Then report the median of the next 10 runs.
+              & 10.95 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The same model file, the same computer, the same process, the
+          same input.
+    \item The result of student A is 22 percent higher.
+    \item On Day 7, two runtimes differed by less than 5 percent for this
+          model. The method changes more.
+    \item The two numbers are correct. They answer two different questions.
+  \end{itemize}
+  \keypoint{The method can change a result more than the optimization that
+    you want to measure. So the method is a part of the result.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% -------------------------------------------------------------------- loop
+\begin{frame}{The measurement loop}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[b] (a) at (0,0)    {Load\\the model};
+    \node[b, draw=darkorange]  (b) at (2.2,0) {First\\inference};
+    \node[b, draw=darkorange]  (c) at (4.4,0) {Warm-up\\runs};
+    \node[b, draw=darkcyan]    (d) at (6.6,0) {Timed runs:\\$N$ times};
+    \node[b, draw=treegreen]   (e) at (8.8,0) {Statistics\\and report};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[below, align=center] at (0,-0.55)   {one time,\\measured alone};
+    \node[below, align=center] at (2.2,-0.55) {one time,\\measured alone};
+    \node[below, align=center] at (4.4,-0.55) {not\\measured};
+    \node[below, align=center] at (6.6,-0.55) {one time\\for each run};
+    \node[below, align=center] at (8.8,-0.55) {median, p95,\\the method};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item One fixed input, ready before the clock starts.
+    \item The clock is around one inference. Nothing else is in the window:
+          no print, no file, no copy that the product does not need.
+    \item Keep each time. Calculate the statistics after the loop.
+    \item Read the temperature between the runs, not in a run.
+    \item This is the loop of the sketch and of the script of the lab.
+  \end{itemize}
+  \keypoint{Each number of a report needs four facts: the warm-up runs, the
+    timed runs, the input, and the statistic.}
+\end{frame}
+
+% ------------------------------------------------------------------ warm-up
+\begin{frame}{Warm-up: the first inferences are slower}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.168cm, y=0.78cm]
+        \draw[coolgray] (0,10) -- (31,10);
+        \draw[coolgray] (0,10) -- (0,14.6);
+        \foreach \v in {10,11,12,13,14} {
+          \draw[coolgray] (0,\v) -- (-0.4,\v) node[left] {\v};
+          \draw[coolgray!30, dotted] (0,\v) -- (31,\v);
+        }
+        \foreach \v in {1,5,10,15,20,25,30} {
+          \draw[coolgray] (\v,10) -- (\v,9.9) node[below] {\v};
+        }
+        \node[coolgray] at (15.5,9.25) {number of the inference};
+        \node[coolgray, anchor=west] at (0.3,14.75) {ms};
+        \draw[darkcyan, thick]
+          (1,14.02) -- (2,13.33) -- (3,13.03) -- (4,13.11) -- (5,13.28) --
+          (6,13.08) -- (7,13.02) -- (8,13.02) -- (9,13.02) -- (10,13.05) --
+          (11,11.80) -- (12,11.60) -- (13,11.41) -- (14,11.45) -- (15,11.09) --
+          (16,11.04) -- (17,10.96) -- (18,11.00) -- (19,11.09) -- (20,11.13) --
+          (21,11.14) -- (22,11.06) -- (23,10.80) -- (24,10.86) -- (25,10.82) --
+          (26,10.95) -- (27,11.07) -- (28,10.95) -- (29,11.15) -- (30,11.40);
+        \foreach \x/\y in {1/14.02, 2/13.33, 3/13.03, 4/13.11, 5/13.28,
+            6/13.08, 7/13.02, 8/13.02, 9/13.02, 10/13.05, 11/11.80, 12/11.60,
+            13/11.41, 14/11.45, 15/11.09, 16/11.04, 17/10.96, 18/11.00,
+            19/11.09, 20/11.13, 21/11.14, 22/11.06, 23/10.80, 24/10.86,
+            25/10.82, 26/10.95, 27/11.07, 28/10.95, 29/11.15, 30/11.40} {
+          \fill[darkcyan] (\x,\y) circle (1.1pt);
+        }
+        \draw[cardinalred, dashed] (20.5,10) -- (20.5,14.4);
+        \node[cardinalred, anchor=west] at (20.8,14.2) {timed runs};
+        \node[cardinalred, anchor=east] at (20.2,14.2) {warm-up};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item The first 30 inferences of a new process.
+        \item Inferences 1 to 10 need about 13 ms. From inference 15, the
+              time is about 11 ms.
+        \item A processor can increase its clock when the load starts.
+        \item The caches and the memory pages fill at the first runs.
+        \item A runtime prepares some buffers at the first inference.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{Plot the first times. The warm-up ends when the times are
+    stable. Here: 20 runs.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+\begin{frame}{Published: a cold start on a small board}
+  \small
+  YOLO on a Raspberry Pi Zero 2 W, the time of each step:
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & \textbf{Pre-process} & \textbf{Inference} & \textbf{Post-process}
+    & \textbf{Sum} \\
+    \midrule
+    First run (cold)   & 289.7 ms & 2545.1 ms & 1540.9 ms & 4375.7 ms \\
+    Second run (warm)  & 237.6 ms & 519.3 ms  & 506.7 ms  & 1263.6 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The same command two times, with no change of the model.
+    \item The first inference needs 4.9 times as long. The complete first
+          run needs 3.5 times as long.
+    \item The first run loads the code of the libraries and reads memory
+          pages from the microSD card. The second run finds them in the RAM.
+    \item A board with little RAM and slow storage has the largest effect.
+  \end{itemize}
+  \keypoint{Do not mix the first run with the other runs. Measure it alone,
+    or do not report it.}
+  \source{\emph{Edge AI Engineering}, chapter on YOLO.}
+\end{frame}
+
+\begin{frame}{The cold start is also a result}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.56\textwidth}r@{}}
+    \toprule
+    \textbf{MobileNetV2 in LiteRT, 10 new processes} & \textbf{Median} \\
+    \midrule
+    Load the model and make the interpreter      & 96.9 ms \\
+    First inference                              & 11.87 ms \\
+    Inferences 21 to 30                          & 11.08 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A camera that runs all the time: the steady time of 11.08 ms is
+          the latency of the product.
+    \item A sensor that wakes, makes one inference, and sleeps again: each
+          inference is a first inference. The product pays the load also:
+          $96.9 + 11.87 = 108.8$ ms.
+    \item The second product is about 10 times slower than the benchmark of
+          the first product says.
+  \end{itemize}
+  \keypoint{Report three times: the load, the first inference, and the
+    steady latency. Your product decides which one counts.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% ----------------------------------------------------------------- variance
+\begin{frame}{Where the variance comes from}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.27\textwidth}L{0.31\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Source} & \textbf{Effect} & \textbf{What you do} \\
+    \midrule
+    Other programs on the device
+        & Some inferences wait for a core
+        & Close them. Report a high percentile. \\
+    The clock of the processor changes
+        & Slow first runs, slow runs when the chip is hot
+        & Warm up. Record the temperature and the clock. \\
+    The input
+        & A detector with many objects needs more post-processing
+        & Use fixed inputs \\
+    Interrupts on a microcontroller
+        & Wi-Fi and timers stop the inference for a short time
+        & Stop the radio, or report it as active \\
+    The operating system moves a thread
+        & The caches are cold after the move
+        & More runs. On Linux: fix the cores. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \keypoint{You cannot remove the variance. You can control it, measure it,
+    and report it.}
+\end{frame}
+
+\begin{frame}{Repeat the benchmark: ten runs, ten medians}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=11cm, y=1cm]
+    % The medians of ten processes, in ms. x = median - 11.
+    \draw[coolgray] (0,0) -- (0.8,0);
+    \foreach \v/\l in {0/11.0, 0.2/11.2, 0.4/11.4, 0.6/11.6, 0.8/11.8} {
+      \draw[coolgray] (\v,0) -- (\v,-0.1) node[below] {\l};
+    }
+    \node[coolgray, anchor=west] at (0.82,-0.25) {ms};
+    \foreach \m in {0.35, 0.21, 0.49, 0.65, 0.37, 0.11, 0.12, 0.62, 0.19,
+                    0.26} {
+      \fill[darkcyan] (\m,0.22) circle (2.2pt);
+    }
+    \draw[cardinalred, thick] (0.11,0.6) -- (0.65,0.6);
+    \draw[cardinalred, thick] (0.11,0.5) -- (0.11,0.7);
+    \draw[cardinalred, thick] (0.65,0.5) -- (0.65,0.7);
+    \node[cardinalred, above] at (0.38,0.6) {4.8 percent};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item Ten times the same benchmark: a new process, 20 warm-up runs, 200
+          timed runs, the median.
+    \item The lowest median is 11.11 ms, and the highest is 11.65 ms.
+    \item A second model that is 3 percent faster in one run of the
+          benchmark is not faster. The difference is inside the noise.
+    \item MLPerf Tiny repeats each test five times and reports the median
+          of the five results.
+  \end{itemize}
+  \keypoint{Run the complete benchmark more than one time. The difference
+    between two runs is the smallest gain that you can report.}
+  \source{An experiment of this course on an x86 processor.\\
+    MLPerf Tiny: Banbury et al., 2021.}
+\end{frame}
+
+\begin{frame}{How many timed runs?}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}rrr@{}}
+        \toprule
+        \textbf{Runs} & \textbf{Lowest median}
+        & \textbf{Highest median} \\
+        \midrule
+        5   & 10.88 ms & 12.37 ms \\
+        20  & 11.06 ms & 12.08 ms \\
+        50  & 11.21 ms & 11.93 ms \\
+        200 & 11.34 ms & 11.79 ms \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{itemize}
+        \item 2000 latencies of one process, cut into groups of 5, 20, 50,
+              or 200 runs.
+        \item Each group gives one median. The table shows the two extreme
+              groups.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item With 5 runs, the median can be 10.88 ms or 12.37 ms: a range of
+          13 percent. With 200 runs the range is 4 percent.
+    \item More runs give a more stable median. The gain becomes small: 10
+          times the runs do not give 10 times the stability.
+    \item On a slow device, set a time limit also: 200 runs, or 30 seconds.
+  \end{itemize}
+  \keypoint{Select the number of runs for the difference that you want to
+    see. Write the number in the report.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+\begin{frame}{Do not report the best run}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.50\textwidth}r@{}}
+    \toprule
+    \textbf{2000 inferences, a second program on the core}
+    & \textbf{Latency} \\
+    \midrule
+    Minimum (``the best run'')   & 10.61 ms \\
+    Median                       & 11.46 ms \\
+    Mean                         & 11.94 ms \\
+    99th percentile              & 27.45 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The minimum is the time with no disturbance. A product has
+          disturbances. The best of three runs is not a benchmark result.
+    \item The mean of few runs is not stable: for groups of 5 runs of this
+          data, the mean is between 10.85 ms and 16.11 ms.
+  \end{itemize}
+  \keypoint{Report the median for the typical case and a high percentile
+    for the slow case. Do not select the run that you like.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+\begin{frame}{A percentile needs many runs}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}rrr@{}}
+        \toprule
+        \textbf{Runs} & \textbf{Lowest p99} & \textbf{Highest p99} \\
+        \midrule
+        20   & 11.44 ms & 32.10 ms \\
+        50   & 26.50 ms & 32.10 ms \\
+        200  & 27.03 ms & 31.27 ms \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item The same data as before: 3 percent of the inferences are
+              slow.
+        \item A group of 20 runs can have no slow inference. Its p99 is
+              then 11.44 ms.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The rule of the rank: the p99 of $N$ runs is the value with the
+          rank $0.99 \times N$, rounded up. For 20 runs, this is the
+          maximum.
+    \item To see an event that occurs one time in 100 runs, you need many
+          times 100 runs.
+    \item MLPerf Inference uses 24\,576 queries for a 90th percentile, and
+          270\,336 queries for a 99th percentile.
+  \end{itemize}
+  \keypoint{With 20 runs, report the median and the maximum. Do not call
+    the maximum a p99.}
+  \source{An experiment of this course on an x86 processor.\\
+    Query numbers: the rules of MLPerf Inference.}
+\end{frame}
+
+% -------------------------------------------------------------------- clock
+\begin{frame}{The clock}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.33\textwidth}L{0.17\textwidth}L{0.40\textwidth}@{}}
+    \toprule
+    \textbf{Clock} & \textbf{Use it?} & \textbf{Reason} \\
+    \midrule
+    \code{time.perf\_counter\_ns()}
+        & Yes, in Python
+        & It does not go back, and it has a small step \\
+    \code{time.time()}
+        & No
+        & It is the clock of the day. The system can set it during your
+          run. \\
+    \code{micros()}
+        & Yes, in a sketch
+        & A step of microseconds \\
+    \code{millis()}
+        & No
+        & A step of 1 ms: an inference of 3.4 ms shows 3 or 4 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A clock read has a cost. On the work computer, one read of
+          \code{perf\_counter\_ns()} needs 146 ns.
+    \item The window must be much longer than the step and the cost of the
+          clock. For a window of some microseconds, time 1000 runs with one
+          pair of clock reads.
+    \item On a microcontroller you can also set a pin before and after the
+          inference, and measure the pulse with an oscilloscope.
+  \end{itemize}
+  \source{The cost of a clock read: an experiment of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------- window
+\begin{frame}[fragile]{Model-only time and full pipeline time}
+\begin{lstlisting}[style=python]
+t0 = time.perf_counter_ns()
+frame = camera.capture_array()                # capture
+x = preprocess(frame)                         # resize, normalize
+t1 = time.perf_counter_ns()
+interpreter.set_tensor(input_index, x)
+interpreter.invoke()                          # the model
+y = interpreter.get_tensor(output_index)
+t2 = time.perf_counter_ns()
+boxes = postprocess(y)                        # decode, suppress
+t3 = time.perf_counter_ns()
+model_ms.append((t2 - t1) / 1e6)
+pipeline_ms.append((t3 - t0) / 1e6)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Two windows in one loop. \code{model\_ms} compares runtimes,
+          precisions, and thread counts. \code{pipeline\_ms} is the time
+          that the user waits.
+    \item The frame rate of a product is 1000 divided by the pipeline time,
+          not by the model time.
+    \item MLPerf Tiny reports the model only. The lab of Day 8 reported the
+          pipeline. The lab of today reports the model.
+  \end{itemize}
+  \keypoint{Give each time the name of its window. A comparison of a model
+    time with a pipeline time is not valid.}
+\end{frame}
+
+\begin{frame}{The copies around the model}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.32\textwidth}rrr@{}}
+    \toprule
+    \textbf{Median of the window} & \textbf{\code{invoke()}}
+    & \textbf{With the copies} & \textbf{Difference} \\
+    \midrule
+    MobileNetV2, \code{float32}           & 11.281 ms & 11.384 ms
+        & 0.9 percent \\
+    Keyword model, \code{int8}            & 0.2468 ms & 0.2489 ms
+        & 0.8 percent \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The two copies: \code{set\_tensor()} writes the input into the
+          model, and \code{get\_tensor()} reads the output.
+    \item Here the copies cost less than 1 percent: 103 microseconds for
+          an image of 224 pixels, and 2 microseconds for the small input of
+          the keyword model.
+    \item A product needs the copies. So the window of the lab script has
+          them.
+    \item On a different runtime, the cost of the copies can be larger.
+          Measure it one time, and write which window you use.
+  \end{itemize}
+  \keypoint{``Model only'' has more than one meaning. Write the first call
+    and the last call of your window in the protocol.}
+  \source{An experiment of this course on an x86 processor, one thread.}
+\end{frame}
+
+\begin{frame}{A faster model in a slow pipeline}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.0042cm, y=0.55cm]
+    % Times in ms of the warm run on the Raspberry Pi Zero 2 W.
+    \foreach \y/\m/\t in {2/519.3/{Measured}, 1/259.65/{Model: half the time},
+                          0/0/{Model: no time}} {
+      \fill[coolgray!45] (0,\y) rectangle (237.6,\y+0.7);
+      \fill[darkcyan!70] (237.6,\y) rectangle (237.6+\m,\y+0.7);
+      \fill[coolgray!45] (237.6+\m,\y) rectangle (744.3+\m,\y+0.7);
+      \node[anchor=east] at (-25,\y+0.35) {\t};
+    }
+    \node[anchor=west] at (1290,2.35) {1263.6 ms};
+    \node[anchor=west] at (1030,1.35) {1004 ms: 1.26 times as fast};
+    \node[anchor=west] at (770,0.35) {744.3 ms: 1.70 times as fast};
+    \node[white] at (497,2.35) {model};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The warm run of the last table: the model has 519.3 ms of
+          1263.6 ms. This is 41 percent.
+    \item A model that is 2 times as fast makes the pipeline 1.26 times as
+          fast. A model with no time at all gives 1.70 times: this is the
+          limit.
+    \item The law of Amdahl (Day 7): with the part $f$ of the time in the
+          model, and a model that is $s$ times as fast, the gain is
+          $1 / ((1 - f) + f / s)$.
+  \end{itemize}
+  \keypoint{Measure the pipeline first. Then optimize its largest step.
+    This step is not always the model.}
+  \source{Times: \emph{Edge AI Engineering}, chapter on YOLO.\\
+    The two faster cases are calculations.}
+\end{frame}
+
+% -------------------------------------------------------------------- input
+\begin{frame}{Fix the input}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Model type} & \textbf{Does the time depend on the input?}
+    & \textbf{Input for a benchmark} \\
+    \midrule
+    Image classifier, keyword model
+        & No. Each input needs the same operations.
+        & One fixed input is sufficient \\
+    Detector
+        & Yes, in the post-processing: more candidates need more time
+        & A fixed set of images of the product \\
+    Language model
+        & Yes: the time grows with the number of tokens
+        & Fixed prompts and a fixed output length \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Day 8: the suppression of 47 candidates needed 1.4 ms, and the
+          suppression of 727 candidates needed 43 ms. Same model, same
+          image, a different score threshold.
+    \item Use the same inputs, in the same order, for each system that you
+          compare.
+    \item Random numbers are a valid input for a classifier. Fix the seed.
+  \end{itemize}
+  \keypoint{An input that changes from run to run adds variance that is
+    not a property of the system.}
+  \source{Day 8: an experiment of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------- sketch
+\begin{frame}[fragile]{The same loop on a microcontroller}
+\begin{lstlisting}[style=cpp]
+for (int i = 0; i < kTimedRuns; i++) {
+  bench_input(bench, input);            // fill the input: not in the window
+  const unsigned long start = micros();
+  interpreter.Invoke();                 // the window: the model only
+  times_us[i] = micros() - start;
+}
+sortTimes(times_us, kTimedRuns);        // statistics after the loop
+Serial.printf("median %lu us\n", percentileUs(times_us, kTimedRuns, 50));
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item No \code{Serial.print} in the window. On a serial line with
+          115\,200 baud, a line of 40 characters needs 3.5 ms.
+    \item Fill the input before each inference. The interpreter can use the
+          memory of the input tensor again for a later tensor.
+    \item The result also depends on the memory of the arena (internal RAM
+          or PSRAM), on the clock of the processor, and on the radio. Write
+          the three settings in the report.
+  \end{itemize}
+  \keypoint{The rules are the same on each device: warm up, repeat, keep
+    each time, and print after the loop.}
+  \source{The sketch \texttt{kit\_bench} of the lab.}
+\end{frame}
+
+% ------------------------------------------------------------------- system
+\begin{frame}{Describe the system}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.31\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Item} & \textbf{XIAOML Kit} & \textbf{Raspberry Pi 5} \\
+    \midrule
+    Board and processor & XIAO ESP32S3, 240 MHz
+                        & Raspberry Pi 5, 4 cores at 2.4 GHz \\
+    Software            & esp32 core and library, with versions
+                        & Operating system, Python, runtime, with versions \\
+    Model file          & Name, bytes, precision
+                        & Name, bytes, precision \\
+    Settings            & PSRAM, arena memory, clock
+                        & Threads, delegate, clock governor \\
+    Power and cooling   & USB or battery
+                        & Power supply, active cooler \\
+    State during the run & Radio on or off, chip temperature
+                        & Other programs, temperature, throttle state \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Day 7: the same model needed 2440 ms or 10.84 ms on the same
+          board. The difference was one line of this table: the kernels.
+    \item The script of the lab prints most of these items. Copy them into
+          the report.
+  \end{itemize}
+  \keypoint{A second person must be able to build your system again from
+    this table.}
+\end{frame}
+
+% ------------------------------------------------------------------- errors
+\begin{frame}{Common errors}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.52\textwidth}@{}}
+    \toprule
+    \textbf{Error} & \textbf{Result} \\
+    \midrule
+    No warm-up                         & The cold start is in the mean \\
+    Few runs, and the mean             & One slow run moves the result \\
+    The best run                       & A number that the product does
+                                         not reach \\
+    The load or a print in the window  & You measure the storage or the
+                                         terminal \\
+    A new input in each run            & More variance, and no comparison
+                                         with a second system \\
+    A different window for two systems & A model time against a pipeline
+                                         time \\
+    No thread setting                  & The runtime selects a number that
+                                         you do not know \\
+    A latency with no accuracy         & The fast model is possibly wrong \\
+    A short run on a hot or cold chip  & The result changes after some
+                                         minutes (Part 3) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \keypoint{Each error gives a number that looks exact. Only the written
+    method shows the error.}
+\end{frame}
+
+% ----------------------------------------------------------------- protocol
+\begin{frame}{The protocol: write it before you measure}
+  \small
+  \begin{enumerate}
+    \item The question: which decision does the number support?
+    \item The seven parts: task, dataset, model, metrics, harness, system,
+          run rules.
+    \item The window: the first call and the last call.
+    \item The warm-up runs and the timed runs, with a time limit.
+    \item The statistics: the median, one high percentile, and the first
+          inference.
+    \item The number of repetitions of the complete benchmark.
+    \item Your prediction for each result, with a reason.
+  \end{enumerate}
+  \vskip 0.3em
+  \begin{itemize}
+    \item A protocol that you write after the measurement follows the
+          result that you like.
+    \item A change during the work is permitted. Write the change and its
+          reason.
+    \item Part A of the lab: 20 minutes for this protocol, with one table
+          for the two boards.
+  \end{itemize}
+  \keypoint{A result is useful when a second person can repeat it. The
+    protocol is the instruction for that person.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\begin{frame}[fragile]{Exercise: find three errors in a benchmark script}
+\begin{lstlisting}[style=python]
+import time
+import numpy as np
+from ai_edge_litert.interpreter import Interpreter
+
+best = 1e9
+for i in range(5):
+    start = time.time()
+    interpreter = Interpreter(model_path="mnv2.tflite")
+    interpreter.allocate_tensors()
+    image = np.random.rand(1, 3, 224, 224).astype("float32")
+    interpreter.set_tensor(interpreter.get_input_details()[0]["index"], image)
+    interpreter.invoke()
+    print("run", i, "is complete")
+    best = min(best, time.time() - start)
+print("Latency of MobileNetV2: %.1f ms" % (1000 * best))
+\end{lstlisting}
+  \begin{exerciseblock}
+    \small
+    The script prints one number. Find three errors or more in the method.
+    For each error, say how it changes the number. Then write the list of
+    facts that the last line must print. Work with your neighbour for 8
+    minutes.
+  \end{exerciseblock}
+\end{frame}
+
+\begin{frame}[fragile]{Answer: find three errors in a benchmark script}
+\begin{lstlisting}[style=python]
+interpreter = Interpreter(model_path="mnv2.tflite", num_threads=4)   # 6
+interpreter.allocate_tensors()                                       # 1
+index = interpreter.get_input_details()[0]["index"]
+rng = np.random.default_rng(0)
+image = rng.random((1, 3, 224, 224), dtype=np.float32)               # 3
+for _ in range(20):                                                  # 2
+    interpreter.set_tensor(index, image)
+    interpreter.invoke()
+times = []
+for _ in range(200):                                                 # 2
+    start = time.perf_counter_ns()                                   # 5
+    interpreter.set_tensor(index, image)
+    interpreter.invoke()
+    times.append((time.perf_counter_ns() - start) / 1e6)             # 4
+\end{lstlisting}
+  \begin{answerblock}
+    \footnotesize
+    (1) The load is in the window: each run is a cold start.
+    (2) No warm-up, and only 5 runs.
+    (3) A new random input in each run, made in the window.
+    (4) A print in the window, and the minimum as the result.
+    (5) The clock of the day.
+    (6) No thread setting.
+    The last line must give: the median and a high percentile, the 20
+    warm-up runs, the 200 timed runs, the input, the window, the threads,
+    and the device.
+  \end{answerblock}
+\end{frame}

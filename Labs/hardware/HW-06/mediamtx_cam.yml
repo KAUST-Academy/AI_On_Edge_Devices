@@ -1,0 +1,40 @@
+# mediamtx_cam.yml - settings of MediaMTX for the Day 11 lab
+#
+# Use:  cd ~/mediamtx && ./mediamtx mediamtx_cam.yml
+# Then: rtsp://pi-NN.local:8554/cam
+#
+# This file gives only the values that the course changes. All other
+# settings keep the default values of MediaMTX v1.21.1. The file
+# mediamtx.yml of the release explains each setting.
+#
+# Hardware status: new file, not tested on a Raspberry Pi
+# (prepared on 2026-10-01).
+
+# The lab uses RTSP only. The other servers stay off.
+rtmp: false
+hls: false
+webrtc: false
+srt: false
+moq: false
+
+# RTSP server. 8554 is the default port.
+rtspAddress: :8554
+
+paths:
+  # The stream of the Raspberry Pi camera.
+  cam:
+    source: rpiCamera
+    # Part C of the lab changes these four values.
+    rpiCameraWidth: 1280
+    rpiCameraHeight: 720
+    rpiCameraFPS: 30
+    rpiCameraBitrate: 2000000      # bits per second
+    # One keyframe each second at 30 frames per second.
+    # A reader can start only at a keyframe.
+    rpiCameraIDRPeriod: 30
+
+  # A stream that a program sends to the server, for example FFmpeg:
+  #   ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=30 -c:v libx264 \
+  #     -tune zerolatency -f rtsp rtsp://localhost:8554/test
+  test:
+    source: publisher

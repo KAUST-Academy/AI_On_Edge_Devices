@@ -1,0 +1,679 @@
+% Part 2 of Day 5: Vision under microcontroller constraints.
+%
+% Topics of the syllabus: input resolution, width multiplier, visual wake
+% words; peak activation memory and PSRAM; transfer learning; capture, resize,
+% and colour conversion on the device. Exercise: calculate the peak activation
+% memory of a MobileNet at two input resolutions.
+%
+% The numbers for MobileNetV2 (parameters, operations, peak) are results of a
+% calculation with the Keras model, with the rule of Day 1 for the peak. The
+% times and the estimates of the kit lab have a source line.
+
+\theorypart{Vision under microcontroller constraints}%
+  {calculate the peak activation memory of a MobileNet at two resolutions}
+
+% ------------------------------------------------------------------ the task
+\begin{frame}{An image as data}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+        \toprule
+        \textbf{Input of a model} & \textbf{Values} \\
+        \midrule
+        Motion features (Day 3)   & 63 \\
+        MFCC of 1 s of audio      & 637 \\
+        Image $96 \times 96$, RGB & 27\,648 \\
+        Image $160 \times 160$, RGB & 76\,800 \\
+        Image $224 \times 224$, RGB & 150\,528 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{itemize}
+        \item An image has no feature step. The model takes the pixels.
+        \item The first layers of the CNN do the work of the features. So
+              they hold large tensors.
+        \item A camera gives much more than the model takes: $320 \times
+              240$ pixels or more.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{For motion and audio, the features make the input small. For an
+    image, only a smaller image makes the input small.}
+\end{frame}
+
+\begin{frame}{The pipeline of an image classifier}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Camera};
+    \node[b] (b) at (2.15,0) {Convert\\the colours};
+    \node[b] (c) at (4.3,0)  {Crop and\\resize};
+    \node[b, draw=cardinalred] (d) at (6.45,0) {Model};
+    \node[b, draw=darkcyan] (e) at (8.6,0)  {Post-\\processing};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {$320 \times 240$\\JPEG};
+    \node[lab] at (2.15,-0.95) {RGB, 3 bytes\\for each pixel};
+    \node[lab] at (4.3,-0.95)  {$96 \times 96 \times 3$};
+    \node[lab] at (6.45,-0.95) {MobileNet\\\code{int8}};
+    \node[lab] at (8.6,-0.95)  {class, display,\\pin};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item The steps before the model are the pre-processing. They need time
+          and RAM, as the features of the audio pipeline do.
+    \item The model is a small CNN from the MobileNet family.
+    \item This part gives the limits of the model first, then the two
+          controls that make it fit, then the training, then the
+          pre-processing.
+  \end{itemize}
+  \source{Pipeline of the sketch: kit lab ``Image Classification'' of
+    \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{Three budgets, three properties of the model}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.16\textwidth}L{0.26\textwidth}L{0.24\textwidth}L{0.22\textwidth}@{}}
+    \toprule
+    \textbf{Budget} & \textbf{Property of the model} & \textbf{Depends on}
+    & \textbf{XIAO ESP32S3} \\
+    \midrule
+    Flash   & The number of parameters & The width of the layers
+            & About 3.3 MB for the program \\
+    RAM     & The peak activation memory & The image size and the width
+            & About 300 KB free, and 8 MB of PSRAM \\
+    Time    & The number of operations (MACs)
+            & The image size and the width & Your target for the frame
+              rate \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \vskip 0.3em
+  \begin{itemize}
+    \item Day 1 gave the three counts. A CNN has few parameters for its
+          size, because the filters are small. But each filter makes a
+          large feature map.
+  \end{itemize}
+  \keypoint{The motion model and the audio model of this course are far
+    below the three budgets. For a vision model, the RAM fails first.}
+  \source{Flash and RAM of the XIAO ESP32S3: the build output of the Day 1
+    lab.}
+\end{frame}
+
+\begin{frame}{Recap: the peak activation memory}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+          b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                    minimum width=1.5cm, minimum height=0.8cm,
+                    align=center}]
+        \node[b, draw=darkcyan, minimum width=1.25cm, minimum height=1.7cm]
+          (i) at (0,0) {input\\tensor};
+        \node[b, draw=cardinalred, minimum width=1.0cm] (l) at (1.65,0)
+          {layer};
+        \node[b, draw=darkcyan, minimum width=1.25cm, minimum height=1.2cm]
+          (o) at (3.3,0) {output\\tensor};
+        \draw[->] (i) -- (l); \draw[->] (l) -- (o);
+        \node[font=\scriptsize, text=coolgray] at (1.65,-1.25)
+          {the two tensors exist at the same time};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item When a layer runs, its input and its output are in the RAM.
+        \item After the layer, the runtime can use the input buffer again.
+        \item The peak is the largest sum of an input and an output, for all
+              layers.
+        \item A skip connection keeps one more tensor.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item In \code{int8}, one value is one byte. So the peak in values is
+          the peak in bytes.
+    \item The arena also holds the data of the interpreter. For a vision
+          model, this part is small against the activations.
+  \end{itemize}
+  \keypoint{The size of the model file says nothing about the peak. You
+    must look at the feature maps.}
+\end{frame}
+
+\begin{frame}{Where the peak is: the first layers}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.72cm, y=0.017cm]
+    % Sum of input and output of the first 12 layers, in units of 1000
+    % values. MobileNetV2, alpha 0.35, image 96 x 96.
+    \draw[->, coolgray] (0,0) -- (12.9,0) node[right] {layer};
+    \draw[->, coolgray] (0,0) -- (0,160);
+    \node[anchor=west, coolgray] at (0.1,157) {input + output, in KB};
+    \foreach \y in {50,100} {
+      \draw[coolgray] (0,\y) -- (-0.12,\y) node[left] {\y};
+      \draw[coolgray!40, dotted] (0,\y) -- (12.6,\y);
+    }
+    \foreach \k/\v in {1/63, 2/72, 3/54, 4/126, 6/31.5, 7/31.5, 8/58.5,
+                       9/36, 10/13.5, 11/31.5, 12/33.8} {
+      \fill[darkcyan!55] (\k-0.38,0) rectangle (\k+0.38,\v);
+    }
+    \fill[cardinalred!70] (5-0.38,0) rectangle (5+0.38,135);
+    \node[cardinalred, above] at (5,135) {135 KB};
+    \foreach \k in {1,...,12} { \node[below, coolgray] at (\k,0) {\k}; }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The bars show MobileNetV2 with a width multiplier of 0.35 and an
+          image of $96 \times 96$, in \code{int8}.
+    \item The first layers have feature maps of $48 \times 48$. The peak is
+          at layer 5, with 48 channels.
+    \item Each stride of 2 makes the map four times smaller. The other 50
+          layers stay below 30 KB.
+  \end{itemize}
+  \source{A calculation with the Keras model of MobileNetV2. 1 KB is 1024
+    bytes.}
+\end{frame}
+
+% ---------------------------------------------------------------- the model
+\begin{frame}{MobileNet: the depthwise separable convolution}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.3cm, minimum height=0.95cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (s) at (0,0) {Convolution\\$3 \times 3$};
+    \node[lab] at (0,-0.85) {$9 \cdot C_{in} \cdot C_{out}$ weights};
+    \node at (2.1,0) {becomes};
+    \node[b, draw=cardinalred] (d) at (4.4,0) {Depthwise\\$3 \times 3$};
+    \node[b, draw=darkcyan] (p) at (7.6,0) {Pointwise\\$1 \times 1$};
+    \draw[->] (d) -- (p);
+    \node[lab] at (4.4,-0.85) {one filter for each\\channel: $9 \cdot C_{in}$};
+    \node[lab] at (7.6,-0.85) {mixes the channels:\\$C_{in} \cdot C_{out}$};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item A normal convolution filters the space and mixes the channels in
+          one step.
+    \item MobileNet does the two jobs in two layers. Example with 48 input
+          channels and 48 output channels: 20\,736 weights become
+          $432 + 2304 = 2736$ weights.
+    \item The number of operations decreases by the same factor: about 8.
+    \item The feature maps do not become smaller. The layer saves flash and
+          time, but it saves no RAM.
+  \end{itemize}
+  \keypoint{MobileNet solves the flash budget and the time budget. The RAM
+    budget needs two more controls.}
+\end{frame}
+
+\begin{frame}{The block of MobileNetV2}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b, minimum height=0.6cm] (i) at (0,0) {input};
+    \node[b, draw=darkcyan, minimum height=1.9cm] (e) at (2.7,0)
+      {Expand\\$1 \times 1$};
+    \node[b, draw=cardinalred, minimum height=1.9cm] (d) at (5.4,0)
+      {Depthwise\\$3 \times 3$};
+    \node[b, minimum height=0.6cm] (p) at (8.1,0) {Project\\$1 \times 1$};
+    \draw[->] (i) -- (e); \draw[->] (e) -- (d); \draw[->] (d) -- (p);
+    \node[lab] at (0,-1.3)   {8 channels};
+    \node[lab] at (2.7,-1.3) {48 channels};
+    \node[lab] at (5.4,-1.3) {48 channels};
+    \node[lab] at (8.1,-1.3) {8 channels};
+    \draw[->, coolgray, dashed] (i.north) -- ++(0,0.9) -| node[pos=0.25,
+      above, font=\scriptsize] {skip connection, when the sizes are equal}
+      (p.north);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item The block has a narrow input and a narrow output. Inside, the
+          expand layer makes 6 times as many channels.
+    \item The depthwise layer works on the wide tensor. This is the place
+          of the peak.
+    \item The narrow tensors between the blocks keep the skip connection
+          small.
+  \end{itemize}
+  \source{The channel numbers are the numbers of the second block for a
+    width multiplier of 0.35. Block: Sandler et al., ``MobileNetV2: Inverted
+    Residuals and Linear Bottlenecks'', 2018.}
+\end{frame}
+
+\begin{frame}{Control 1: the input resolution}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.17\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Image} & \textbf{Parameters} & \textbf{MACs}
+    & \textbf{Peak in \code{int8}} & \textbf{Against 96} \\
+    \midrule
+    $96 \times 96$   & 410\,208 & 10.7 million & 135 KB & 1.0 \\
+    $160 \times 160$ & 410\,208 & 29.6 million & 375 KB & 2.8 \\
+    $224 \times 224$ & 410\,208 & 58.0 million & 735 KB & 5.4 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The table shows MobileNetV2 with a width multiplier of 0.35, with
+          no classification layer.
+    \item The filters do not change with the image size. So the number of
+          parameters and the flash use stay equal.
+    \item Each feature map grows with the area of the image. The peak and
+          the operations grow with the square of the side:
+          $(160 / 96)^2 = 2.8$.
+  \end{itemize}
+  \keypoint{The resolution is the strongest control for the RAM and for the
+    time. It costs accuracy when the object becomes too small in the image.}
+  \source{A calculation with the Keras model of MobileNetV2.}
+\end{frame}
+
+\begin{frame}{Control 2: the width multiplier}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.24\textwidth}rrr@{}}
+    \toprule
+    \textbf{Width multiplier $\alpha$} & \textbf{Parameters}
+    & \textbf{MACs} & \textbf{Peak in \code{int8}} \\
+    \midrule
+    0.35 & 410\,208   & 10.7 million & 135 KB \\
+    0.50 & 706\,224   & 17.6 million & 135 KB \\
+    1.00 & 2\,257\,984 & 55.0 million & 270 KB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The table shows MobileNetV2 for an image of $96 \times 96$.
+    \item $\alpha$ multiplies the number of channels of each layer. The
+          result is rounded to a multiple of 8.
+    \item A layer has $C_{in} \cdot C_{out}$ weights. So the parameters and
+          the operations grow about with $\alpha^2$.
+    \item A feature map grows with $\alpha$. The values 0.35 and 0.50 give
+          the same first layers after the rounding, so the peak is equal.
+  \end{itemize}
+  \keypoint{The width is the control for the flash. The resolution is the
+    control for the RAM. The two change the time.}
+  \source{A calculation with the Keras model of MobileNetV2.}
+\end{frame}
+
+\begin{frame}{The choice in the lab}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.36\textwidth}L{0.16\textwidth}rr@{}}
+    \toprule
+    \textbf{Model in Edge Impulse Studio} & \textbf{Image}
+    & \textbf{RAM} & \textbf{Flash} \\
+    \midrule
+    MobileNetV1, $\alpha = 0.10$ & $96 \times 96$   & 53 KB  & 101 KB \\
+    MobileNetV2, $\alpha = 0.35$ & $96 \times 96$   & 233 KB & 546 KB \\
+    MobileNetV2, $\alpha = 1.0$  & $160 \times 160$ & 1.3 MB & 2.6 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The Studio gives MobileNetV1 and MobileNetV2 with $\alpha$ from
+          0.05 to 1.0, for images of $96 \times 96$ and $160 \times 160$.
+    \item The lab uses MobileNetV2 with $\alpha = 0.35$ and
+          $96 \times 96$: the second row.
+    \item The RAM estimate of the Studio is larger than the peak of
+          135 KB. It holds the complete arena and the buffers of the
+          library.
+  \end{itemize}
+  \keypoint{Select the smallest model that reaches your accuracy target.
+    Start small, and go to a larger model only when the accuracy is too
+    low.}
+  \source{Estimates of Edge Impulse Studio: kit lab ``Image
+    Classification'' of \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{Visual wake words}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item The question: is a person in the image, or not?
+        \item It is the vision task with the same role as keyword
+              spotting: a small model that is always on and wakes a larger
+              system.
+        \item The dataset comes from a large public dataset of photos.
+              Each image has the label ``person'' or ``not person''.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{The target of the paper}
+        \begin{itemize}
+          \item A microcontroller with about 250 KB of RAM.
+          \item Mobile models reach an accuracy of 85 to 90 percent in
+                this limit.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A task with two classes needs less from the model than a task
+          with 1000 classes. So a small width and a small image are
+          enough.
+    \item Uses: a light that follows the people in a room, a doorbell, a
+          camera that records only with a person in the image.
+  \end{itemize}
+  \source{Chowdhery et al., ``Visual Wake Words Dataset'', 2019.}
+\end{frame}
+
+\begin{frame}{The PSRAM: more RAM, at a price}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.35\textwidth}@{}}
+    \toprule
+    & \textbf{Internal RAM} & \textbf{PSRAM} \\
+    \midrule
+    Size      & 512 KB, about 300 KB free & 8 MB \\
+    Place     & In the chip & A second chip in the module \\
+    Access    & Direct & Through a serial bus: slower \\
+    Use it for & The arena of a small model & The image buffers, the arena
+                 of a large model \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \vskip 0.3em
+  \begin{itemize}
+    \item One image of $320 \times 240$ with 3 bytes for each pixel needs
+          230\,400 bytes. The camera needs the PSRAM for its frame buffer.
+    \item A model with a peak above 300 KB runs only with the arena in the
+          PSRAM. You measure the price in time in the lab.
+  \end{itemize}
+  \keypoint{The PSRAM removes the RAM limit of this board. A product with a
+    smaller chip has no PSRAM.}
+  \source{Memory of the board: Day 1 and Day 2 of this course.}
+\end{frame}
+
+% ------------------------------------------------------------ the training
+\begin{frame}{Transfer learning: the idea}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum height=1.1cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b, minimum width=1.5cm] (i) at (0,0) {Image};
+    \node[b, draw=darkcyan, minimum width=4.4cm] (b) at (3.6,0)
+      {MobileNetV2 with no last layer\\trained before, on many photos};
+    \node[b, draw=cardinalred, minimum width=2.0cm] (h) at (7.6,0)
+      {New last\\layers};
+    \draw[->] (i) -- (b); \draw[->] (b) -- (h);
+    \node[lab] at (3.6,-0.95) {410\,208 parameters: you keep them};
+    \node[lab] at (7.6,-0.95) {20\,547 parameters:\\you train them};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item A model for images needs thousands of images for each class. You
+          have about 50.
+    \item The first layers of a CNN learn edges, colours, and textures.
+          These features are good for all photos.
+    \item So you take a model that learned them from a large dataset. You
+          train only the last layers for your classes.
+  \end{itemize}
+  \keypoint{With transfer learning, 50 images for each class can be
+    enough, and the training needs minutes.}
+  \source{Method and number of images: kit lab ``Image Classification'' of
+    \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{Transfer learning in the lab}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.46\textwidth}L{0.46\textwidth}@{}}
+        \toprule
+        \textbf{Setting} & \textbf{Value} \\
+        \midrule
+        Base model & MobileNetV2, $\alpha = 0.35$, $96 \times 96$ \\
+        Last layers & 16 neurons, then one output for each class \\
+        Dropout & 0.1 \\
+        Epochs & 20 \\
+        Learning rate & 0.0005 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item \textbf{Data augmentation:} each epoch sees the images with
+              small random changes: a flip, a crop, a change of the
+              brightness.
+        \item \textbf{Fine-tuning:} some more epochs with all layers and a
+              very small learning rate. It is an option.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The base model fixes the image size. A base model that was
+          trained with $96 \times 96$ needs images of $96 \times 96$.
+    \item After the training, the Studio quantizes the model to
+          \code{int8}, as on Day 4. The calibration set comes from your
+          training images.
+  \end{itemize}
+  \source{Settings: kit lab ``Image Classification'' of \emph{Machine
+    Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------- the pre-processing
+\begin{frame}{Capture: the camera gives a format}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.14\textwidth}L{0.24\textwidth}L{0.22\textwidth}L{0.26\textwidth}@{}}
+    \toprule
+    \textbf{Format} & \textbf{One pixel} & \textbf{Bytes for $320 \times
+    240$} & \textbf{Note} \\
+    \midrule
+    Grayscale & 1 byte: the brightness & 76\,800 & No colour \\
+    RGB565    & 2 bytes: 5, 6, and 5 bits & 153\,600
+              & Format of small displays \\
+    RGB888    & 3 bytes: 8 bits for each colour & 230\,400
+              & Format of the model \\
+    JPEG      & Compressed & Some thousands, not constant
+              & The sketch must decode it \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The camera sensor of the kit gives these formats and many frame
+          sizes. The model takes RGB888 with its own size.
+    \item The sketch of the lab captures a JPEG image of
+          $320 \times 240$ and decodes it to RGB888.
+  \end{itemize}
+  \source{Formats and frame size of the sketch: kit lab ``Image
+    Classification'' of \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{Crop and resize on the device}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=5pt]}]
+    % Frame of the camera, 4:3.
+    \draw[coolgray, fill=boxgray] (0,0) rectangle (3.2,2.4);
+    \draw[cardinalred, line width=1pt] (0.4,0) rectangle (2.8,2.4);
+    \node at (1.6,1.2) {$240 \times 240$};
+    \node[below, coolgray] at (1.6,0) {camera: $320 \times 240$};
+    \draw[->] (3.5,1.2) -- (4.7,1.2) node[midway, above] {resize};
+    \draw[cardinalred, line width=1pt, fill=boxgray] (5.0,0.6)
+      rectangle (6.2,1.8);
+    \node at (5.6,1.2) {$96 \times 96$};
+    \node[below, coolgray] at (5.6,0.6) {model};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The camera image is wider than high. The model image is a
+          square. In the resize step, each output pixel takes the value of
+          the nearest input pixel, or a mean of its neighbours.
+    \item \textbf{Crop:} cut the sides. The objects keep their form, and
+          the sides of the scene are lost.
+    \item \textbf{Squash:} resize the two axes with different factors.
+          The complete scene stays, and the objects become narrow.
+  \end{itemize}
+  \keypoint{The object must still be visible in $96 \times 96$ pixels. Look
+    at the small image before you train the model.}
+\end{frame}
+
+\begin{frame}{One pre-processing, two places}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.33\textwidth}L{0.33\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{In the training} & \textbf{On the device} \\
+    \midrule
+    Source of the image & A photo file, or the camera of the kit
+        & The camera of the kit \\
+    Crop or squash & A setting of the Studio & Code of the sketch \\
+    Order of the colours & Red, green, blue & The same order \\
+    Range of the values & 0 to 1, or $-1$ to 1 & The same range, then the
+        scale and the zero point of the input tensor \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A difference in one row gives a model that works on the laptop
+          and fails on the board. No error message shows it.
+    \item Day 3 gave this rule for the features. For images, the camera,
+          the light, and the background are also a part of it.
+  \end{itemize}
+  \keypoint{Collect the images with the device that runs the model.}
+\end{frame}
+
+\begin{frame}{Time and power on the kit}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.34\textwidth}L{0.13\textwidth}rrr@{}}
+    \toprule
+    \textbf{Model, \code{int8}} & \textbf{Image}
+    & \textbf{Pre-process} & \textbf{Infer} & \textbf{Frames/s} \\
+    \midrule
+    MobileNetV2 of SenseCraft AI, three classes
+        & $224 \times 224$ & 110 ms & 426 ms & 1.8 \\
+    MobileNetV2, $\alpha = 0.35$, of Edge Impulse Studio, three classes
+        & $96 \times 96$ & 81 ms & 205 ms & 3.4 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The numbers come from the kit lab. Its author measured them on a
+          XIAO ESP32S3 Sense with the firmware of SenseCraft AI.
+    \item A person classifier with MobileNetV2 and $\alpha = 0.35$ needs a
+          peak current of 160 mA at 5.23 V: about 830 mW.
+    \item The Studio estimated 1160 ms for the second model, for a board
+          with an older processor. The estimate of a tool is not a
+          measurement.
+    \item Your sketch uses a different library: you measure your own
+          times.
+  \end{itemize}
+  \source{Kit lab ``Image Classification'' of \emph{Machine Learning
+    Systems}. Nobody measured these times on the kit of this course.}
+\end{frame}
+
+\begin{frame}{The limits of a classifier}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{What it gives}
+        \begin{itemize}
+          \item One class for the complete image.
+          \item A probability for each class.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{What it does not give}
+        \begin{itemize}
+          \item The position of the object.
+          \item The number of objects.
+          \item An answer ``none of my classes'', if no class for it
+                exists.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Add a class ``background'' with images of the empty scene. It has
+          the role of the classes UNKNOWN and NOISE of Part 1.
+    \item One object must fill a large part of the image. Two objects of
+          different classes in one image give an unclear result.
+    \item For the position and the number of objects, you need a detection
+          model. Part 3 gives one that fits a microcontroller.
+  \end{itemize}
+  \keypoint{A classifier answers one question for one image. Design the
+    scene of the camera so that this question has a clear answer.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{the peak activation memory}{%
+  \small
+  The first layers of MobileNetV2 with $\alpha = 0.35$, for an image of
+  $96 \times 96$, in \code{int8}. No layer of the table has a skip
+  connection.
+  \vskip 0.1em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{@{}llll@{}}
+    \toprule
+    \textbf{Layer} & \textbf{Type} & \textbf{Input} & \textbf{Output} \\
+    \midrule
+    1 & Convolution, stride 2 & $96 \times 96 \times 3$
+      & $48 \times 48 \times 16$ \\
+    2 & Depthwise             & $48 \times 48 \times 16$
+      & $48 \times 48 \times 16$ \\
+    3 & Project               & $48 \times 48 \times 16$
+      & $48 \times 48 \times 8$ \\
+    4 & Expand                & $48 \times 48 \times 8$
+      & $48 \times 48 \times 48$ \\
+    5 & Depthwise, stride 2   & $48 \times 48 \times 48$
+      & $24 \times 24 \times 48$ \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.2em
+  \begin{enumerate}
+    \item Calculate the sum of the input and the output for each layer.
+          Which layer has the peak? Give the peak in KB.
+    \item The image is now $160 \times 160$. Calculate the new peak with
+          the factor between the two image areas.
+    \item The board has about 300 KB of free internal RAM. Which model
+          runs with no PSRAM?
+    \item The frame buffer of the camera needs 230\,400 bytes. Where do you
+          put it?
+  \end{enumerate}
+  Work with your neighbour for 10 minutes.
+}
+
+\answerframe{the peak activation memory}{%
+  \small
+  \begin{enumerate}
+    \item The sums in bytes:
+          \vskip 0.1em
+          {\footnotesize
+          \renewcommand{\arraystretch}{1.05}
+          \begin{tabular}{@{}lrrr@{}}
+            \toprule
+            \textbf{Layer} & \textbf{Input} & \textbf{Output}
+            & \textbf{Sum} \\
+            \midrule
+            1 & 27\,648  & 36\,864  & 64\,512 \\
+            2 & 36\,864  & 36\,864  & 73\,728 \\
+            3 & 36\,864  & 18\,432  & 55\,296 \\
+            4 & 18\,432  & 110\,592 & 129\,024 \\
+            5 & 110\,592 & 27\,648  & \textbf{138\,240} \\
+            \bottomrule
+          \end{tabular}}
+          \vskip 0.1em
+          The peak is at layer 5: 138\,240 bytes, or 135 KB.
+    \item The factor is $(160 / 96)^2 = 2.78$. The new peak is
+          $138\,240 \cdot 2.78 = 384\,000$ bytes, or 375 KB.
+    \item Only the model for $96 \times 96$. Its peak of 135 KB is below
+          300 KB. The peak of 375 KB is above it.
+    \item In the PSRAM. With the frame buffer of 225 KB in the internal
+          RAM, the model for $96 \times 96$ has no space also:
+          $225 + 135 = 360$ KB.
+  \end{enumerate}
+}

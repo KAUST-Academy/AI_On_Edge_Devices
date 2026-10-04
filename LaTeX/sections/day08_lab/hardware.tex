@@ -1,0 +1,78 @@
+% Hardware, software, and the two computers of the Day 8 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \small
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item Raspberry Pi 5 (8 GB) with the active cooler and the card of
+              your group: \code{pi-NN}.
+        \item Power supply, 27 W.
+        \item Camera Module 3 with its cable.
+        \item Laptop in the Wi-Fi \code{edgeai-lab}.
+        \item A bottle and a cup.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \small
+      \textbf{Software}
+      \begin{itemize}
+        \item On the board: the environment \code{\textasciitilde/yolo}
+              with \code{ultralytics} 8.4.171, NCNN, and LiteRT.
+        \item On the laptop: the new environment
+              \code{\textasciitilde/day08\_env} with the file
+              \code{requirements.txt}: the same version of the
+              package. It needs 2.7 GB.
+        \item A browser on the laptop, for the live image.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
+    Lab files & \code{Labs/day08/} on the laptop,
+                \code{\textasciitilde/edgeai/day08/} on the board \\
+    Each new terminal on the board &
+                \code{cd \textasciitilde/edgeai/day08} and
+                \code{source \textasciitilde/yolo/bin/activate} \\
+    The camera cable & Do not connect or remove it when the power is on. \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Two computers, one detector}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Dataset};
+    \node[b, draw=treegreen] (b) at (2.15,0) {Train\\(Part B)};
+    \node[b, draw=darkorange] (c) at (4.3,0)  {Export\\(Part C)};
+    \node[b, draw=darkorange] (d) at (6.45,0) {Live\\detection\\(Part C)};
+    \node[b, draw=cardinalred] (e) at (8.6,0)  {Frame-rate\\table\\(Part D)};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {400 images,\\2 classes};
+    \node[lab] at (2.15,-0.95) {YOLO11n,\\25 epochs};
+    \node[lab] at (4.3,-0.95)  {six files,\\copy with \texttt{scp}};
+    \node[lab] at (6.45,-0.95) {camera,\\web page};
+    \node[lab] at (8.6,-0.95)  {image size,\\precision};
+    \draw[coolgray, dashed] (-1.0,0.75) rectangle (5.32,-1.45);
+    \draw[coolgray, dashed] (5.43,0.75) rectangle (9.6,-1.45);
+    \node[lab] at (2.15,1.0) {the laptop};
+    \node[lab] at (7.5,1.0)  {the Raspberry Pi};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Part A is not in the diagram: it runs two pre-trained models on
+          the board. It needs no file of the laptop.
+    \item The training needs PyTorch, and the export to LiteRT does not run
+          on the board. The two steps stay on the laptop.
+    \item The download of the dataset and the training run in the
+          background. One student of the group can start sections 0 to 2 of
+          the notebook during Part A.
+  \end{itemize}
+  \keypoint{The board gets no PyTorch file of your model. It gets the
+    exported files, and each file has one fixed image size.}
+\end{frame}

@@ -1,0 +1,13 @@
+# Grafana data source for the Day 13 lab.
+# Install:  sudo cp prometheus.yml /etc/grafana/provisioning/datasources/edgeai.yml
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: edgeai-prometheus
+    type: prometheus
+    access: proxy
+    url: http://localhost:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 2s

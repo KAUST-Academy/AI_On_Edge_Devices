@@ -1,0 +1,30 @@
+% Theory deck of day NN. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file DayNN_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day NN]{Day NN: TITLE OF THE DAY}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/dayNN/outcomes}
+\input{sections/dayNN/toc}
+\input{sections/dayNN/part1}
+\input{sections/dayNN/part2}
+\input{sections/dayNN/part3}
+\input{sections/dayNN/recap}
+\input{sections/dayNN/further_reading}
+\input{sections/credits}
+
+\end{document}

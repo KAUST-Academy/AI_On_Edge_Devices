@@ -1,0 +1,33 @@
+# Python packages for the notebook of the Day 7 lab (Part C, on the laptop).
+#
+# Use a new virtual environment for this lab. The package litert-torch needs
+# its own version of torch, so do not install it into the environment of the
+# other labs.
+#
+# Install (Linux, macOS, or Windows with WSL), from the folder Labs/day07/:
+#   python3 -m venv ~/day07_env
+#   ~/day07_env/bin/pip install --upgrade pip
+#   ~/day07_env/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+#   ~/day07_env/bin/jupyter notebook export_inspect.ipynb
+#
+# Upgrade pip first: an old version of pip needs a very long time to find
+# the package versions. The extra index gives the CPU version of torch on
+# Linux. The default package on Linux is much larger.
+
+# The model and the export to ONNX.
+torch
+torchvision
+onnx
+onnxscript
+onnxruntime
+
+# The export to LiteRT. It installs ai-edge-litert, which runs the file.
+litert-torch
+
+# The notebook. The two limits keep the versions that litert-torch accepts.
+notebook
+ipykernel<7
+jupyter-client<8.7
+
+# A viewer for model files: netron <file>
+netron

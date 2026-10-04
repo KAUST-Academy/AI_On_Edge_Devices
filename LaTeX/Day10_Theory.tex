@@ -1,0 +1,31 @@
+% Theory deck of Day 10. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day10_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 10]{Day 10: Generative AI at the edge}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditraspi
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day10/outcomes}
+\input{sections/day10/toc}
+\input{sections/day10/part1}
+\input{sections/day10/part2}
+\input{sections/day10/part3}
+\input{sections/day10/recap}
+\input{sections/day10/further_reading}
+\input{sections/credits}
+
+\end{document}

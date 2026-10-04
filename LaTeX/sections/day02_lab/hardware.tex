@@ -1,0 +1,66 @@
+% Hardware, software, and the data path of the Day 2 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item XIAOML Kit: the XIAO ESP32S3 Sense on the expansion board
+              with the IMU.
+        \item USB-C data cable.
+        \item Wi-Fi antenna of the kit, for the last step of Part B.
+        \item Laptop in the lab Wi-Fi.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \textbf{Software}
+      \begin{itemize}
+        \item MicroPython firmware v1.29.0, \code{esptool}, and
+              \code{mpremote}.
+        \item Python 3.10 or later with \code{numpy}, \code{matplotlib},
+              \code{pyserial}, and \code{jupyterlab}.
+        \item An Edge Impulse account. The CLI is optional.
+        \item Arduino IDE 2, for the last step.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}ll@{}}
+    Lab files      & \code{Labs/day02/}. Run all commands from this folder. \\
+    Setup steps    & \code{Labs/SETUP.md}, steps 5 and 6 \\
+  \end{tabular}
+  \vskip 0.3em
+  \keypoint{MicroPython replaces the Arduino firmware of the board. The last
+    step of the lab puts the Arduino firmware back. Day 3 needs it.}
+\end{frame}
+
+\begin{frame}{The path of the data}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=darkcyan, align=center}]
+    \node[b, draw=cardinalred] (k) at (0,0) {XIAOML Kit\\\code{main.py}};
+    \node[b] (l) at (4.0,0)  {\code{logger.py}\\on the laptop};
+    \node[b] (f) at (8.0,0)  {\code{data/}\\CSV files};
+    \node[b] (n) at (8.0,-1.9) {\code{dataset.ipynb}};
+    \node[b] (s) at (4.0,-1.9) {\code{split.json}\\for Day 3};
+    \node[b] (e) at (0,-1.9)   {Edge Impulse\\Studio};
+    \draw[->] (k) -- node[lab, above] {serial port\\or Wi-Fi} (l);
+    \draw[->] (l) -- node[lab, above] {one file for\\each recording} (f);
+    \draw[->] (f) -- (n);
+    \draw[->] (n) -- (s);
+    \draw[->] (s) -- (e);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item \textbf{Part A:} MicroPython runs on the kit.
+    \item \textbf{Part B:} the kit sends 50 IMU samples each second. You
+          check the rate with \code{host/check\_rate.py}.
+    \item \textbf{Part C:} the logger writes the recordings. The notebook
+          checks them and writes the split.
+    \item \textbf{Part D:} you upload the same files to Edge Impulse Studio.
+  \end{itemize}
+\end{frame}

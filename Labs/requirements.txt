@@ -1,0 +1,52 @@
+# Python packages for the labs of "AI on Edge Devices".
+#
+# No version is fixed yet. The Day 1 pilot fixes each version and writes it
+# in VERSIONS.md. Each lab task adds the packages that its lab needs.
+#
+# Install:
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+
+# Base. Every lab uses these.
+numpy
+matplotlib
+pandas
+jupyterlab
+
+# Training and profiling of models (Days 1, 3, 4, and 6).
+# On Linux, install the CPU version first. The default package is larger
+# than 2 GB:
+#   .venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+
+# Conversion and runtimes (Days 3, 4, and 7).
+# tensorflow-cpu has Keras and the converter to the LiteRT format.
+# ai-edge-litert runs a LiteRT file on the laptop.
+# The notebook of the Day 7 lab needs the package litert-torch, which needs
+# its own version of torch. That lab has its own environment and its own
+# file: day07/requirements.txt.
+tensorflow-cpu
+ai-edge-litert
+onnx
+onnxruntime
+
+# Object detection (Day 8).
+# The notebook of the Day 8 lab exports to LiteRT with the package
+# litert-torch, as the Day 7 lab does. That lab has its own environment and
+# its own file: day08/requirements.txt.
+ultralytics
+
+# Camera and video (Days 8 and 11).
+opencv-python
+
+# Messages and telemetry (Days 12 and 13).
+paho-mqtt
+requests
+
+# Serial port of a board (Day 2, Labs/hardware/HW-01).
+pyserial
+
+# System metrics and the bridge to Prometheus (Day 13, Labs/hardware/HW-08).
+psutil
+prometheus-client

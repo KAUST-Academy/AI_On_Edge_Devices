@@ -1,0 +1,114 @@
+% Hardware, software, and the setup of the Day 13 lab.
+% The values come from Labs/day13/README.md.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item Raspberry Pi 5 with the cooler, the camera, the card, and the
+              27 W power supply.
+        \item Laptop in the lab network.
+        \item A cup, a bottle, and an object that the model does not know.
+        \item A desk lamp, or the light of the room.
+        \item Optional: the XIAO with the Day 12 sketch.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \small
+      \textbf{Software}
+      \begin{itemize}
+        \item Card: the environment \code{\textasciitilde/yolo}
+              (\code{ultralytics}, \code{ncnn}, \code{paho-mqtt},
+              \code{psutil}, \code{flask}) and the Mosquitto broker of
+              Day 12.
+        \item The Day 8 folder in \code{\textasciitilde/edgeai/day08/} with
+              its model \code{cupbottle\_320\_ncnn\_model}.
+        \item Optional on the laptop: \code{mosquitto\_sub}.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
+    Lab files & \code{Labs/day13/} on the laptop, and a copy in
+                \code{\textasciitilde/edgeai/day13/} on the Raspberry Pi. \\
+    Names     & \code{gNN} is your group and \code{pi-NN} its board. The
+                examples use \code{g07}. \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{The setup}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      box/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  minimum height=0.8cm}]
+    \draw[darkcyan, dashed, rounded corners=3pt] (1.1,-1.75) rectangle
+      (8.4,1.2);
+    \node[darkcyan, anchor=south west] at (1.15,1.2) {Raspberry Pi
+      (\texttt{pi-07})};
+    \node[box, fill=cardinalred!12, text width=0.85cm] (cam) at (0,0.45)
+      {Camera};
+    \node[box, fill=cardinalred!12, text width=2.35cm] (d) at (2.6,0.45)
+      {\texttt{monitor\_detect.py}};
+    \node[box, fill=boxgray, text width=1.4cm] (log) at (2.6,-1.05)
+      {\texttt{logs/}\\ JSON log};
+    \node[box, fill=boxgray, text width=1.3cm] (b) at (5.15,0.45)
+      {Mosquitto};
+    \node[box, fill=boxgray, text width=1.3cm] (al) at (5.15,-1.05)
+      {\texttt{alert.py}};
+    \node[box, fill=boxgray, text width=1.7cm] (dash) at (7.2,-0.3)
+      {\texttt{dashboard.py}\\ CSV each day};
+    \node[box, fill=darkcyan!20, text width=0.95cm] (lap) at (9.45,-0.3)
+      {Laptop\\ :8080};
+    \draw[->] (cam) -- (d);
+    \draw[->] (d) -- (log);
+    \draw[->] (d) -- (b);
+    \draw[->] (b) -- (al);
+    \draw[->] (b.east) -| (dash.north);
+    \draw[->] (al.east) -| (dash.south);
+    \draw[->] (dash) -- (lap);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item \code{monitor\_detect.py} runs the Day 8 detector. Each 10 s it
+          writes one summary to the log and sends it to
+          \code{edgeai/g07/pi/metrics}.
+    \item \code{dashboard.py} stores each summary and draws eight charts.
+          \code{alert.py} applies one rule and publishes its state on
+          \code{edgeai/g07/pi/alert/<metric>}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The summary of each 10 s}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Field} & \textbf{Content} \\
+    \midrule
+    \texttt{frames}, \texttt{fps} & Frames in the window, frames each
+      second \\
+    \texttt{latency\_ms}, \texttt{latency\_p95\_ms}, \texttt{latency\_max\_ms}
+      & Time of one frame: mean, 95th percentile, largest \\
+    \texttt{confidence} & Mean top score: the largest box score of each
+      frame, 0 with no box \\
+    \texttt{low\_conf} & Part of the frames with a top score below 0.5 \\
+    \texttt{objects} & Mean number of boxes with a score of 0.25 or more \\
+    \texttt{brightness}, \texttt{sharpness} & Mean of the grey image,
+      variance of its Laplacian (Task A1) \\
+    \texttt{cpu\_temp\_c}, \texttt{throttled} & Temperature, the bits of
+      \texttt{vcgencmd get\_throttled} \\
+    \texttt{rss\_mb}, \texttt{ram\_used\_mb}, \texttt{disk\_free\_pct} &
+      Memory of the detector, of the board; free disk \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The model runs with the score threshold 0.05, so that the top score is
+  known also when the model is not sure. The message also has the fields of
+  HW-08: \code{seq}, \code{ts}, \code{cpu\_percent}.
+\end{frame}

@@ -1,0 +1,474 @@
+% The four parts of the Day 8 lab. The steps follow Labs/day08/README.md.
+%
+% Hardware status: not tested on hardware. A value that only the board can
+% give is written as "..." and the students measure it. The deck does not
+% show a result that the students must predict.
+%
+% The frame "Part B: how to read the comparison" gives the answer of the
+% second prediction of Part B. Show it after section 7 of the notebook.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: pre-trained models (30 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Start the board, copy two folders, and connect & 8 min \\
+    2 & Get two test images: \code{bus.jpg}, and a photo of your desk
+      & 4 min \\
+    3 & The SSD model, with Task A1 & 9 min \\
+    4 & The YOLO model: two image sizes, two IoU thresholds & 9 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+ssh edge@pi-NN.local "mkdir -p ~/edgeai/day08/images"    # on the laptop
+scp -r day08/pi day08/models edge@pi-NN.local:~/edgeai/day08/
+ssh edge@pi-NN.local                                     # then on the board
+cd ~/edgeai/day08
+source ~/yolo/bin/activate
+rpicam-jpeg --output images/desk.jpg --width 1280 --height 960
+\end{lstlisting}
+  \begin{itemize}
+    \item Run the first two commands in the folder \code{Labs/}. \code{NN}
+          is the number of your group.
+    \item \code{bus.jpg} is the image of the lecture. Step 2 of the README
+          gives the command that copies it from the package.
+    \item Put the bottle and the cup in front of the camera for the photo.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: the SSD model and Task A1}
+  \small
+  \code{python pi/detect\_ssd.py images/bus.jpg} runs SSD MobileNet V1 of
+  the kit lab:
+\begin{lstlisting}
+Input:  shape [1, 300, 300, 3], type uint8
+Output 0: shape [1, 10, 4], type float32
+First inference: ... ms. Median of the next 20 runs: ... ms.
+Rows in the output: 10. Rows with a score of 0.50 or more: ...
+Task A1: not complete
+\end{lstlisting}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item \textbf{Task A1:} the function \code{to\_pixel\_boxes}. A
+              box of the model is \code{ymin, xmin, ymax, xmax} from 0 to
+              1. Change it to pixels of the image. Keep the boxes above
+              the score threshold.
+        \item The diagram is the check of the script.
+        \item \textbf{You record:} the four outputs, the times, and the
+              detections.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=1cm, y=-1cm,
+          >={Stealth[length=4pt]}]
+        % The output of the model: a square from 0 to 1.
+        \draw[coolgray, fill=boxgray] (0,0) rectangle (1.6,1.6);
+        \draw[cardinalred, thick] (0.16,0.40) rectangle (0.80,1.20);
+        \node[coolgray, anchor=south] at (0.8,0) {0 to 1};
+        \node[anchor=north, align=center] at (0.8,1.65)
+          {y: 0.25 to 0.75\\x: 0.10 to 0.50};
+        \draw[->] (1.75,0.8) -- (2.35,0.8);
+        % The image: 200 x 100 pixels.
+        \draw[coolgray, fill=boxgray] (2.5,0.2) rectangle (4.9,1.4);
+        \draw[cardinalred, thick] (2.74,0.5) rectangle (3.7,1.1);
+        \node[coolgray, anchor=south] at (3.7,0.2) {200 $\times$ 100 pixels};
+        \node[anchor=north, align=center] at (3.7,1.65)
+          {y: 25 to 75\\x: 20 to 100};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \source{Nobody measured the two times on a board.}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: the YOLO model}
+  \small
+\begin{lstlisting}[style=shell]
+python pi/detect_yolo.py images/bus.jpg               # YOLO11n, 640 pixels
+python pi/detect_yolo.py images/bus.jpg --imgsz 320
+python pi/detect_yolo.py images/bus.jpg --iou 0.9
+python pi/detect_yolo.py images/desk.jpg --output yolo_desk.jpg
+\end{lstlisting}
+\begin{lstlisting}
+Thresholds: score 0.25, IoU 0.70. Image size: 640.
+Load: ... ms. First run: ... ms.
+Median of the next 5 runs, in ms:
+  pre-processing ...   inference ...   post-processing ...   complete call ...
+Detections: ...
+\end{lstlisting}
+  \begin{exerciseblock}
+    \textbf{Prediction,} before the second and the third command:
+    \begin{itemize}
+      \item The image size goes from 640 to 320 pixels. By which factor
+            does the inference time change?
+      \item The IoU threshold goes from 0.7 to 0.9. Do you get more
+            detections, or fewer?
+    \end{itemize}
+  \end{exerciseblock}
+  \begin{itemize}
+    \item The first run downloads the weights \code{yolo11n.pt} (5.4 MB).
+    \item \textbf{You record:} the time of each step, the detections, and
+          the result for the photo of your desk with each model.
+  \end{itemize}
+  \source{Nobody measured the times on a board.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}{Part B: custom model (50 min)}
+  \small
+  Work on the laptop, in the notebook \code{custom\_detector.ipynb}. The
+  bar shows its sections.
+  \vskip 0.3em
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.2cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 50 minutes long.
+    \fill[coolgray!35]   (0,0)  rectangle (8,0.6);
+    \fill[treegreen!60]  (8,0)  rectangle (10,0.6);
+    \fill[darkcyan!45]   (10,0) rectangle (17,0.6);
+    \fill[darkcyan!45]   (17,0) rectangle (25,0.6);
+    \fill[darkcyan!45]   (25,0) rectangle (35,0.6);
+    \fill[coolgray!35]   (35,0) rectangle (43,0.6);
+    \fill[coolgray!35]   (43,0) rectangle (50,0.6);
+    \foreach \t in {8,10,17,25,35,43} {
+      \draw[white, line width=1pt] (\t,0) -- (\t,0.6);
+    }
+    \node at (4,0.3)    {0, 1: data};
+    \node at (9,0.3)    {2};
+    \node at (13.5,0.3) {3: Task 1};
+    \node at (21,0.3)   {4: Task 2};
+    \node at (30,0.3)   {5: Task 3};
+    \node at (39,0.3)   {6: curves};
+    \node at (46.5,0.3) {7: test};
+    \foreach \t in {0,8,10,17,25,35,43,50} {
+      \draw[coolgray] (\t,0) -- (\t,-0.1);
+    }
+    \foreach \t in {0,10,17,25,35,43} {
+      \node[below, text=coolgray] at (\t,-0.08) {\t};
+    }
+    \node[below, text=coolgray] at (50,-0.08) {50 min};
+    % The training runs in the background.
+    \fill[treegreen!60] (10,-0.95) rectangle (19,-0.6);
+    \node[anchor=west] at (19.5,-0.775)
+      {the training in the background: about 9 minutes};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}lrrrL{0.50\textwidth}@{}}
+    \toprule
+    \textbf{Split} & \textbf{Images} & \code{bottle} & \code{cup}
+      & \textbf{Use} \\
+    \midrule
+    \code{train} & 240 & 172 & 185 & The training changes the weights. \\
+    \code{valid} & 60  & 41  & 43  & Selects the best epoch. Gives the
+                                     calibration images for \code{int8}. \\
+    \code{test}  & 100 & 71  & 77  & The numbers of your report. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item Section 1 downloads the 400 images (about 60 MB). Section 2
+          starts the training. Continue with Task 1 while it runs.
+    \item The cell after a task prints \code{Task N: complete} or
+          \code{not complete}.
+    \item \textbf{You record} (section 1): does each box touch its object
+          on the four sides? Which object has no label?
+  \end{itemize}
+  \source{Images and labels: COCO 2017, \texttt{cocodataset.org}.}
+\end{frame}
+
+\begin{frame}{Part B: Tasks 1, 2, and 3}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.19\textwidth}L{0.64\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{Function} & \textbf{You write} \\
+    \midrule
+    1 & \code{box\_iou} & The IoU of two boxes: the intersection, the
+        union, and their ratio \\
+    2 & \code{nms} & The suppression for one class: keep the box with the
+        highest score, remove each box with an IoU above the threshold,
+        and do this again \\
+    3 & \code{count\_image} & TP, FP, and FN for one class in one image:
+        each detection takes the free label with the highest IoU \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{columns}[c]
+    \begin{column}{0.30\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.17cm, y=-0.17cm]
+        \fill[darkorange!35] (2,0) rectangle (10,10);
+        \draw[treegreen, dashed, thick] (0,0) rectangle (10,10);
+        \draw[cardinalred, thick] (2,0.15) rectangle (12,10.15);
+        \node at (6,5) {80};
+        \node[anchor=north, align=center] at (6,10.6)
+          {IoU $= 80 / 120$\\$= 0.67$};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.66\textwidth}
+      The checks:
+      \begin{itemize}
+        \item Task 1: the two box pairs of the lecture, and 200 random
+              pairs. The diagram shows pair 1.
+        \item Task 2: \code{bus.jpg} has 47 candidates above the score
+              0.25, and 5 detections for the IoU threshold 0.7, as in the
+              lecture.
+        \item Task 3: five small cases.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \textbf{You record:} the IoU of three pairs, and the number of
+  detections for the two IoU thresholds.
+\end{frame}
+
+\begin{frame}{Part B: the baseline, the training, and the test}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.11\textwidth}L{0.80\textwidth}@{}}
+    \toprule
+    \textbf{Section} & \textbf{Work} \\
+    \midrule
+    5 & The baseline: the pre-trained YOLO11n on the 100 test images, at
+        320 and at 640 pixels. Your function counts TP, FP, and FN. \\
+    6 & The result of the training: one line for each epoch, then the
+        curves of the two losses and of the mAP \\
+    7 & Your model on the 100 test images, and the comparison with the
+        baseline. The validation images selected the best epoch, so they
+        are not a fair test. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{exerciseblock}
+    \textbf{Two predictions.} Write each one in the report before you run
+    the cell:
+    \begin{itemize}
+      \item Section 5: is the recall at 320 pixels lower than at 640
+            pixels?
+      \item Section 7: your model has 2 classes and saw 240 images. The
+            pre-trained model has 80 classes and saw 118 000 images. Which
+            model has the higher recall for the two classes?
+    \end{itemize}
+  \end{exerciseblock}
+  \begin{itemize}
+    \item \textbf{You record:} the best epoch with its mAP, the tables of
+          the three models, and one false positive and one false negative
+          of the figure.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part B: how to read the comparison}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize,
+      m/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=4.4cm, minimum height=1.5cm, align=center}]
+    \node[m, draw=darkcyan]  (a) at (0,0)
+      {\textbf{The baseline}\\pre-trained YOLO11n\\80 classes, 118 000
+       images};
+    \node[m, draw=treegreen] (b) at (5.2,0)
+      {\textbf{Your model}\\the same network, a new head\\2 classes, 240
+       images};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item On the work computer of the course, the baseline had the higher
+          recall for the two classes. This is a normal result: 240 images
+          do not pass a model that learned the two classes from 118 000
+          images.
+    \item A custom model is the correct tool in two cases:
+      \begin{itemize}
+        \item The pre-trained model does not know your classes. Example:
+              the box and the wheel of the kit lab.
+        \item Your images are different from the images of COCO: a
+              different camera position, or a different light.
+      \end{itemize}
+    \item With more images of your own camera, the custom model becomes
+          better than the baseline.
+  \end{itemize}
+  \keypoint{Measure a baseline before you train. Then you know what the
+    training gave.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: export and deploy (40 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Export: sections 8 to 10 of the notebook, on the laptop & 15 min \\
+    2 & Copy the six files to the board & 3 min \\
+    3 & Check your model with the photo of your desk & 5 min \\
+    4 & Live detection with the camera & 12 min \\
+    5 & Demonstration for the instructor & 5 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+python pi/detect_yolo.py images/desk.jpg \
+    --model models/cupbottle_320_ncnn_model --imgsz 320
+python pi/live_detect.py --model models/cupbottle_320_ncnn_model
+python pi/live_detect.py --model models/cupbottle_320_int8.tflite
+python pi/live_detect.py --model models/cupbottle_320_ncnn_model --conf 0.5
+\end{lstlisting}
+  \begin{itemize}
+    \item Step 2: use the \code{scp} command of section 10 of the notebook.
+    \item Step 3: give the image size of the file with \code{--imgsz}.
+          Compare the result with the pre-trained model of Part A.
+    \item Step 4: stop the application with Ctrl+C before you start it
+          with a different file.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part C: six files from one model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      f/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=0.62cm, align=center},
+      q/.style={f, draw=cardinalred, fill=cardinalred!10},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[f, draw=treegreen, minimum height=1.0cm] (m) at (0,-0.45)
+      {your model\\(PyTorch)};
+    \node[lab] at (2.25,0) {320 pixels};
+    \node[lab] at (2.25,-0.9) {640 pixels};
+    \foreach \y in {0,-0.9} {
+      \node[f] at (4.2,\y) {NCNN};
+      \node[f] at (6.4,\y) {LiteRT};
+      \node[q] at (8.6,\y) {LiteRT};
+    }
+    \draw[->] (m.east) -- (1.5,0);
+    \draw[->] (m.east) -- (1.5,-0.9);
+    \node[lab] at (4.2,0.65) {\texttt{float32}};
+    \node[lab] at (6.4,0.65) {\texttt{float32}};
+    \node[lab] at (8.6,0.65) {\texttt{int8}};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A name gives the three properties:
+          \code{cupbottle\_320\_int8.tflite}.
+    \item Section 9 measures the mAP of each LiteRT file. An NCNN folder
+          has the same \code{float32} weights: use the value of the LiteRT
+          \code{float32} file.
+    \item The test set has 100 images. A difference of 0.02 of the mAP is
+          not a clear result.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Three predictions,} before the cells of sections 8 and 9:
+    \begin{itemize}
+      \item How large is the \code{int8} file, as a part of the
+            \code{float32} file?
+      \item How many points of mAP50-95 does the \code{int8} file lose?
+      \item Your model learned at 320 pixels. Is its mAP at 640 pixels
+            higher, the same, or lower?
+    \end{itemize}
+  \end{exerciseblock}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: the live detection}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      s/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=1.3cm, minimum height=0.6cm, align=center}]
+    \node[s, draw=darkcyan] (cam) at (0,0) {camera};
+    \node[s] (c) at (1.75,0) {capture};
+    \node[s] (p) at (3.3,0)  {pre};
+    \node[s, draw=cardinalred] (i) at (4.85,0) {inference};
+    \node[s] (o) at (6.4,0)  {post};
+    \node[s] (d) at (7.95,0) {draw};
+    \node[s, draw=darkorange] (w) at (7.95,-1.5) {web server};
+    \node[s, draw=darkcyan] (b) at (3.3,-1.5) {browser of the laptop};
+    \foreach \a/\b in {cam/c, c/p, p/i, i/o, o/d} { \draw[->] (\a) -- (\b); }
+    \draw[->] (d) -- node[right, coolgray, pos=0.72] {JPEG} (w);
+    \draw[->] (w) -- node[above, coolgray] {port 5000, Wi-Fi} (b);
+    \draw[coolgray, dashed] (0.95,0.5) rectangle (8.95,-0.5);
+    \node[coolgray] at (4.95,0.7)
+      {one thread on the board: one frame after the other};
+  \end{tikzpicture}\par\endgroup
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+Model: cupbottle_320_ncnn_model, NCNN, float32, image size 320
+Open http://<name of this board>:5000 in a browser. Stop with Ctrl+C.
+  ... frames/s | capture   ...  pre  ...  inference    ...  post  ...  draw  ... ms | 1 bottle, 1 cup | ... C
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Open \code{http://pi-NN.local:5000} on the laptop. You see the
+          live image with the boxes, the frame rate, and the time of each
+          step.
+    \item Put the bottle and the cup in front of the camera. Move them,
+          change the distance, and change the background.
+    \item Then start the \code{int8} file, and the first file with the
+          score threshold 0.5.
+    \item \textbf{You record:} the frame rate and the inference time of
+          each command, the objects that the model finds, the objects that
+          it misses, and the wrong detections.
+  \end{itemize}
+  \source{Nobody measured the values on a board.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}[fragile]{Part D: measure (30 min)}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Predict: write your answer for each question of the report
+      & 5 min \\
+    2 & Task D1: the function \code{frame\_rate} in
+        \code{pi/bench\_detect.py} & 5 min \\
+    3 & Measure: run the script two times & 10 min \\
+    4 & Fill the frame-rate table, and calculate the ratios & 5 min \\
+    5 & Compare with your predictions, and write the Decision Log
+      & 5 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+model                        runtime type     size | capture     pre inference    post | frames/s | objects
+cupbottle_320_ncnn_model     NCNN    float32   320 |     ...     ...       ...     ... |      ... | ...
+...
+cupbottle_640_int8.tflite    LiteRT  int8      640 |     ...     ...       ...     ... |      ... | ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \code{python pi/bench\_detect.py} measures the six files: the
+          median time of each step for 30 frames of the camera. It also
+          writes \code{results.csv}.
+    \item Task D1: one frame needs the sum of the times of the four steps.
+          The check is the example of the lecture: 325 ms for one frame
+          give 3.1 frames in each second.
+  \end{itemize}
+  \source{Nobody measured the values on a board.}
+\end{frame}
+
+\begin{frame}{Part D: predict, measure, compare}
+  \begin{exerciseblock}
+    \textbf{Prediction,} before you run the script:
+    \begin{itemize}
+      \item \code{float32}: which runtime is faster, NCNN or LiteRT?
+      \item The gain of the frame rate from 640 to 320 pixels: 4, more
+            than 4, or less than 4?
+      \item LiteRT: is \code{int8} faster than \code{float32}? By which
+            factor?
+      \item Which step is the largest after the inference?
+    \end{itemize}
+  \end{exerciseblock}
+  \small
+  \begin{itemize}
+    \item Stop the live application. Point the camera at the bottle and
+          the cup. Use the second run for the table: the difference
+          between the two runs is the noise of your measurement.
+    \item \textbf{You record:} the six rows with the mAP50-95 of section 9,
+          the two temperatures, and the ratios: 320 against 640 pixels,
+          \code{int8} against \code{float32}, NCNN against LiteRT.
+    \item The lecture measured on an x86 processor: \code{int8} was slower
+          than \code{float32}, and NCNN was slower than LiteRT. Nobody
+          measured these rows on a Raspberry Pi 5 for this course. What do
+          you measure?
+  \end{itemize}
+\end{frame}

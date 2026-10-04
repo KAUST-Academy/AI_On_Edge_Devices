@@ -1,0 +1,20 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A deployed model can lose accuracy with no error: data drift, sensor
+          faults, heat, memory leaks. System metrics show the state of the
+          device. Model metrics show the state of the predictions.
+    \item A structured log has one record with fixed fields for each event.
+          Log levels, rotation, and sampling keep the logs inside the storage.
+          A log keeps no personal data that the task does not need.
+    \item A dashboard shows the metrics over time. An alert fires when a
+          metric passes a threshold for a minimum time, not for one noisy
+          value.
+    \item With no labels, a drop of the confidence or a change of the input
+          statistics shows drift. Then the loop starts again: collect, label,
+          train, test, deploy.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Measure the device and the model, keep the logs small, and let an
+            alert tell you about drift before the users see it.}
+\end{frame}

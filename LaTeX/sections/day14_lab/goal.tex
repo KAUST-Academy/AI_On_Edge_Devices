@@ -1,0 +1,65 @@
+% Goal and plan of the Day 14 lab.
+% The parts and the times come from the Day 14 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} an approved capstone proposal and a started build.
+    \item \textbf{Boards:} the XIAOML Kit and the Raspberry Pi 5 of both
+          lab groups of your team.
+    \item \textbf{Deliverable:} the approved proposal \code{proposal.md},
+          and the file \code{report.md} with the budgets, the result of the
+          review, the result of the first test, and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    Part 3 of the lecture gave a design method in seven steps, the
+    budgets for latency, power, and cost, and the questions of a design
+    review. Today your team applies them to its own system.
+    \code{Docs/capstone.md} is the capstone brief.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{Test the riskiest assumption today. A plan that fails on
+    Day 14 can still change.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (20,0.8);
+    \fill[treegreen!60]   (20,0)  rectangle (70,0.8);
+    \fill[darkorange!55]  (70,0)  rectangle (110,0.8);
+    \fill[cardinalred!35] (110,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (20,0) -- (20,0.8) (70,0) -- (70,0.8)
+      (110,0) -- (110,0.8) (150,0) -- (150,0.8);
+    \node at (10,0.4)    {\textbf{A}};
+    \node at (45,0.4)    {\textbf{B}: 50 min};
+    \node at (90,0.4)    {\textbf{C}: 40 min};
+    \node at (130,0.4)   {\textbf{D}: 40 min};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,20,70,110,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.66\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Teams: form the team, select a problem & 20 min \\
+    B & Proposal: requirements, boards, model, data, metrics, budgets &
+      50 min \\
+    C & Design review with the instructor & 40 min \\
+    D & Build: the first test of the riskiest assumption & 40 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

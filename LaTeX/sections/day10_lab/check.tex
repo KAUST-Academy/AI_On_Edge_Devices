@@ -1,0 +1,48 @@
+% Check criterion, deliverable, and the Decision Log question of Day 10.
+% The criterion comes from the Day 10 section of the syllabus and from
+% Labs/day10/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{python measure\_slm.py} prints
+          \code{Task A1: complete}.
+    \item \cmark\ The benchmark table has the two models with measured
+          numbers: the median generation rate, the prompt rate, the model
+          memory, and the temperature, with the method.
+    \item \cmark\ \code{part\_b/structured.py} prints
+          \code{Task B1: complete}, and \code{part\_b/tools.py} prints
+          \code{Task B2: complete} and \code{REFUSED} for the request of 300
+          degrees.
+    \item \cmark\ The application of Part C prints
+          \code{valid structured output 5 of 5} for its five test prompts.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    A farm wants an offline assistant on a Raspberry Pi 5 in a greenhouse.
+    The workers type questions about the manual of the greenhouse
+    controller. The first word of the answer must appear in less than 10
+    seconds.
+    \begin{itemize}
+      \item Which model and which quantization level do you select?
+      \item Which context and which k?
+      \item Which part of the job does not need a language model?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the rates of your board with their method, and the prompt
+          tokens of one question,
+    \item names the correct answers of your test, not only the valid ones,
+    \item names what you lose: for example speed against correct facts.
+  \end{itemize}
+\end{frame}

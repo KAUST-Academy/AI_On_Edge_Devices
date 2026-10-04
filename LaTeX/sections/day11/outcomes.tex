@@ -1,0 +1,30 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 11 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item Days 1 to 10 ran a model on one device. Week 3 connects the devices:
+          a camera node sends images, a second node runs the model, and a
+          third node shows the results.
+    \item A network adds delay, loses packets, and has a limited bandwidth. A
+          video stream at 30 frames each second can need more bandwidth than
+          the Wi-Fi of a classroom gives to one device.
+    \item A detector on a network stream sees an image that is old. The age of
+          the image comes from the camera, the encoder, the network, the
+          buffers, and the model. The latency of the model is only one part.
+    \item In the lab you find the devices on the lab network, publish the
+          camera of the Raspberry Pi as an RTSP stream, run the Day 8 detector
+          on the stream, and measure the end-to-end latency. Then you stream
+          the camera of the XIAO and compare.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Explain when to use TCP and when to use UDP.
+    \item Describe an RTSP session and the role of RTP and H.264.
+    \item Set up an RTSP server on the Raspberry Pi.
+    \item Read a video stream in Python and run inference on it.
+    \item Measure the end-to-end latency of a stream.
+  \end{itemize}
+\end{frame}

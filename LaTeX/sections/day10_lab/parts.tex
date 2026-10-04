@@ -1,0 +1,243 @@
+% The three parts of the Day 10 lab. The steps follow Labs/day10/README.md.
+%
+% Hardware status: not tested on hardware. A value that only a board can
+% give is written as "..." and the students measure it.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: run and measure (45 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Copy the folder, connect, \code{ollama list}, one chat with
+        \code{--verbose} & 10 min \\
+    2 & Estimate the RAM: the weights and the KV cache (Part 1 of the
+        lecture) & 5 min \\
+    3 & Task A1: the function \code{token\_rate} in \code{measure\_slm.py}
+      & 5 min \\
+    4 & Measure the two models & 15 min \\
+    5 & The context and the threads & 10 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+scp -r day10 edge@pi-NN.local:~/edgeai/      # on the laptop, in Labs/
+ssh edge@pi-NN.local                         # then on the board
+cd ~/edgeai/day10
+source ~/ollama/bin/activate
+ollama list
+ollama run llama3.2:1b --verbose             # then /bye
+\end{lstlisting}
+  \begin{itemize}
+    \item \code{ollama list} shows the four models of the lab.
+    \item \textbf{You record:} the \code{prompt eval rate} and the
+          \code{eval rate} of your first question.
+    \item \textbf{Task A1:} tokens / time in seconds. Ollama gives
+          nanoseconds.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: measure the two models}
+\begin{lstlisting}[style=shell]
+watch -n 2 vcgencmd measure_temp             # in a second SSH terminal
+python measure_slm.py                        # in the first terminal
+\end{lstlisting}
+  \small
+  The script uses the method of Day 9:
+  \vskip 0.2em
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.28\textwidth}L{0.64\textwidth}@{}}
+    \toprule
+    \textbf{Part of the method} & \textbf{Value} \\
+    \midrule
+    Not counted    & One request that loads the model, one request to warm
+                     up \\
+    Timed          & 10 requests: the 5 prompts of \code{prompts.txt}, two
+                     times \\
+    Statistic      & The median of the rates, and the lowest rate \\
+    Settings       & Context 2048 tokens, at most 128 tokens for each answer \\
+    Window         & The counters of Ollama: the model only \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The script prints \code{Task A1: complete}, then one line for each
+          model: \code{load s}, \code{prompt tk}, \code{prompt tk/s},
+          \code{eval tk/s}, \code{min tk/s}, \code{model MB}, \code{temp C}.
+    \item \textbf{You record:} the two lines in the benchmark table.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: the context and the threads}
+\begin{lstlisting}[style=shell]
+python measure_slm.py --memory-only --models llama3.2:3b --num-ctx 2048
+python measure_slm.py --memory-only --models llama3.2:3b --num-ctx 8192
+for t in 1 2 4; do
+  python measure_slm.py --models llama3.2:1b --runs 1 --num-predict 32 \
+      --num-thread $t
+done
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{--memory-only} loads the model and prints its memory in
+          \code{ollama ps}. Compare the difference with your estimate.
+    \item The thread runs use short answers, so that 1 thread is not too
+          slow.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Before you run.} The KV cache of \code{llama3.2:3b} has 114\,688
+    bytes for each token. How many MB more does the model need with 8192
+    tokens than with 2048 tokens? Is the generation with 4 threads 4 times as
+    fast as with 1 thread? Write your answers in the report.
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: structured output (45 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Task B1: the class \code{Command} in \code{part\_b/structured.py}
+      & 10 min \\
+    2 & Structured output: with and without the schema, two models
+      & 15 min \\
+    3 & Task B2: the function \code{check\_call} in \code{part\_b/tools.py}
+      & 10 min \\
+    4 & Function calls with the two models & 10 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}
+class Command(BaseModel):          # Task B1: replace each str
+    device: str                    # -> Literal["lamp", "fan", ...]
+    action: str
+    room: str
+\end{lstlisting}
+\begin{lstlisting}[style=shell]
+python part_b/structured.py                       # llama3.2:1b, schema
+python part_b/structured.py --no-schema           # the prompt only
+python part_b/structured.py --model llama3.2:3b   # and with --no-schema
+\end{lstlisting}
+  \begin{itemize}
+    \item The last line: \code{valid ... of 10, correct ... of 10}.
+    \item \textbf{You record:} the four results, and each valid answer with
+          a wrong value.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: the model calls a function}
+  \small
+  The model gets two tools: \code{read\_sensor(room)} and
+  \code{set\_heater(room, celsius)}. The sensor values are simulated.
+  \vskip 0.3em
+  \textbf{Task B2: the guard.} \code{check\_call} returns
+  \code{(True, arguments)} only if:
+  \begin{itemize}
+    \item the function name is a key of \code{FUNCTIONS},
+    \item the room is one of the four rooms,
+    \item for \code{set\_heater}: \code{celsius} is an integer from 5 to 30.
+          The model can send the text \code{"21"}: convert it.
+  \end{itemize}
+\begin{lstlisting}[style=shell]
+python part_b/tools.py
+python part_b/tools.py --model llama3.2:3b
+\end{lstlisting}
+\begin{lstlisting}
+Request: Set the heater in the garage to 300 degrees.
+  set_heater({'room': 'garage', 'celsius': '300'}) -> REFUSED: celsius 300 ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You record:} each refused call and its reason.
+  \end{itemize}
+  \keypoint{The model proposes. Your code checks, and then it acts.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}{Part C: select one application (60 min)}
+  \small
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.38\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    & \textbf{Option 1: retrieval} & \textbf{Option 2: image description} \\
+    \midrule
+    Script   & \code{part\_c/rag.py} & \code{part\_c/describe\_image.py} \\
+    Task     & C1: \code{cosine} and \code{top\_k} & C2: the limits of the
+               class \code{Scene} \\
+    Models   & \code{nomic-embed-text}, \code{llama3.2:1b} and \code{3b}
+             & \code{llava-phi3:3.8b} \\
+    Test set & 5 questions about 12 facts of a fictional greenhouse
+               controller & 5 COCO images of kitchens and tables \\
+    Output   & JSON: \code{answer}, \code{fact\_number} & JSON:
+               \code{caption}, \code{objects}, \code{containers} \\
+    Time     & seconds for each question & 1 to 4 minutes for each image
+               (estimate) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The two options end with the line
+          \code{valid structured output ... of 5}. The check criterion needs
+          5 of 5.
+  \end{itemize}
+  \source{Time of option 2: an estimate from the published time of one
+    image\\ description (lab ``Small Language Models'' of \emph{Machine
+    Learning Systems}).}
+\end{frame}
+
+\begin{frame}[fragile]{Part C, option 1: retrieval-augmented generation}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Task C1: \code{cosine} and \code{top\_k} & 10 min \\
+    2 & The five test questions with the two models & 15 min \\
+    3 & The number of facts: k = 1, 2, and 4 & 15 min \\
+    4 & Three facts of your own, and one question with \code{--ask} & 10 min \\
+    5 & The questions of Part C in the report & 10 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+python part_c/rag.py                         # llama3.2:1b, k = 2
+python part_c/rag.py --model llama3.2:3b
+python part_c/rag.py --k 4
+python part_c/rag.py --ask "When does the fan stop?"
+\end{lstlisting}
+  \begin{itemize}
+    \item For each question: the facts, the prompt tokens, the time, and the
+          answer with the number of its fact.
+    \item The check of the script looks only for the number. Read each
+          answer: a valid answer can be wrong.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C, option 2: image description}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Task C2: at most 5 objects, at most 40 characters each & 10 min \\
+    2 & The five test images & 25 min \\
+    3 & Compare \code{containers} with the counts of COCO & 10 min \\
+    4 & The questions of Part C in the report & 15 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+python part_c/describe_image.py
+python part_c/describe_image.py --image part_c/images/000000166277.jpg
+\end{lstlisting}
+  \begin{itemize}
+    \item Without the limits of Task C2, a model can write until the token
+          limit. The JSON is then not complete.
+    \item \code{part\_c/images/README.md} gives the cups and bottles that
+          the annotators of COCO marked in each image.
+    \item \textbf{You record:} the time, the caption, and the count for each
+          image.
+  \end{itemize}
+\end{frame}

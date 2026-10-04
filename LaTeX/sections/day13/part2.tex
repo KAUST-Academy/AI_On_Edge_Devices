@@ -1,0 +1,621 @@
+% Part 2 of Day 13: Logging.
+%
+% Topics of the syllabus: structured logs, log levels, log rotation,
+% sampling; time-series storage; privacy of logged data. Exercise: calculate
+% the storage that one day of logs needs at three sampling rates.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: tools/experiments/day13_logging.py,
+%    values in tools/data/day13/day13_logging.json. A simulated hour of the
+%    Day 8 detector at 10 frames each second (synthetic records, seed 0),
+%    written with the Python standard library on an x86 processor.
+% 2. The Prometheus documentation (bytes for each sample, default
+%    retention), copy in tools/data/day13/sources/prometheus_storage.md.
+% 3. The textbook (evidence channels, sampling of successful requests and
+%    errors, data minimization) and the companion book (a CSV logger, a
+%    SQLite table of counts). Day 12 gave the SQLite commit times.
+% The two listings ran as scripts on the work computer.
+
+\theorypart{Logging}%
+  {calculate the storage that one day of logs needs at three sampling rates}
+
+% ------------------------------------------------------------------ channels
+\begin{frame}{Four kinds of evidence}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.30\textwidth}L{0.42\textwidth}@{}}
+    \toprule
+    \textbf{Channel} & \textbf{Question} & \textbf{On the edge device} \\
+    \midrule
+    Metrics & Which value left its normal range? & Latency, frame rate,
+      temperature, confidence: numbers at fixed times \\
+    Logs & Which part did what, and when? & One record for each event: a
+      start, an error, a slow frame \\
+    Traces & Where did one input spend its time? & The time of each step
+      for one frame: capture, model, send \\
+    Prediction logs & Did the model behave as before? & A sample of inputs
+      and outputs, for later labels \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Metrics start an alert. Logs and traces explain it. Prediction
+          logs connect a problem to the model.
+    \item On a device, all four compete for the same small disk and the
+          same link. This part is about how much to keep.
+  \end{itemize}
+  \source{After \emph{Machine Learning Systems}, Volume II, chapter ``ML
+    Operations at Scale'', section ``Observability architecture''.}
+\end{frame}
+
+% ------------------------------------------------------------------ structured
+\begin{frame}[fragile]{A line for a person, a record for a program}
+  \small
+  Free text (110 bytes):
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+2026-10-03T14:00:00.000Z INFO live_detect: frame 0, 2 objects, 47.6 ms, 9.8 fps, conf 0.608, 60.9 C, 412.1 MB
+\end{lstlisting}
+  Structured, one JSON object on each line (226 bytes):
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+{"ts":"2026-10-03T14:00:00.000Z","level":"INFO","device":"pi-07","app":"live_detect",
+ "model":"yolo11n_320_int8","event":"frame","frame":0,"latency_ms":47.6,"fps":9.8,
+ "objects":2,"conf_mean":0.608,"temp_c":60.9,"rss_mb":412.1}
+\end{lstlisting}
+  \begin{itemize}
+    \item A program reads the second form with no pattern: one call of
+          \code{json.loads} for each line. A dashboard selects a field by
+          its name.
+    \item The free text needs a regular expression, which breaks when a
+          person changes the message.
+    \item The cost is the size: the field names repeat in each record.
+  \end{itemize}
+  \source{Experiment of this part: the first record of the simulated hour
+    (the listing breaks the JSON line in three).}
+\end{frame}
+
+% ------------------------------------------------------------------ fields
+\begin{frame}{The fields of a record}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.36\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    \textbf{Field} & \textbf{Content} & \textbf{Why} \\
+    \midrule
+    \code{ts} & Time in UTC, ISO 8601, with ms & Order of events, all
+      devices on one time scale (Day 12) \\
+    \code{level} & DEBUG, INFO, WARNING, ERROR & Filter and count \\
+    \code{device}, \code{app} & Host name, program and its version & Which
+      device, which release \\
+    \code{model} & Model file or version & Compare two versions \\
+    \code{event} & A fixed name: \code{frame}, \code{slow\_frame} & Count
+      events by name \\
+    Values & \code{latency\_ms}, \code{temp\_c}, \code{rss\_mb} & The unit
+      is part of the name \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Use the same names in all programs of the system: the log, the
+          MQTT message, and the dashboard.
+    \item Write the time in UTC. Convert to local time only on the screen.
+    \item An event name is fixed text. The values go into fields, not into
+          the name.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ levels
+\begin{frame}{Log levels}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrL{0.33\textwidth}L{0.33\textwidth}@{}}
+    \toprule
+    \textbf{Level} & \textbf{Value} & \textbf{Meaning} & \textbf{Example} \\
+    \midrule
+    DEBUG & 10 & Detail for a developer & The boxes of each frame \\
+    INFO & 20 & Normal operation & Start, model loaded, summary \\
+    WARNING & 30 & Unusual, the program continues & A frame took 300 ms \\
+    ERROR & 40 & A task failed & The camera read failed \\
+    CRITICAL & 50 & The program cannot continue & The model file is
+      missing \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The program writes only the records at or above its level. A
+          device runs at INFO. Set the level from a setting, so that you
+          can change it with no new code.
+    \item A DEBUG call at the level INFO costs 0.55 microseconds: it can
+          stay in the code.
+    \item A good rule: an ERROR needs action by a person; a WARNING needs a
+          look when it repeats.
+  \end{itemize}
+  \source{Level values of the Python module \texttt{logging}. Time:
+    experiment of this part, x86 processor.}
+\end{frame}
+
+% ------------------------------------------------------------------ python
+\begin{frame}[fragile]{Structured logs in Python}
+\begin{lstlisting}[style=python, basicstyle=\ttfamily\scriptsize]
+import json, logging, logging.handlers, time
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        data = {"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ",
+                                    time.gmtime(record.created)),
+                "level": record.levelname, "event": record.getMessage()}
+        data.update(getattr(record, "fields", {}))
+        return json.dumps(data, separators=(",", ":"))
+
+handler = logging.handlers.RotatingFileHandler(
+    "detector.jsonl", maxBytes=1024 * 1024, backupCount=5)
+handler.setFormatter(JsonFormatter())
+log = logging.getLogger("live_detect")
+log.addHandler(handler)
+log.setLevel(logging.INFO)
+
+log.info("frame", extra={"fields": {"frame": 7, "latency_ms": 47.6}})
+log.debug("boxes", extra={"fields": {"boxes": [[12, 40, 200, 300]]}})
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Only the standard library. The DEBUG record is not written.
+    \item The handler limits the files: the next frame explains it.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ cost
+\begin{frame}{The cost of a log call}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        \textbf{Call} & \textbf{Time} \\
+        \midrule
+        DEBUG at the level INFO & 0.55\,$\mu$s \\
+        INFO to a JSON file & 43.3\,$\mu$s \\
+        INFO through a queue & 47.8\,$\mu$s \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      One record for each frame at 10 frames each second costs 0.4\,ms in
+      each second: less than 0.1 percent of the time.
+    \end{column}
+  \end{columns}
+  \vskip 0.7em
+  \small
+  \begin{itemize}
+    \item The file handler writes the record to the disk at each call. On
+          a microSD card, one write can sometimes wait much longer than the
+          mean.
+    \item A \code{QueueHandler} puts the record into a queue. A second
+          thread (\code{QueueListener}) writes it. On one core it saves no
+          time, but a slow write no longer stops the frame loop.
+    \item So the time of a log call is seldom the problem. The size of the
+          logs is.
+  \end{itemize}
+  \source{Experiment of this part: median of 5 runs of 100\,000 calls, one
+    core of an x86 processor.}
+\end{frame}
+
+% ------------------------------------------------------------------ hour
+\begin{frame}{One hour of logs}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{Format} & \textbf{Hour} & \textbf{gzip} \\
+        \midrule
+        JSON lines & 7.89\,MB & 0.54\,MB \\
+        CSV rows & 3.57\,MB & 0.45\,MB \\
+        SQLite, row a frame & 2.03\,MB & \\
+        SQLite, row a value & 6.33\,MB & \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \small
+      36\,000 records: one for each frame at 10 frames each second, with
+      12 errors and 180 slow frames.
+    \end{column}
+  \end{columns}
+  \vskip 0.7em
+  \small
+  \begin{itemize}
+    \item JSON repeats the names, so it has about twice the size of CSV. gzip
+          removes most of the repetition: a factor of 14.6.
+    \item A real log compresses less: real values change more than the
+          simulated ones.
+    \item SQLite stores numbers in binary: 59.5 bytes for a row of 7
+          values. One row for each value (time, name, value) needs 30.9
+          bytes for each value.
+  \end{itemize}
+  \source{Experiment of this part: synthetic records; 1 MB = 1024 KB.}
+\end{frame}
+
+% ------------------------------------------------------------------ rotation
+\begin{frame}{Rotation: a log with a size limit}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      f/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                align=center, text width=1.2cm, minimum height=0.75cm}]
+    \node[f, fill=cardinalred!12, text width=1.9cm] (a) at (0,0)
+      {\texttt{detector.log}\\ writing};
+    \node[f] (b) at (2.35,0) {\texttt{.log.1}};
+    \node[f] (c) at (4.15,0) {\texttt{.log.2}};
+    \node at (5.45,0) {\dots};
+    \node[f] (e) at (6.75,0) {\texttt{.log.5}};
+    \node[f, fill=white, draw=coolgray!60, text=coolgray] (x) at (8.55,0)
+      {deleted};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (5.15,0);
+    \draw[->] (5.75,0) -- (e); \draw[->] (e) -- (x);
+    \node[darkcyan] at (4.2,-0.75) {when the file reaches 1 MB, each file
+      moves one place};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    \textbf{10 MB of records, limit 1 MB, 5 old files} & \textbf{Files} &
+      \textbf{On the disk} \\
+    \midrule
+    Plain files & 6 & 5.0\,MB \\
+    Old files with gzip & 6 & 0.31\,MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The disk use has a fixed limit, whatever the program writes. The
+          oldest records go first.
+    \item \code{TimedRotatingFileHandler(when="midnight", backupCount=7)}
+          keeps one file for each day, for 7 days.
+    \item System logs: \code{logrotate}, and \code{SystemMaxUse=} in the
+          settings of \code{journald}.
+  \end{itemize}
+  \source{Experiment of this part. The gzip step follows the Python
+    logging cookbook (\texttt{namer}, \texttt{rotator}).}
+\end{frame}
+
+% ------------------------------------------------------------------ sampling
+\begin{frame}{Sampling: keep fewer records}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.33\textwidth}rrrrr@{}}
+    \toprule
+    \textbf{Rule (one hour)} & \textbf{Records} & \textbf{Size} &
+      \textbf{Errors} & \textbf{Slow} & \textbf{Max.\ ms} \\
+    \midrule
+    Each frame & 36\,000 & 7.89\,MB & 12 & 180 & 398.1 \\
+    1 in 10 frames & 3600 & 807\,KB & 1 & 14 & 394.6 \\
+    1 in 100 frames & 360 & 80.8\,KB & 0 & 4 & 324.5 \\
+    1 in 100, each WARNING and ERROR & 548 & 124\,KB & 12 & 180 & 398.1 \\
+    Summary each 60\,s, each ERROR & 72 & 18.9\,KB & 12 & 180 & 398.1 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item ``Slow'': the slow frames that the records show, of 180.
+          ``Max.'': the largest latency that the records show.
+    \item A plain sample loses the rare events: 1 in 100 kept no error and
+          4 of 180 slow frames.
+    \item Keep each rare event, and sample or summarize the normal ones.
+          The textbook gives the same rule for a data centre: all errors,
+          1 percent of the successful requests.
+  \end{itemize}
+  \source{Experiment of this part: synthetic hour, seed 0. Rule: \emph{Machine
+    Learning Systems}, Volume I, chapter ``ML Operations''.}
+\end{frame}
+
+% ------------------------------------------------------------------ summary
+\begin{frame}[fragile]{Summaries: aggregate on the device}
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+{"ts":"2026-10-03T14:01:00.000Z","level":"INFO","device":"pi-07","app":"live_detect",
+ "model":"yolo11n_320_int8","event":"summary_60s","frames":600,"latency_mean_ms":47.1,
+ "latency_p95_ms":52.0,"latency_max_ms":198.4,"slow":1,"objects_mean":1.88,
+ "conf_mean":0.697,"temp_c":60.6,"rss_mb":411.9}
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item One record of 292 bytes for 600 frames. It keeps what a person
+          looks at: the mean, the p95, the maximum, and the count of slow
+          frames.
+    \item It loses the single frame. A slow frame or an error keeps its own
+          record, so you can find its time.
+    \item A repeated error (a camera that fails 10 times each second) gives
+          one record and then a count each minute: ``failed 600 times in
+          60 s''.
+    \item The lab sends the same summary with MQTT to the dashboard.
+  \end{itemize}
+  \source{Experiment of this part: the first summary of the simulated hour.}
+\end{frame}
+
+% ------------------------------------------------------------------ series
+\begin{frame}[fragile]{Metrics are time series}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+edgeai_latency_ms{device="pi-07",stage="inference"}  47.6   at 14:00:00
+edgeai_latency_ms{device="pi-07",stage="inference"}  46.9   at 14:00:15
+edgeai_cpu_temp_celsius{device="pi-07"}              60.9   at 14:00:00
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A sample is a time, a name, some labels, and one number. A name
+          with one set of labels is one \textbf{series}.
+    \item The labels say where the value comes from: the device, the step,
+          the model. A query selects or groups by label.
+    \item Each new label value makes a new series. Do not put a frame
+          number, an image name, or a person in a label: millions of series
+          fill the storage.
+    \item A log record can hold any field. A metric holds only numbers with
+          a fixed set of labels, so it is small and fast to query.
+  \end{itemize}
+  \source{Notation of Prometheus; metric names of HW-08. Example labels and
+    values.}
+\end{frame}
+
+% ------------------------------------------------------------------ storage
+\begin{frame}{Three ways to store metrics on a device}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.22\textwidth}L{0.24\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    \textbf{Store} & \textbf{Size of one frame} & \textbf{Good for} &
+      \textbf{Limit} \\
+    \midrule
+    CSV file each day & 104.7 bytes & A simple logger, a spreadsheet & A
+      query reads the whole file \\
+    SQLite table & 59.5 bytes & Queries by time, one file & One writer;
+      commit in batches \\
+    Time-series database & 1 to 2 bytes for each value & Many series,
+      retention, a query language & One more service to run \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The companion book logs sensor readings to a CSV file each 60 s,
+          and the bee counter writes one row each 10 s to SQLite.
+    \item Prometheus is a time-series database: it compresses the samples
+          and deletes samples older than its retention time (default 15
+          days).
+    \item The lab uses the Python dashboard of HW-08 with CSV files. Option A
+          of HW-08 uses Prometheus.
+  \end{itemize}
+  \source{Experiment of this part (CSV: the 13 fields of the record;
+    SQLite: 7 numbers).\\ Prometheus documentation, ``Storage''.}
+\end{frame}
+
+% ------------------------------------------------------------------ sqlite
+\begin{frame}[fragile]{SQLite for metrics}
+\begin{lstlisting}[style=python, basicstyle=\ttfamily\scriptsize]
+import sqlite3, time
+
+con = sqlite3.connect("metrics.db")
+con.execute("PRAGMA journal_mode=WAL")
+con.execute("PRAGMA synchronous=NORMAL")
+con.execute("""CREATE TABLE IF NOT EXISTS frames (t REAL, latency_ms REAL,
+               fps REAL, objects INTEGER, conf_mean REAL, temp_c REAL)""")
+con.execute("CREATE INDEX IF NOT EXISTS frames_t ON frames (t)")
+
+batch = []                           # rows of the last second
+batch.append((time.time(), 47.6, 9.8, 2, 0.608, 60.9))
+con.executemany("INSERT INTO frames VALUES (?,?,?,?,?,?)", batch)
+con.commit()                         # one commit for each second, not each frame
+rows = con.execute("SELECT avg(latency_ms), max(latency_ms) FROM frames "
+                   "WHERE t > ?", (time.time() - 3600,)).fetchall()
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Day 12 measured one commit: 2.8 ms with the defaults, 0.027 ms
+          with WAL and \code{synchronous=NORMAL}.
+    \item The index on the time makes a query of the last hour fast.
+          Delete old rows each night: \code{DELETE ... WHERE t < ?}.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ tiers
+\begin{frame}{Keep detail for a short time}
+  \begin{columns}[T]
+    \begin{column}{0.56\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{Tier} & \textbf{Rows} & \textbf{Size} \\
+        \midrule
+        Each frame, 1 day & 864\,000 & 49.0\,MB \\
+        Each second, 30 days & 2\,592\,000 & 147.0\,MB \\
+        Each minute, 365 days & 525\,600 & 29.8\,MB \\
+        \midrule
+        Total & & 225.9\,MB \\
+        Each frame, 365 days & & 17\,889\,MB \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      A row of the SQLite table: 59.5 bytes. A summary row has about the
+      same size.
+    \end{column}
+  \end{columns}
+  \vskip 0.7em
+  \small
+  \begin{itemize}
+    \item Recent data needs detail: you look for one slow frame of today.
+          Old data needs only trends: the mean latency of last March.
+    \item A job makes the summaries (downsampling) and deletes the detail
+          when it is older than its tier.
+    \item Prometheus: 20 series, each 15 s, for 15 days, is 1\,728\,000
+          samples: 1.6 to 3.3 MB at 1 to 2 bytes each.
+  \end{itemize}
+  \source{Calculation with the row size of the experiment; Prometheus
+    formula of its documentation. 1 MB = 1024 KB.}
+\end{frame}
+
+% ------------------------------------------------------------------ sdcard
+\begin{frame}{The microSD card}
+  \small
+  \begin{itemize}
+    \item The Raspberry Pi stores its system and its logs on a microSD card.
+          A full card stops the logs, the message queue of Day 12, and
+          sometimes the system.
+    \item Flash memory wears with each write. Many small writes (one write
+          with a flush for each frame) wear it more than one large write
+          each second.
+    \item The rules of this part protect the card: a size limit
+          (rotation), fewer records (sampling, summaries), and writes in
+          batches.
+    \item Check the space: \code{df -h /}, \code{du -sh logs},
+          \code{journalctl --disk-usage}.
+    \item An option: write the detailed log to a RAM disk (\code{/run} or a
+          \code{tmpfs}) and keep only the summaries on the card. A restart
+          deletes the detail.
+  \end{itemize}
+  \keypoint{Give each log a limit in bytes. A log with no limit fills the
+    disk on a day when nobody watches.}
+\end{frame}
+
+% ------------------------------------------------------------------ privacy
+\begin{frame}{Privacy of logged data}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Do not log} & \textbf{Risk} & \textbf{Log in its place} \\
+    \midrule
+    Images, audio & Faces, voices, homes & Counts, classes, scores \\
+    Text of a user (Day 10) & Names, health, opinions & Length, intent
+      class \\
+    Passwords, keys & Access to the system & Nothing; a key ID \\
+    Exact place with time & The habits of a person & A zone, a coarse
+      time \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item \textbf{Data minimization}: log only what the purpose needs. A
+          person counter needs a count, not the image of each person.
+    \item \textbf{Purpose and retention}: write why you keep each field and
+          for how long. Rotation enforces the time.
+    \item \textbf{Access}: a log file on the device is readable by its
+          users. Set the file rights; do not send logs over an open link.
+    \item An edge device can keep the raw data local. A log that copies it
+          to a server removes this advantage.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter ``Responsible
+    Engineering''; Volume II, chapter ``Edge Intelligence'' (GDPR).}
+\end{frame}
+
+% ------------------------------------------------------------------ prediction
+\begin{frame}{Prediction logs: a sample with care}
+  \small
+  \begin{itemize}
+    \item Part 3 needs examples of the inputs when the model is not sure:
+          they become the new training data.
+    \item Keep a small sample: for example, the frames with a confidence
+          below a threshold, at most N each hour.
+    \item Store them in a separate folder with its own size limit and a
+          short retention. Do not mix them with the normal log.
+    \item Images of people need a notice in the room, or a blur of the faces
+          on the device before the image is stored.
+    \item Record with each sample: the time, the model version, the output,
+          and the reason for the sample.
+  \end{itemize}
+  \vskip 0.4em
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.9cm, minimum height=0.8cm}]
+    \node[st] (a) at (0,0) {Frame and output};
+    \node[st, fill=cardinalred!12] (b) at (2.7,0) {Confidence\\ below 0.4?};
+    \node[st] (c) at (5.4,0) {Hourly quota\\ not full?};
+    \node[st, fill=darkcyan!15] (d) at (8.1,0) {Save image\\ and record};
+    \draw[->] (a) -- (b); \draw[->] (b) -- node[above] {yes} (c);
+    \draw[->] (c) -- node[above] {yes} (d);
+  \end{tikzpicture}\par\endgroup
+  \source{The threshold 0.4 and the quota are example values.}
+\end{frame}
+
+% ------------------------------------------------------------------ lab
+\begin{frame}{The logs of the lab}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.0cm, minimum height=0.9cm}]
+    \node[st, fill=cardinalred!12] (d) at (0,0) {Day 8 detector\\ with
+      measures};
+    \node[st] (l) at (3.4,0.8) {JSON log\\ 1 MB x 5 files};
+    \node[st] (m) at (3.4,-0.8) {Summary each 10 s\\ MQTT};
+    \node[st, fill=darkcyan!15] (s) at (6.8,-0.8) {Dashboard:\\ CSV each
+      day};
+    \draw[->] (d) -- node[above, sloped] {events} (l);
+    \draw[->] (d) -- node[below, sloped] {metrics} (m);
+    \draw[->] (m) -- (s);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Part A: the detector writes a structured JSON log with rotation:
+          the start, each WARNING and ERROR, and a summary.
+    \item Part B: the same summary goes as an MQTT message to the topic
+          \code{edgeai/gNN/pi/metrics}. The dashboard of HW-08 stores it in
+          a CSV file for each day and draws it.
+    \item The lab keeps no image. The drift check of Part C uses the
+          confidence and the input statistics.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{Storage of one day of logs}{%
+  The detector of the lab writes JSON records of 230 bytes. Calculate the
+  storage for one day (1 MB = 1024 KB) for each rate:
+  \begin{enumerate}
+    \item[A.] one record for each frame, at 10 frames each second;
+    \item[B.] one record each second;
+    \item[C.] one summary each minute.
+  \end{enumerate}
+  The device has a log budget of 1 GB for 30 days. Which rates fit? Which
+  fit when gzip compresses the old files by a factor of 14.6?}
+
+\answerframe{Storage of one day of logs}{%
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Rate} & \textbf{Records} & \textbf{One day} &
+      \textbf{30 days} & \textbf{30 days, gzip} \\
+    \midrule
+    A. Each frame & 864\,000 & 189.5\,MB & 5685\,MB & 389.4\,MB \\
+    B. Each second & 86\,400 & 19.0\,MB & 568.5\,MB & 38.9\,MB \\
+    C. Each minute & 1440 & 0.32\,MB & 9.5\,MB & 0.65\,MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item One day: $864\,000 \times 230 = 198\,720\,000$ bytes $=$ 189.5 MB.
+    \item Without gzip, B and C fit 1 GB (1024 MB) for 30 days. With gzip,
+          A also fits.
+    \item The factor 14.6 came from synthetic records. Measure the factor
+          on real logs before you plan with it.
+  \end{itemize}}

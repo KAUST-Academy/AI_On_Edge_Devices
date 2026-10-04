@@ -1,0 +1,14 @@
+# The knowledge base of rag.py (Part C, option 1). One fact on each line.
+# The greenhouse controller GH-7 is fictional. A model cannot know these facts.
+The greenhouse controller GH-7 opens the roof window when the air temperature is above 31 degrees Celsius.
+The GH-7 closes the roof window again when the temperature falls below 27 degrees Celsius.
+The irrigation pump of the GH-7 runs for 4 minutes at 06:30 each morning.
+The GH-7 skips the morning irrigation when the soil moisture is above 42 percent.
+The GH-7 sends an alarm by SMS to the number stored in slot 3 when the temperature is above 38 degrees Celsius.
+The GH-7 reads its sensors every 90 seconds.
+The backup battery of the GH-7 keeps the controller running for 11 hours.
+The GH-7 uses the sensor model TH-55 for temperature and humidity.
+The light panel of the GH-7 switches on when the light level is below 3500 lux between 07:00 and 19:00.
+The GH-7 stores its log on the SD card for 60 days, then it deletes the oldest file.
+The fan of the GH-7 starts at 70 percent humidity and stops at 60 percent humidity.
+To reset the GH-7, hold the button RESET for 8 seconds.

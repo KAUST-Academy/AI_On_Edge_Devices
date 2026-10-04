@@ -1,0 +1,39 @@
+% Fallbacks and common problems of the Day 4 lab. The rows come from
+% Labs/day04/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    Your group has no dataset of Day 2
+      & Copy the folder \code{data/} of a different group into
+        \code{Labs/day02/}. Write this in the report. \\
+    Task 4 or task 5 is not complete in time
+      & Copy the two functions from the notebook of \code{solutions/}.
+        Parts C and D need them. \\
+    The \code{int8} model has an accuracy near 25 percent
+      & The test code gives zeros or float values to the model. Check
+        task 5. \\
+    \code{Task 7: not complete}, the gradient is \code{None}
+      & The function returns \code{x\_q}. Return
+        \code{x + ops.stop\_gradient(x\_q - x)}. \\
+    The build prints \code{model\_int8.h: No such file}
+      & Run section 15 of the notebook, or use the files of the
+        repository. \\
+    The board gives 20 correct windows of 80
+      & The output is 0 for each class. Complete task D2. \\
+    \code{same class as on the laptop} is below 80
+      & Check the scale and the zero point in tasks D1 and D2. Run section
+        15 again. \\
+    Tasks D1 and D2 are not complete in time
+      & Use the sketch of \code{solutions/} with your four files of the
+        notebook. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}

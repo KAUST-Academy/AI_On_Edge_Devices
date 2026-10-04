@@ -1,0 +1,621 @@
+% Part 2 of Day 4: Post-training quantization.
+%
+% Topics of the syllabus: dynamic range and full integer quantization;
+% calibration methods; per-channel scales; batch normalization folding before
+% quantization. Exercise: predict the result of a calibration set that has
+% one class only.
+%
+% The file sizes of this part are results of the converter of TensorFlow
+% 2.21.0 for the example model of Day 3 (300 inputs, 6274 parameters). The
+% numbers of the answer frame come from the fallback dataset of Day 2, which
+% has simulated signals. The frames say so.
+
+\theorypart{Post-training quantization}%
+  {predict the result of a calibration set with one class}
+
+% ------------------------------------------------------------------ overview
+\begin{frame}{Quantize a model that is trained}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.3cm, minimum height=1.0cm, align=center}]
+    \node[b] (m) at (0,0.7)  {Trained model\\\code{float32}};
+    \node[b] (d) at (0,-0.7) {Calibration\\data};
+    \node[b, draw=cardinalred] (c) at (3.6,0) {Converter};
+    \node[b] (q) at (7.2,0)  {LiteRT model\\\code{int8}};
+    \draw[->] (m.east) -- (c.west);
+    \draw[->] (d.east) -- (c.west);
+    \draw[->] (c) -- (q);
+    \node[font=\scriptsize, text=coolgray] at (3.6,-0.8) {no training};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item Post-training quantization (PTQ) changes the format of a model
+          after the training.
+    \item It needs no training loop, no labels, and no loss function. It
+          needs some seconds.
+    \item The converter must know the range of each tensor. It then
+          calculates the scale and the zero point of Part 1.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Always try post-training quantization first. Part 3 gives the
+    method for a model that loses too much accuracy.}
+\end{frame}
+
+\begin{frame}{Weights and activations are different problems}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Weights}
+        \begin{itemize}
+          \item They are in the model file.
+          \item They do not change after the training.
+          \item The converter reads the smallest and the largest weight of
+                each tensor. It needs no data.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Activations}
+        \begin{itemize}
+          \item They exist only when the model runs.
+          \item They depend on the input.
+          \item The converter must run the model with real inputs and
+                record the range of each activation.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item This difference gives two methods: one quantizes only the
+          weights, the other quantizes the weights and the activations.
+  \end{itemize}
+  \keypoint{The range of an activation is a property of the model and of
+    its data together.}
+\end{frame}
+
+\begin{frame}{Three methods of the LiteRT converter}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.19\textwidth}L{0.16\textwidth}L{0.16\textwidth}L{0.17\textwidth}r@{}}
+    \toprule
+    \textbf{Method} & \textbf{Weights} & \textbf{Activations}
+    & \textbf{Data} & \textbf{File} \\
+    \midrule
+    None           & \code{float32} & \code{float32} & None & 26\,732 \\
+    Float16        & \code{float16} & \code{float32} & None & 14\,764 \\
+    Dynamic range  & \code{int8}    & \code{float32} & None & 9056 \\
+    Full integer   & \code{int8}    & \code{int8}    & Calibration set
+                   & 8680 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The file sizes are in bytes, for the model of Day 3 with 300
+          inputs and 6274 parameters.
+    \item The weights go from 25\,096 bytes to 6274 bytes. The file does
+          not become four times smaller, because the description of the
+          graph stays.
+    \item Only the full integer model has \code{int8} activations. Only
+          this model makes the arena smaller.
+  \end{itemize}
+  \source{File sizes: results of the converter of TensorFlow 2.21.0.}
+\end{frame}
+
+% -------------------------------------------------------------- dynamic range
+\begin{frame}[fragile]{Dynamic range quantization}
+\begin{lstlisting}[style=python]
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+tflite_model = converter.convert()
+\end{lstlisting}
+  \begin{itemize}
+    \item One line more than the float conversion. No data is necessary.
+    \item The weights are \code{int8} in the file. The input, the output,
+          and the activations stay \code{float32}.
+    \item At run time, the kernel finds the range of each activation for
+          each input. From this comes the name ``dynamic range''.
+  \end{itemize}
+  \vskip 0.3em
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    Good for & A phone or a Raspberry Pi: the file is smaller, and the
+               sketch or the program needs no change \\
+    Not good for & A microcontroller: the arena does not become smaller,
+               and the kernels still use float arithmetic \\
+    \bottomrule
+  \end{tabular}
+  \source{The arena of the dynamic range model is equal to the arena of the
+    float model: 1232 bytes for the feature model of Day 3, in a 32-bit
+    build of TensorFlow Lite Micro on the work computer.}
+\end{frame}
+
+% --------------------------------------------------------------- full integer
+\begin{frame}[fragile]{Full integer quantization}
+\begin{lstlisting}[style=python]
+def representative_dataset():
+    for i in range(200):
+        yield [x_calibration[i:i + 1]]         # one input, with batch size 1
+
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+converter.optimizations = [tf.lite.Optimize.DEFAULT]
+converter.representative_dataset = representative_dataset
+converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+converter.inference_input_type = tf.int8
+converter.inference_output_type = tf.int8
+tflite_model = converter.convert()
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{representative\_dataset}: the converter runs the model with
+          these inputs and records the range of each activation.
+    \item \code{TFLITE\_BUILTINS\_INT8}: each operator must have an
+          \code{int8} kernel. If one operator has none, the conversion
+          stops with an error.
+    \item \code{inference\_input\_type}: the model takes \code{int8}
+          input. The sketch quantizes the input, as Part 1 showed.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Calibration: record the range of each activation}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.7cm, minimum height=0.8cm, align=center},
+      o/.style={draw=cardinalred, rounded corners=3pt, fill=white,
+                minimum width=1.9cm, minimum height=0.7cm, align=center,
+                font=\scriptsize}]
+    \node[b] (i) at (0,0)   {Inputs};
+    \node[b] (a) at (2.6,0) {Layer 1};
+    \node[b] (c) at (5.2,0) {Layer 2};
+    \node[b] (e) at (7.8,0) {Layer 3};
+    \draw[->] (i) -- (a); \draw[->] (a) -- (c); \draw[->] (c) -- (e);
+    \node[o] (o0) at (1.3,-1.3) {min $-0.87$\\max 1.74};
+    \node[o] (o1) at (3.9,-1.3) {min 0.00\\max 5.31};
+    \node[o] (o2) at (6.5,-1.3) {min 0.00\\max 7.92};
+    \draw[->, cardinalred] (1.3,0) -- (o0);
+    \draw[->, cardinalred] (3.9,0) -- (o1);
+    \draw[->, cardinalred] (6.5,0) -- (o2);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{enumerate}
+    \item The converter puts an observer at each activation tensor.
+    \item It runs the float model for each input of the calibration set.
+    \item Each observer keeps the smallest and the largest value that it
+          saw.
+    \item From each range, the converter calculates one scale and one zero
+          point.
+  \end{enumerate}
+  \vskip 0.2em
+  \keypoint{The calibration is a measurement of the model with your data.
+    It trains nothing and changes no weight.}
+  \source{The values in the red boxes are examples.}
+\end{frame}
+
+\begin{frame}{The representative dataset}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{block}{What it must be}
+        \begin{itemize}
+          \item Inputs of the same type as the inputs on the device.
+          \item With the same pre-processing as the training.
+          \item From all classes and all conditions.
+          \item 100 to 500 inputs are usually enough.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{What it does not need}
+        \begin{itemize}
+          \item Labels.
+          \item Many inputs: the range of a tensor is stable after some
+                hundreds.
+          \item The test set. Take the inputs from the training set.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A range that is too small cuts values on the device: clipping.
+    \item A range that is too large makes the step large for all values:
+          rounding error.
+  \end{itemize}
+  \keypoint{The calibration set decides the range. A wrong calibration set
+    gives a wrong model, and the conversion shows no error.}
+\end{frame}
+
+\begin{frame}{Calibration methods}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.40\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Method} & \textbf{The range is} & \textbf{Weak point} \\
+    \midrule
+    Minimum and maximum & The smallest and the largest value that the
+        observer saw & One extreme value makes the range large \\
+    Moving average & The mean of the minimum and of the maximum over the
+        batches & Depends on the order and the size of the batches \\
+    Percentile & The range that holds 99.9 percent of the values
+        & Cuts the rare, large values \\
+    Minimum error & The range that gives the smallest difference between
+        the float values and the quantized values
+        & Needs more calculation \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The LiteRT converter records the minimum and the maximum.
+    \item Other tools let you select the method. Day 7 uses a second tool.
+  \end{itemize}
+  \source{Method list: \emph{Machine Learning Systems}, Volume I,
+    chapter 10; Nagel et al., ``A White Paper on Neural Network
+    Quantization'', 2021.}
+\end{frame}
+
+\begin{frame}{One extreme value changes the scale}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.44cm, y=1.2cm]
+    \draw[->, coolgray] (-0.3,0) -- (21,0) node[right] {$r$};
+    \draw[darkcyan, fill=darkcyan!25]
+      plot[domain=0:6, samples=50, smooth] (\x,{1.1*exp(-(\x-2.2)*(\x-2.2)/1.6)})
+      -- (6,0) -- (0,0) -- cycle;
+    \fill[cardinalred] (20,0.07) circle (2pt);
+    \node[cardinalred, above] at (20,0.1) {20.0};
+    \foreach \x/\l in {0/0, 6/6.0} { \node[below] at (\x,0) {\l}; }
+    \node[darkcyan, anchor=west] at (4.2,0.8) {99.9 percent of the values};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\textwidth}rL{0.20\textwidth}L{0.26\textwidth}@{}}
+    \toprule
+    \textbf{Range} & \textbf{Scale} & \textbf{Largest rounding error}
+    & \textbf{Clipping} \\
+    \midrule
+    Minimum and maximum: $[0, 20]$ & 0.0784 & 0.0392 & None \\
+    Percentile: $[0, 6]$           & 0.0235 & 0.0118 & 20 becomes 6 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item With the full range, each of the normal values has a rounding
+          error that is 3.3 times as large.
+    \item With the percentile range, one value in a thousand has a large
+          clipping error. You measure which range gives the better
+          accuracy.
+  \end{itemize}
+  \source{The values are an example for the calculation.}
+\end{frame}
+
+% ---------------------------------------------------------------- per channel
+\begin{frame}{Per-tensor quantization of a convolution}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.85cm, y=0.55cm]
+    \foreach \y/\n/\w/\c in {3/filter 1/4.0/darkcyan, 2/filter 2/0.4/treegreen,
+        1/filter 3/1.6/cardinalred} {
+      \node[anchor=east] at (-4.3,\y) {\n};
+      \fill[\c!45] (-\w,\y-0.3) rectangle (\w,\y+0.3);
+    }
+    \draw[coolgray] (0,0.4) -- (0,3.6);
+    \draw[->, coolgray] (-4.2,0.2) -- (4.4,0.2) node[right] {weight};
+    \foreach \x/\l in {-4/$-1.0$, 0/0, 4/1.0} { \node[below] at (\x,0.2) {\l}; }
+    \node[anchor=west] at (4.5,3) {$\pm 1.0$};
+    \node[anchor=west] at (4.5,2) {$\pm 0.1$};
+    \node[anchor=west] at (4.5,1) {$\pm 0.4$};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item A convolution has one filter for each output channel. The
+          weights of different filters can have very different sizes.
+    \item Per-tensor: one scale for all filters. The largest filter
+          decides: $S = 1.0 / 127 = 0.00787$.
+    \item Filter 2 has weights up to 0.1. With this scale, its integers
+          are between $-13$ and 13. It uses 27 of the 255 levels.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{With one scale for the tensor, a filter with small weights
+    has a large relative error.}
+  \source{The three ranges are an example.}
+\end{frame}
+
+\begin{frame}{Per-channel quantization}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & \textbf{Largest} & \textbf{Per-tensor} & \textbf{Per-channel}
+    & \textbf{Levels} \\
+    & \textbf{weight} & \textbf{scale} & \textbf{scale}
+    & \textbf{in use} \\
+    \midrule
+    Filter 1 & 1.0 & 0.00787 & 0.00787 & 255 and 255 \\
+    Filter 2 & 0.1 & 0.00787 & 0.00079 & 27 and 255 \\
+    Filter 3 & 0.4 & 0.00787 & 0.00315 & 103 and 255 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item Per-channel: each filter has its own scale. Each filter then
+          uses all levels.
+    \item The cost is small: one scale for each output channel in the
+          file, and one multiplier $M$ for each channel in the kernel.
+    \item The zero point of the weights stays 0 for all channels.
+    \item The activations stay per-tensor: one scale and one zero point
+          for each activation tensor.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The LiteRT converter uses per-channel scales for the weights of
+    convolution layers. You see the list of the scales in Netron.}
+  \source{The last column gives the levels with the per-tensor scale and
+    with the per-channel scale. Rules: \texttt{int8} quantization
+    specification of LiteRT.}
+\end{frame}
+
+% ------------------------------------------------------------------ BN folding
+\begin{frame}{Batch normalization folding}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=0.8cm, align=center}]
+    \node[anchor=east, text=coolgray] at (-1.3,0) {Training};
+    \node[anchor=east, text=coolgray] at (-1.3,-1.3) {Inference};
+    \node[b] (a) at (0,0)   {Convolution\\$w$, $b$};
+    \node[b] (c) at (2.8,0) {Batch norm\\$\gamma$, $\beta$, $\mu$, $\sigma$};
+    \node[b] (d) at (5.6,0) {ReLU};
+    \draw[->] (a) -- (c); \draw[->] (c) -- (d);
+    \node[b, draw=cardinalred, minimum width=4.7cm] (e) at (1.4,-1.3)
+      {Convolution with $w'$, $b'$};
+    \node[b] (f) at (5.6,-1.3) {ReLU};
+    \draw[->] (e) -- (f);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \[
+    w' = w \cdot \frac{\gamma}{\sigma} \qquad\qquad
+    b' = \beta + (b - \mu) \cdot \frac{\gamma}{\sigma}
+  \]
+  \small
+  \begin{itemize}
+    \item At inference, a batch normalization is a multiplication and an
+          addition with constants, for each channel.
+    \item The converter puts these constants into the weights and the
+          bias of the convolution before it. The layer disappears.
+    \item The folding must come before the quantization. The device runs
+          $w'$, so the range of $w'$ decides the scale.
+    \item The factor $\gamma / \sigma$ is different for each channel. So
+          the folded filters have very different ranges. This is the
+          main reason for per-channel scales.
+  \end{itemize}
+\end{frame}
+
+% ----------------------------------------------------------- input and output
+\begin{frame}{The input and the output of the quantized model}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.32\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    & \textbf{\code{int8} input and output}
+    & \textbf{\code{float32} input and output} \\
+    \midrule
+    Setting of the converter & Input type and output type \code{tf.int8}
+                             & The default \\
+    Operators in the file    & Only the operators of the model
+                             & One QUANTIZE and one DEQUANTIZE more \\
+    The sketch               & Quantizes the input with the scale and the
+                               zero point of the input tensor
+                             & Writes float values, as on Day 3 \\
+    Input tensor in the arena & 1 byte for each value & 4 bytes for each
+                                                         value \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The output of a softmax in \code{int8} always has the scale
+          $1 / 256$ and the zero point $-128$. The integer $-128$ is the
+          probability 0, and 127 is the probability 0.996.
+  \end{itemize}
+  \source{Softmax scale: the full integer model of this part, and the
+    \texttt{int8} quantization specification of LiteRT.}
+\end{frame}
+
+\begin{frame}[fragile]{Check the quantized model on the laptop}
+\begin{lstlisting}[style=python]
+interpreter = Interpreter(model_content=tflite_model)
+interpreter.allocate_tensors()
+inp = interpreter.get_input_details()[0]
+out = interpreter.get_output_details()[0]
+S, Z = inp["quantization"]                   # scale and zero point
+
+correct = 0
+for x, label in zip(x_test, y_test):
+    q = np.clip(np.round(x / S) + Z, -128, 127).astype(np.int8)
+    interpreter.set_tensor(inp["index"], q[None, :])
+    interpreter.invoke()
+    correct += interpreter.get_tensor(out["index"])[0].argmax() == label
+print(correct / len(x_test))
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The LiteRT interpreter on the laptop uses the same integer
+          arithmetic as the device.
+    \item Compare the accuracy of the float model and of the \code{int8}
+          model on the same test set.
+    \item Count the input values that the clamp changes. Many clipped
+          values show a calibration problem.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What you can expect}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.95cm, y=0.045cm]
+        \draw[->, coolgray] (0,0) -- (4.6,0);
+        \draw[->, coolgray] (0,0) -- (0,90);
+        \node[coolgray, anchor=south west] at (0,90) {accuracy in percent};
+        \foreach \v in {0,25,50,75} {
+          \draw[coolgray] (0,\v) -- (-0.08,\v);
+          \node[anchor=east, coolgray] at (-0.1,\v) {\v};
+        }
+        \fill[darkcyan!60]    (0.3,0) rectangle (1.0,76.2);
+        \fill[treegreen!60]   (1.3,0) rectangle (2.0,76.1);
+        \fill[cardinalred!45] (2.3,0) rectangle (3.0,72);
+        \fill[cardinalred!75] (3.3,0) rectangle (4.0,51);
+        \node[above] at (0.65,76.2) {76.2};
+        \node[above] at (1.65,76.1) {76.1};
+        \node[above] at (2.65,72) {71 to 73};
+        \node[above] at (3.65,51) {51};
+        \node[below] at (0.65,0) {FP32};
+        \node[below] at (1.65,0) {INT8};
+        \node[below] at (2.65,0) {INT4};
+        \node[below] at (3.65,0) {1 bit};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item The figure shows ResNet-50 on ImageNet.
+        \item With 8 bits, most models lose less than 1 percentage point.
+        \item Below 8 bits, the accuracy decreases fast.
+        \item A small model has less redundancy than a large model. It can
+              lose more.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \begin{block}{Rule for the next step}
+    Loss below 1 point: use the PTQ model. Loss of 1 to 3 points: try
+    quantization-aware training. Loss above 3 points: find the layer that
+    causes the error (Part 3).
+  \end{block}
+  \source{Numbers and rule: slides of \emph{Machine Learning Systems},
+    Volume I, chapter 10.}
+\end{frame}
+
+\begin{frame}{The arena of the full integer model}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.42\textwidth}rr@{}}
+    \toprule
+    \textbf{Feature model of Day 3 (63 inputs)} & \textbf{\code{float32}}
+    & \textbf{\code{int8}} \\
+    \midrule
+    Peak of the activations, in bytes & 332 & 83 \\
+    Arena used, in bytes              & 1232 & 1028 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item The activations become four times smaller: from
+          $63 \times 4 + 80 = 332$ bytes to $63 + 20 = 83$ bytes.
+    \item The arena decreases by 204 bytes only. For this very small
+          model, the data of the interpreter is the largest part of the
+          arena.
+    \item For a model with images, the activations are the largest part.
+          Then the arena decreases by a factor near 4.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Know which part of a budget is large before you optimize it.
+    The gain of a method depends on the model.}
+  \source{Arena values: 32-bit build of TensorFlow Lite Micro on the work
+    computer of the course. The values of the board can be different. You
+    measure them in the lab.}
+\end{frame}
+
+\begin{frame}{The steps of post-training quantization}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center}]
+    \node[b] (a) at (0,0)    {Float\\baseline};
+    \node[b] (b) at (2.15,0) {Calibration\\set};
+    \node[b, draw=cardinalred] (c) at (4.3,0) {Convert\\to \code{int8}};
+    \node[b] (d) at (6.45,0) {Test on the\\laptop};
+    \node[b] (e) at (8.6,0)  {Test on\\the board};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{enumerate}
+    \item \textbf{Float baseline.} Measure the accuracy, the file size, and
+          the latency of the float model.
+    \item \textbf{Calibration set.} Take 100 to 500 inputs from the
+          training set, from all classes.
+    \item \textbf{Convert.} Full integer quantization with \code{int8}
+          input and output.
+    \item \textbf{Test on the laptop.} The same test set as for the float
+          model. Compare.
+    \item \textbf{Test on the board.} Flash, arena, latency, and the class
+          for real inputs.
+  \end{enumerate}
+  \keypoint{Each number of the \code{int8} model needs the same number of
+    the float model next to it.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{a calibration set with one class}{%
+  \small
+  A team quantizes a motion classifier. The model takes the raw window: 300
+  acceleration values in $g$. The classes have these value ranges:
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & \textbf{idle} & \textbf{terrestrial} & \textbf{lift}
+    & \textbf{maritime} \\
+    \midrule
+    Smallest value & 0.00 & $-0.87$ & $-0.08$ & $-0.52$ \\
+    Largest value  & 1.01 & 1.13    & 1.74    & 1.39 \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.3em
+  The team takes the calibration set from one folder. The folder holds only
+  recordings of the class ``idle''.
+  \begin{enumerate}
+    \item Which range does the converter record for the input tensor?
+          Calculate the scale.
+    \item What happens to a value of $-0.87$, and to a value of 1.74?
+    \item Predict the accuracy for each class: no change, or lower?
+    \item The conversion gives no error. How can the team find the
+          problem?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes. The value ranges come from the
+  fallback dataset of Day 2, which has simulated signals.
+}
+
+\answerframe{a calibration set with one class}{%
+  \footnotesize
+  \begin{enumerate}
+    \item The range of the class ``idle'': about $[0.00, 1.01]$. The scale
+          is $1.01 / 255 = 0.0040$.
+    \item The two values are outside the range. The clamp changes $-0.87$
+          to 0.00 and 1.74 to 1.01. The model receives a window that the
+          sensor did not measure.
+    \item ``idle'': no change. The motion classes: lower, because a part of
+          their values is cut.
+    \item Count the clipped input values on the test set, and compare the
+          accuracy of each class with the float model.
+  \end{enumerate}
+  \vskip 0.1em
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}lrrrrr@{}}
+    \toprule
+    \textbf{Calibration set} & \textbf{Total} & \textbf{idle}
+    & \textbf{terr.} & \textbf{lift} & \textbf{mar.} \\
+    \midrule
+    All classes: accuracy   & 100.0 & 100.0 & 100.0 & 100.0 & 100.0 \\
+    Only ``idle'': accuracy & 69.2 & 100.0 & 59.5 & 100.0 & 17.4 \\
+    Only ``idle'': clipped values & & 0.0 & 34.7 & 28.5 & 44.7 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  All values are in percent, for the fallback dataset of Day 2 (simulated
+  signals) with the converter of TensorFlow 2.21.0. The class ``lift'' keeps
+  its accuracy with 28.5 percent of clipped values: the effect depends on
+  the class.
+}

@@ -1,0 +1,6 @@
+device,state,power_w,method
+kit,active,0.217,"data sheet of the ESP32-S3: 65.9 mA at 3.3 V (240 MHz, one core active, clocks of the peripherals on)"
+kit,idle,0.157,"data sheet of the ESP32-S3: 47.6 mA at 3.3 V (240 MHz, the two cores wait)"
+kit,sleep,0.00079,"data sheet of the ESP32-S3: light sleep, 240 microamperes at 3.3 V"
+pi,active,,"empty: the script uses the column power_w of results_pi.csv. With a USB power meter: write your value here."
+pi,idle,3.235,"published example for a Raspberry Pi 5 with no load (book Edge AI Engineering). Replace it with your value of: python pi/bench.py --idle 30"

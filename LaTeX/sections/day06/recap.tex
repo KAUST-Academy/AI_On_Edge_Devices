@@ -1,0 +1,18 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item Unstructured pruning makes the model file smaller. Only structured
+          pruning makes a normal runtime faster.
+    \item Distillation trains a small student with the soft outputs of a large
+          teacher. The temperature controls how much the small probabilities
+          count.
+    \item An efficient design decreases the operations and the activations
+          before the training starts.
+    \item The constraint selects the technique: flash, RAM, or latency. The
+          usual order is prune, distill, quantize.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Measure each technique on the target device. A smaller number of
+            parameters is not a smaller latency, and it is not a smaller peak
+            RAM.}
+\end{frame}

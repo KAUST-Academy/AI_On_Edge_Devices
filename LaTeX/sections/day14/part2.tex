@@ -1,0 +1,514 @@
+% Part 2 of Day 14: Security, privacy, and reliability.
+%
+% Topics of the syllabus: attack surface, model theft, physical access; keys
+% and encrypted transport; data minimization; watchdogs and reduced operation
+% after a failure. Exercise: list the threats for the Day 12 system and
+% select two mitigations.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: tools/experiments/day14_security.py,
+%    values in tools/data/day14/day14_security.json. Three Mosquitto 2.0.11
+%    brokers (open; passwords and an access rule; TLS), a model file of the
+%    Day 7 lab with AES-GCM and Ed25519 (package cryptography), and a
+%    watchdog of user systemd. All on the work computer (x86).
+% 2. The ESP32-S3 data sheet version 2.2 (security features, watchdogs),
+%    and the Day 6 distillation result (a copy from outputs only).
+% 3. The textbook, Volume II (a preview), chapter "Security & Privacy":
+%    the attack surface, model theft, physical access, the Mirai botnet.
+
+\theorypart{Security, privacy, and reliability}%
+  {list the threats for the Day 12 system and select two mitigations}
+
+% ------------------------------------------------------------------ why
+\begin{frame}{Why an edge device needs security}
+  \small
+  \begin{itemize}
+    \item A device stands in a public place for years. A person can touch
+          it, open it, or take it away.
+    \item It has a network link, a model, keys, and data of the people near
+          it. Each one is worth something to an attacker.
+    \item Many identical devices share one weakness. One method attacks all
+          of them.
+    \item Example: in 2016 the Mirai botnet took control of more than
+          600\,000 cameras, recorders, and routers with factory-default
+          passwords, and used them for an attack of 1.2 Tbit/s.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{Three goals}
+    \textbf{Confidentiality}: only the right people read the data and the
+    model. \textbf{Integrity}: nobody changes the data, the model, or the
+    commands. \textbf{Availability}: the device works when it is needed.
+  \end{block}
+  \source{\emph{Machine Learning Systems}, Volume II, chapter ``Security
+    \& Privacy'' (Mirai).}
+\end{frame}
+
+% ------------------------------------------------------------------ surface
+\begin{frame}{The attack surface of the Day 12 system}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.45cm, minimum height=0.85cm},
+      atk/.style={circle, draw=cardinalred, fill=cardinalred!15, inner sep=1pt,
+                 font=\scriptsize\bfseries, text=cardinalred}]
+    \node[st] (s) at (0,0) {Microphone, camera};
+    \node[st, fill=cardinalred!12] (x) at (2.2,0) {XIAO\\ model, keys};
+    \node[st] (b) at (4.6,0) {Broker on the Raspberry Pi};
+    \node[st] (d) at (7.0,0) {Decision, forwarder};
+    \node[st, fill=darkcyan!15] (c) at (9.2,0) {Cloud};
+    \draw[->] (s) -- (x); \draw[<->] (x) -- node[above] {Wi-Fi} (b);
+    \draw[<->] (b) -- (d); \draw[->] (d) -- node[above] {link} (c);
+    \node[atk] at (0,0.8) {1}; \node[atk] at (2.2,0.8) {2};
+    \node[atk] at (3.4,-0.55) {3}; \node[atk] at (4.6,0.8) {4};
+    \node[atk] at (7.0,0.8) {5}; \node[atk] at (8.1,-0.55) {6};
+    \node[atk] at (2.2,-0.8) {7};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}rL{0.38\textwidth}rL{0.44\textwidth}@{}}
+    1 & A false input: a sound, a photo, a light & 5 & The SD card: the
+      queue, the logs, the model files \\
+    2 & The flash: the program, the model, the Wi-Fi password & 6 & The
+      link to the cloud \\
+    3 & The radio: read or send messages & 7 & The USB and debug port, the
+      update channel \\
+    4 & The broker: any client can connect & & \\
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  The attack surface is each point where an attacker can read, change, or
+  stop something. Each point needs its own defense.
+\end{frame}
+
+% ------------------------------------------------------------------ threats
+\begin{frame}{Threats of an edge AI system}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.36\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Threat} & \textbf{Example} & \textbf{It harms} \\
+    \midrule
+    Eavesdropping & Read the MQTT messages on the Wi-Fi & Privacy \\
+    False commands & Publish \code{led=1} to a device & Integrity, safety
+      \\
+    Model theft & Copy the model file from the SD card & The value of the
+      model \\
+    Model extraction & Query the model and train a copy & The value of the
+      model \\
+    False input & A sound or a photo that fools the model & The decisions
+      \\
+    Poisoned data & False samples for the next training & The next model \\
+    Physical access & Read the flash, use the debug port & All of the above
+      \\
+    Denial of service & Flood the broker, jam the Wi-Fi & Availability \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  Select the defenses by risk: how likely is the threat, and how bad is the
+  result for this system?
+  \source{After \emph{Machine Learning Systems}, Volume II, chapter
+    ``Security \& Privacy''.}
+\end{frame}
+
+% ------------------------------------------------------------------ open broker
+\begin{frame}{Measured: the open broker of the lab}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.44\textwidth}ccc@{}}
+    \toprule
+    \textbf{Test} & \textbf{Open} & \textbf{Passwords, rule} &
+      \textbf{TLS too} \\
+    \midrule
+    Messages of g07 that a stranger reads & 1 & 0 & 0 \\
+    False \code{led=1} that the g07 device gets & 1 & 0 & 0 \\
+    Client with no password & accepted & refused & refused \\
+    Client with a wrong password & accepted & refused & refused \\
+    TLS client that does not know the CA & & & refused \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The lab broker of Day 12 accepts any client. A stranger in the
+          Wi-Fi subscribes to \code{\#}, reads all messages, and switches
+          the LED of another group.
+    \item In the second and third broker the stranger is the user g08: a
+          valid user of a different group.
+    \item The lab network is closed, so the lab accepts this risk. A product
+          cannot.
+  \end{itemize}
+  \source{Experiment of this part: three Mosquitto 2.0.11 brokers on one
+    computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ acl
+\begin{frame}[fragile]{Passwords and access rules in Mosquitto}
+\begin{lstlisting}[style=shell]
+mosquitto_passwd -c /etc/mosquitto/passwd g07   # asks for the password of g07
+\end{lstlisting}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+# /etc/mosquitto/conf.d/lab.conf
+listener 1883
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+acl_file /etc/mosquitto/acl
+
+# /etc/mosquitto/acl: each user only in the tree of its own group
+pattern readwrite edgeai/%u/#
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{\%u} is the user name. The user g07 reads and writes only
+          below \code{edgeai/g07/}.
+    \item A message to a topic that the rule denies is dropped with no
+          error, and a subscription to \code{\#} gets nothing of the other
+          groups.
+    \item Better: one user for each device, so that a stolen device can be
+          removed alone.
+  \end{itemize}
+  \source{The settings of the experiment of this part; the file names are
+    those of a Raspberry Pi.}
+\end{frame}
+
+% ------------------------------------------------------------------ tls
+\begin{frame}{Encrypted transport: TLS}
+  \begin{columns}[T]
+    \begin{column}{0.56\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        & \textbf{Plain} & \textbf{TLS} \\
+        \midrule
+        Connect, median & 2.4 ms & 51.9 ms \\
+        Bytes to connect & 36 & 3368 \\
+        Bytes of 100 messages & 10\,400 & 12\,600 \\
+        One message & 104 bytes & 126 bytes \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      An IMU message of 81 bytes of JSON, QoS 0, with a password. A counting
+      proxy measured the bytes.
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item TLS encrypts each message and checks that nobody changed it. The
+          certificate proves the identity of the broker.
+    \item The cost is at the start: a handshake with certificates. Keep the
+          connection open: each message then costs 22 bytes more.
+    \item The ESP32-S3 has AES, SHA, and RSA hardware that makes TLS
+          possible on the XIAO (port 8883 by convention).
+  \end{itemize}
+  \source{Experiment of this part (OpenSSL 3.0.2, x86). ESP32-S3 data sheet
+    2.2, section ``Security''.}
+\end{frame}
+
+% ------------------------------------------------------------------ keys
+\begin{frame}{Keys}
+  \small
+  \begin{itemize}
+    \item \textbf{One key for each device.} A shared password lets one
+          stolen device open all others. A key for each device can be
+          revoked alone.
+    \item \textbf{No default password.} The Mirai botnet used factory
+          passwords. A device sets its key at installation.
+    \item \textbf{Not in the code repository.} The Day 12 sketch keeps the
+          Wi-Fi password in \code{arduino\_secrets.h}, outside the shared
+          code. A key in git stays in its history.
+    \item \textbf{Protected on the device.} The ESP32-S3 has 4096 bits of
+          eFuse memory, an HMAC unit, and an RSA signature unit whose private
+          key only the hardware can decrypt. On a Raspberry Pi, a key is a
+          file: set its rights (\code{chmod 600}).
+    \item \textbf{Change them.} Plan how to replace a key or a certificate
+          before it expires.
+  \end{itemize}
+  \source{ESP32-S3 data sheet 2.2, sections ``Security'', ``HMAC
+    Accelerator'', ``RSA Digital Signature Peripheral''.}
+\end{frame}
+
+% ------------------------------------------------------------------ theft
+\begin{frame}[fragile]{Model theft: the file is the model}
+\begin{lstlisting}[style=python, basicstyle=\ttfamily\scriptsize]
+interp = tf.lite.Interpreter("mnv2_int8.tflite")   # the Day 7 lab file
+interp.allocate_tensors()
+# 109 constant tensors with 3 487 830 values, for example:
+# shape [1280, 1, 1, 320]: -17, 29, -1, -44, 80, 55, 62, 23, ...
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A person with the SD card or the flash of a device has the model:
+          the standard interpreter reads each weight.
+    \item Encryption at rest: AES-256-GCM of the 4\,107\,968-byte file took
+          13.1 ms, its decryption 13.1 ms (one x86 core). A changed byte makes
+          the decryption fail.
+    \item The weak point is the key: it must be on the device to decrypt.
+          The ESP32-S3 has flash encryption in hardware. A person who takes
+          the SD card of a Raspberry Pi reads all files that the software
+          did not encrypt.
+  \end{itemize}
+  \source{Experiment of this part (LiteRT interpreter of TensorFlow,
+    package cryptography). ESP32-S3 data sheet 2.2.}
+\end{frame}
+
+% ------------------------------------------------------------------ extraction
+\begin{frame}{Model extraction through the outputs}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.8cm, minimum height=0.85cm}]
+    \node[st] (a) at (0,0) {Attacker\\ images};
+    \node[st, fill=cardinalred!12] (m) at (3.0,0) {Device model\\ (90.3\,\%)};
+    \node[st, fill=darkcyan!15] (c) at (6.6,0) {Copy, trained on the
+      outputs (85.3\,\%)};
+    \draw[->] (a) -- node[above] {queries} (m);
+    \draw[->] (m) -- node[above] {scores} (c);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Day 6: a small student trained only on the scores of the teacher
+          for 60\,000 images with no label reached 85.3 percent. The teacher
+          had 90.3 percent. This is a copy through the outputs.
+    \item An attacker needs no file, only many queries and the scores.
+    \item Defenses: give only the class, not all scores; limit the queries
+          of each client; watch for many unusual queries; mark the model
+          (watermark) to prove a copy.
+  \end{itemize}
+  \source{Day 6, Part 2 (distillation experiment). Defenses: \emph{Machine
+    Learning Systems}, Volume II, chapter ``Security \& Privacy''.}
+\end{frame}
+
+% ------------------------------------------------------------------ integrity
+\begin{frame}{Integrity: signed updates and secure boot}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.75cm, minimum height=0.85cm}]
+    \node[st] (a) at (0,0) {Server: SHA-256 of the file};
+    \node[st, fill=cardinalred!12] (b) at (2.6,0) {Sign the hash (private
+      key)};
+    \node[st] (c) at (5.2,0) {Device: SHA-256 again};
+    \node[st, fill=darkcyan!15] (d) at (7.8,0) {Check the signature (public
+      key)};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A hash proves that the file did not change in transit. A signature
+          also proves who made it: only the holder of the private key can
+          sign.
+    \item Cost on one x86 core: SHA-256 of the 4\,107\,968-byte file 11.3 ms;
+          an Ed25519 signature of 64 bytes, its check 0.14 ms.
+    \item Secure boot applies the same check to the program at each start.
+          The ESP32-S3 boots only firmware with a valid RSA-PSS signature
+          when secure boot is on.
+  \end{itemize}
+  \source{Experiment of this part. ESP32-S3 data sheet 2.2, section
+    ``Secure Boot''.}
+\end{frame}
+
+% ------------------------------------------------------------------ physical
+\begin{frame}{Physical access}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.60\textwidth}@{}}
+    \toprule
+    \textbf{Attack} & \textbf{Defense} \\
+    \midrule
+    Read the SD card or the flash & Encrypt the data and the model; keep no
+      data that the task does not need \\
+    Use the USB or the debug port & Disable the debug port (an eFuse of the
+      ESP32-S3); no login with a default password \\
+    Load a different program & Secure boot; signed updates \\
+    Replace or cover the sensor & Input checks (Day 13); a second sensor;
+      a tamper switch \\
+    Take the device away & A key for each device that the server can revoke
+      \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item With physical access, a network password does not help. The
+          defense must be in the hardware and in the boot chain.
+    \item A case with a lock and a mount out of reach are also defenses.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume II, chapter ``Security
+    \& Privacy'' (physical attacks). ESP32-S3 data sheet 2.2.}
+\end{frame}
+
+% ------------------------------------------------------------------ inputs
+\begin{frame}{False inputs}
+  \small
+  \begin{itemize}
+    \item A model has no common sense. A printed photo, a sticker, a sound
+          from a speaker, or a light can change its output.
+    \item On a device, the attacker controls the scene, not the code: the
+          attack goes through the sensor.
+    \item Defenses that this course built:
+          \begin{itemize}
+            \item input checks: brightness, sharpness, value range (Day 13);
+            \item the decision layer: several windows, hysteresis, a second
+                  condition before an action (Day 12);
+            \item a second sensor that must agree for an important action.
+          \end{itemize}
+    \item Poisoned data: a sample that an attacker places in the next
+          training set. Check the origin of new data before you train
+          (Day 13, the loop back to training).
+  \end{itemize}
+  \keypoint{Do not let one model output start an action that can hurt
+    somebody.}
+\end{frame}
+
+% ------------------------------------------------------------------ privacy
+\begin{frame}{Privacy by design}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.66\textwidth}@{}}
+    \toprule
+    \textbf{Rule} & \textbf{In the course systems} \\
+    \midrule
+    Process on the device & The XIAO sends a keyword event, not the audio
+      (Day 12) \\
+    Send results & A count each minute, not the video (Day 12, Part 3) \\
+    Minimize the logs & Counts and scores, no images (Day 13) \\
+    Limit the time & Rotation, a retention for each folder (Day 13) \\
+    Protect the link & Passwords, access rules, TLS (this part) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Data that never leaves the device cannot leak from the cloud.
+    \item Federated learning keeps the raw data local, but the weights can
+          still leak facts (Part 1).
+    \item Tell the people near the device what it records.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ watchdog
+\begin{frame}[fragile]{Reliability: watchdogs}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+[Service]                       # a unit of systemd for the detector
+Type=notify
+ExecStart=/home/edge/yolo/bin/python monitor_detect.py ...
+WatchdogSec=3                   # no ping for 3 s: stop and restart
+Restart=on-failure
+RestartSec=1
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The program sends \code{WATCHDOG=1} to systemd in each loop. A
+          program that hangs stops sending, and systemd restarts it.
+    \item Test with a program that stopped its pings after 6 s: systemd
+          started it again 4.3 s and 4.5 s after the last ping.
+    \item The ESP32-S3 has three watchdog timers in hardware. Two of them
+          are on during the boot, to recover from a failed start.
+  \end{itemize}
+  \source{Experiment of this part (\texttt{systemd-run --user} with the same
+    settings). ESP32-S3 data sheet 2.2, section ``Watchdog Timers''.}
+\end{frame}
+
+% ------------------------------------------------------------------ degraded
+\begin{frame}{Reduced operation after a failure}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.38\textwidth}L{0.29\textwidth}@{}}
+    \toprule
+    \textbf{Failure} & \textbf{Reduced operation} & \textbf{Report} \\
+    \midrule
+    Camera read fails & No decisions from the camera; a safe state &
+      ERROR, a count \\
+    New model fails its test & The old model (Part 1) & The version that
+      runs \\
+    Board too hot & A smaller model or fewer frames & Temperature,
+      throttled bits \\
+    Link to the cloud lost & Local decisions, a queue (Day 12) & Queue
+      length \\
+    Disk almost full & Stop the detailed log & Free disk \\
+    Clock not set & Mark the times as not trusted & A flag in each message
+      \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A device that does less, and says so, is better than a device that
+          stops or does wrong things in silence.
+    \item Each reduced mode needs a test: cut the camera, fill the disk,
+          stop the link, as in the Day 12 lab.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ checklist
+\begin{frame}{The lab systems against a product}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.30\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Topic} & \textbf{The labs} & \textbf{A product} \\
+    \midrule
+    Broker & Open, no TLS & A user for each device, access rules, TLS \\
+    Keys & One Wi-Fi password in a file & A key for each device, in hardware
+      where possible \\
+    Updates & Upload by cable & Signed OTA updates with rollback (Part 1) \\
+    Model file & Plain file & Encrypted, signed, versioned \\
+    Restart & By hand & Watchdog, reduced modes \\
+    Data & Logs on the card & Minimized, rotated, retention \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  The labs keep the setup short. Your capstone design names which rows of
+  the right column it needs, and why.
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{Threats of the Day 12 system}{%
+  The Day 12 system: the XIAO sends keyword events with MQTT to the broker
+  on the Raspberry Pi; \code{decide.py} switches the LED of the XIAO; the
+  forwarder sends the decisions to the cloud broker. The lab broker is open
+  and has no TLS.
+  \begin{enumerate}
+    \item List at least five threats. For each one, name the point of the
+          attack surface and the goal that it harms.
+    \item Select two mitigations that remove the largest risk for the least
+          work. Say what each one costs.
+  \end{enumerate}}
+
+\answerframe{Threats of the Day 12 system}{%
+  \footnotesize
+  \begin{itemize}
+    \item \textbf{False commands}: any client publishes \code{led=1} (broker;
+          integrity). \textbf{False events}: any client publishes ``yes''
+          (broker; integrity). \textbf{Eavesdropping} on the Wi-Fi
+          (radio; confidentiality). \textbf{Flood} of the broker (broker;
+          availability). \textbf{Wi-Fi password} read from a stolen XIAO
+          (flash; confidentiality). \textbf{Queue and logs} read from the SD
+          card (storage; privacy). \textbf{A sound} that the model takes as
+          ``yes'' (sensor; integrity).
+    \item \textbf{Mitigation 1}: a user for each device and the access rule
+          \code{pattern readwrite edgeai/\%u/\#}. It stops the false commands
+          and events of the measured test. Cost: a password file and one
+          setting on each device.
+    \item \textbf{Mitigation 2}: TLS on the broker. It stops the
+          eavesdropping. Cost in the test: 51.9 ms to connect and 22 bytes more
+          for each message; certificates to manage.
+    \item Other good answers: flash encryption on the XIAO, a rate limit,
+          a second condition in \code{decide.py}.
+  \end{itemize}}

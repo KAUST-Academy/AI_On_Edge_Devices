@@ -1,0 +1,14 @@
+# Grafana dashboard provider for the Day 13 lab.
+# Install:  sudo cp edgeai.yml /etc/grafana/provisioning/dashboards/edgeai.yml
+# Grafana loads each JSON file of the folder "path".
+apiVersion: 1
+
+providers:
+  - name: edgeai
+    folder: Edge AI
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards

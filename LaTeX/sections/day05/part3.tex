@@ -1,0 +1,637 @@
+% Part 3 of Day 5: Streaming inference and detection.
+%
+% Topics of the syllabus: sliding windows, smoothing, thresholds; cascade: an
+% always-on microcontroller wakes a larger device; why SSD and YOLO do not fit
+% on a microcontroller; the centroid method of FOMO. Exercise: design the
+% cascade for a voice-controlled camera.
+%
+% The probability curves and the power values of the cascade are examples.
+% Each frame with such a value says so.
+
+\theorypart{Streaming inference and detection}%
+  {design the cascade for a voice-controlled camera}
+
+% ------------------------------------------------------------------ streaming
+\begin{frame}{From one window to a stream}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{In the training}
+        \begin{itemize}
+          \item One clip of 1 s, with the word in the centre.
+          \item One clip, one label, one result.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{On the device}
+        \begin{itemize}
+          \item A stream of sound with no start and no end.
+          \item Nobody says where a word starts.
+          \item The product needs one event for each spoken keyword.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The model is the same. The code around the model must cut the
+          stream into windows and make events from many results.
+    \item This code is the post-processing. It has no weights, but it has
+          parameters that you must tune.
+  \end{itemize}
+  \keypoint{A good accuracy on clips does not give a good device. The
+    device is the model and the post-processing together.}
+\end{frame}
+
+\begin{frame}{The sliding window}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=3.4cm, y=0.42cm]
+    % Time axis: 0 to 2.6 s. A word from 1.05 s to 1.55 s.
+    \draw[->, coolgray] (0,0) -- (2.75,0) node[right] {time (s)};
+    \foreach \t in {0,0.5,1,1.5,2,2.5} {
+      \draw[coolgray] (\t,0) -- (\t,-0.25) node[below] {\t};
+    }
+    \fill[cardinalred!35] (1.05,0.1) rectangle (1.55,0.9);
+    \node[cardinalred] at (1.3,1.4) {the word};
+    \foreach \k in {0,...,6} {
+      \draw[darkcyan, fill=darkcyan!12]
+        (0.25*\k,2.2+0.75*\k) rectangle (0.25*\k+1,2.8+0.75*\k);
+    }
+    \foreach \k in {3,4,5} {
+      \draw[darkcyan, line width=1pt, fill=darkcyan!45]
+        (0.25*\k,2.2+0.75*\k) rectangle (0.25*\k+1,2.8+0.75*\k);
+    }
+    \node[anchor=west, darkcyan] at (2.3,5.5) {window: 1 s};
+    \node[anchor=west, darkcyan] at (2.3,4.5) {stride: 0.25 s};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A new window starts after each stride. The windows overlap.
+    \item A small stride gives more windows that hold the complete word:
+          three in the figure. It also gives more inferences each second.
+    \item A stride equal to the window gives the fewest inferences. But a
+          word at the limit of two windows is cut into two parts.
+  \end{itemize}
+  \keypoint{The stride decides the number of inferences for each second,
+    and the chance that one window holds the complete word.}
+\end{frame}
+
+\begin{frame}{The time budget of a stream}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1cm, y=1cm]
+    \draw[coolgray] (0,0) rectangle (9.6,0.7);
+    \fill[darkcyan!45] (0,0) rectangle (4.3,0.7);
+    \fill[cardinalred!45] (4.3,0) rectangle (6.4,0.7);
+    \fill[treegreen!45] (6.4,0) rectangle (6.9,0.7);
+    \node at (2.15,0.35) {features};
+    \node at (5.35,0.35) {inference};
+    \node at (8.25,0.35) {free time};
+    \draw[<->, coolgray] (0,-0.3) -- (9.6,-0.3)
+      node[midway, below] {one stride};
+    \node[font=\scriptsize, text=coolgray] at (6.65,1.0) {post-processing};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The work for one window must end before the next window starts.
+    \item Rule: the time for the features, plus the time for the inference,
+          plus the time for the post-processing is smaller than the stride.
+    \item If the rule fails, the device loses samples, or the results come
+          later and later. Day 3 counted these late samples.
+    \item The microphone must still record when the model runs. The sketch
+          reads the samples in a second task, or with an interrupt.
+  \end{itemize}
+  \keypoint{Measure the two times on the board first. Then select the
+    stride.}
+\end{frame}
+
+\begin{frame}{One word, many results}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.55cm, y=2.4cm]
+    \draw[->, coolgray] (0,0) -- (15.6,0) node[right] {window};
+    \draw[->, coolgray] (0,0) -- (0,1.15);
+    \node[anchor=west, coolgray] at (0.1,1.12) {probability of ``yes''};
+    \draw[coolgray] (0,1) -- (-0.15,1) node[left] {1};
+    \draw[coolgray, dashed] (0,0.6) -- (15.2,0.6);
+    \node[anchor=east, coolgray] at (0,0.6) {0.6};
+    \foreach \k/\v in {1/0.03, 2/0.05, 3/0.72, 4/0.04, 5/0.06, 6/0.10,
+                       7/0.55, 8/0.93, 9/0.96, 10/0.88, 11/0.31, 12/0.05,
+                       13/0.04, 14/0.08, 15/0.03} {
+      \fill[darkcyan!60] (\k-0.3,0) rectangle (\k+0.3,\v);
+    }
+    \fill[cardinalred!70] (3-0.3,0) rectangle (3+0.3,0.72);
+    \node[cardinalred, align=center] at (3,0.92) {one window:\\a cough};
+    \node[darkcyan!70!black, align=center] at (9,1.12) {the word ``yes''};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The model gives one probability for each window. A real word
+          gives a high value in some windows in sequence.
+    \item A short noise gives a high value in one window.
+    \item With a threshold of 0.6 on each window, this stream gives four
+          events: one false accept, and three events for one word.
+  \end{itemize}
+  \source{The values are an example. They are not a measurement.}
+\end{frame}
+
+\begin{frame}{Smoothing: the mean of the last windows}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.55cm, y=2.4cm]
+    \draw[->, coolgray] (0,0) -- (15.6,0) node[right] {window};
+    \draw[->, coolgray] (0,0) -- (0,1.15);
+    \node[anchor=west, coolgray] at (0.1,1.12) {mean of 3 windows};
+    \draw[coolgray] (0,1) -- (-0.15,1) node[left] {1};
+    \draw[coolgray, dashed] (0,0.6) -- (15.2,0.6);
+    \node[anchor=east, coolgray] at (0,0.6) {0.6};
+    \foreach \k/\v in {1/0.03, 2/0.05, 3/0.72, 4/0.04, 5/0.06, 6/0.10,
+                       7/0.55, 8/0.93, 9/0.96, 10/0.88, 11/0.31, 12/0.05,
+                       13/0.04, 14/0.08, 15/0.03} {
+      \fill[coolgray!30] (\k-0.3,0) rectangle (\k+0.3,\v);
+    }
+    \draw[cardinalred, line width=1.2pt] plot coordinates {(1,0.01)
+      (2,0.03) (3,0.27) (4,0.27) (5,0.27) (6,0.07) (7,0.24) (8,0.53)
+      (9,0.81) (10,0.92) (11,0.72) (12,0.41) (13,0.13) (14,0.06)
+      (15,0.05)};
+    \foreach \k/\v in {9/0.81, 10/0.92, 11/0.72} {
+      \fill[cardinalred] (\k,\v) circle (2.2pt);
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The post-processing keeps the last $N$ results and calculates
+          their mean. Here $N = 3$.
+    \item The cough gives a mean of 0.27: below the threshold. The false
+          accept disappears.
+    \item The word still passes the threshold, one window later than
+          before. Smoothing costs a delay.
+  \end{itemize}
+  \source{The same example values. The red line is their mean of the last
+    three windows.}
+\end{frame}
+
+\begin{frame}{One event for one word}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=1.0cm, align=center}]
+    \node[b] (a) at (0,0)   {Listen};
+    \node[b, draw=cardinalred] (b) at (4.4,0) {Event:\\keyword};
+    \node[b, draw=darkcyan] (c) at (7.8,0) {Wait};
+    \draw[->] (a) -- node[above, font=\scriptsize] {mean above}
+                     node[below, font=\scriptsize] {the threshold} (b);
+    \draw[->] (b) -- (c);
+    \draw[->] (c.south) -- ++(0,-0.6) -| node[pos=0.25, below,
+      font=\scriptsize] {after the suppression time, for example 1 s}
+      (a.south);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The smoothed value stays above the threshold for some windows.
+          Without one more rule, one word gives some events.
+    \item After an event, the device accepts no new event for a
+          suppression time.
+    \item Three parameters of the post-processing: the number of windows
+          $N$, the threshold, and the suppression time.
+  \end{itemize}
+  \keypoint{The post-processing is a small state machine. You can test it
+    on the laptop with recorded probabilities, with no board.}
+\end{frame}
+
+\begin{frame}{What the smoothing costs}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.29\textwidth}L{0.31\textwidth}@{}}
+    \toprule
+    & \textbf{Small $N$, low threshold} & \textbf{Large $N$, high
+      threshold} \\
+    \midrule
+    False accepts          & More   & Fewer \\
+    False rejects          & Fewer  & More: a short word does not fill
+                                      $N$ windows \\
+    Delay of the event     & Short  & Longer: about $N$ strides \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item Part 1: a false accept rate of 0.1 percent for each window gives
+          7.2 false accepts each hour.
+    \item If three windows were independent, an event with three windows
+          would have a rate of $0.001^3$: one false accept in 16 years.
+    \item The windows overlap, so their errors are not independent. The
+          real gain is much smaller. Measure it.
+  \end{itemize}
+  \keypoint{Smoothing moves the device along the same trade-off as the
+    threshold of Part 1, and it adds a delay.}
+\end{frame}
+
+\begin{frame}{Tune the post-processing with a test}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Test} & \textbf{What you do} & \textbf{What you count} \\
+    \midrule
+    False accepts & Normal speech with no keyword, for a fixed time
+                  & The events \\
+    False rejects & Say the keyword 20 times, with pauses
+                  & The missed keywords \\
+    Delay         & Say the keyword and look at the display
+                  & The time to the event \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item Change one parameter, and repeat the three tests. Write each
+          result in a table.
+    \item Test with a second speaker, and with noise in the room. The
+          tuning for your voice alone is too good.
+    \item The check of the lab: no false activation in 30 seconds of normal
+          speech.
+  \end{itemize}
+  \keypoint{The tuning is a measurement on the device, not a setting that
+    you take from a different project.}
+\end{frame}
+
+\begin{frame}{The same idea for images}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item A camera gives some frames each second. Each frame gives a
+              class.
+        \item One frame can be wrong: a hand in front of the camera, a
+              reflection, a blurred image.
+        \item Accept a class only when the last $N$ frames agree, or when
+              the mean probability is above a threshold.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.42\textwidth}L{0.48\textwidth}@{}}
+        \toprule
+        \textbf{Frame} & \textbf{Class} \\
+        \midrule
+        1 & background \\
+        2 & background \\
+        3 & \textcolor{cardinalred}{wheel} \\
+        4 & background \\
+        5 & box \\
+        6 & box \\
+        7 & box \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item With $N = 3$, the device reports ``box'' at frame 7. It never
+          reports ``wheel''.
+    \item At 3 frames each second, the answer comes one second after the
+          object. For a slow scene, this delay is no problem.
+  \end{itemize}
+  \source{The classes are an example.}
+\end{frame}
+
+% -------------------------------------------------------------------- cascade
+\begin{frame}{The cascade: a small model wakes a large model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.7cm, minimum height=1.25cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b, draw=treegreen] (a) at (0,0)   {Stage 1\\small model};
+    \node[b, draw=darkcyan]  (b) at (3.8,0) {Stage 2\\larger model};
+    \node[b, draw=cardinalred] (c) at (7.6,0) {Stage 3\\server};
+    \draw[->] (a) -- node[above, font=\scriptsize] {wake} (b);
+    \draw[->] (b) -- node[above, font=\scriptsize] {send} (c);
+    \node[lab] at (0,-1.05)   {microcontroller\\always on, milliwatts};
+    \node[lab] at (3.8,-1.05) {larger processor\\on for some seconds};
+    \node[lab] at (7.6,-1.05) {only for the hard cases};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item Stage 1 answers an easy question all the time: ``Is this the
+          keyword?'' or ``Is a person there?''
+    \item Stage 2 answers the difficult question, but only after stage 1
+          wakes it. Most of the time it is off.
+    \item A voice assistant works in this way: a keyword spotter in the
+          device, and the recognition of the complete sentence in the
+          cloud.
+  \end{itemize}
+  \source{Design of voice assistants: kit lab ``Keyword Spotting (KWS)'' of
+    \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{Why a cascade saves energy}
+  \small
+  \[
+    P_{\text{mean}} = P_1 + f \cdot P_2 \qquad
+    f = \frac{\text{time with stage 2 on}}{\text{total time}}
+  \]
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+    \toprule
+    \textbf{Quantity} & \textbf{Value} \\
+    \midrule
+    Stage 1, always on: $P_1$ (example value)          & 10 mW \\
+    Stage 2, vision model on the kit: $P_2$            & 830 mW \\
+    Events each day, with 5 s of stage 2 for each event & 22 \\
+    Part of the time with stage 2 on: $f$              & 0.13 percent \\
+    \midrule
+    Mean power with the cascade                        & 11.1 mW \\
+    Mean power with stage 2 always on                  & 830 mW \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \vskip 0.2em
+  The cascade needs 75 times less power. Stage 2 is almost always off, so
+  the power of stage 1 decides the result.
+  \source{830 mW: the peak power of the image model in the kit lab ``Image
+    Classification''. The value of stage 1 and the number of events are
+    examples.}
+\end{frame}
+
+\begin{frame}{Rules for the design of a cascade}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.35\textwidth}@{}}
+    \toprule
+    & \textbf{Stage 1} & \textbf{Stage 2} \\
+    \midrule
+    Runs         & All the time & After a wake signal \\
+    Must be      & Small and low in power & Accurate \\
+    Its worst error & A false reject: stage 2 never sees the event
+                 & A false accept: the product does a wrong action \\
+    Tune it for  & Few false rejects. Some false accepts are permitted.
+                 & Few false accepts \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item Stage 2 can check stage 1 again. So stage 1 can use a lower
+          threshold than a device with one stage.
+    \item The delay is the sum: the smoothing of stage 1, the time to wake
+          stage 2, and the inference of stage 2.
+  \end{itemize}
+  \keypoint{Each stage removes most of the cases, so that the next stage
+    works rarely.}
+\end{frame}
+
+% ------------------------------------------------------------------ detection
+\begin{frame}{From classification to detection}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.34\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    & \textbf{Classification} & \textbf{Object detection} \\
+    \midrule
+    Question & What is in the image? & What is where, and how many? \\
+    Output   & One probability for each class
+             & For each object: a class, a score, and a box with four
+               numbers \\
+    Number of outputs & Fixed: the number of classes
+             & Not fixed: it depends on the image \\
+    Typical models & MobileNet & SSD, YOLO \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A detector looks at many positions and many sizes. For each of
+          them, it predicts a class and a box.
+    \item Then a step with no weights removes the boxes that show the same
+          object. Day 8 gives the details.
+  \end{itemize}
+  \keypoint{Detection is classification at many places of the image, plus
+    the geometry of the box. It costs much more than one classification.}
+\end{frame}
+
+\begin{frame}{Why SSD and YOLO do not fit}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    \textbf{Property} & \textbf{A detector for a phone or a Raspberry Pi}
+    & \textbf{The microcontroller} \\
+    \midrule
+    Image size & $320 \times 320$ or more: small objects must stay visible
+               & $96 \times 96$ fits \\
+    Peak activation memory & 1.5 MB to 2.9 MB for the first layers alone
+               & About 300 KB of internal RAM \\
+    Model file & Several MB & 3.3 MB for the complete program \\
+    Outputs    & Thousands of boxes, then a filter step
+               & Little time and little RAM for it \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The peak values are a calculation for MobileNetV2 at
+          $320 \times 320$ in \code{int8}, for the widths 0.35 and 1.0.
+    \item The image size is the main problem. In a small image, a small
+          object has too few pixels.
+  \end{itemize}
+  \source{Model sizes of the detectors: kit lab ``Object Detection'' of
+    \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{FOMO: the position, not the box}
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.3cm, y=0.3cm]
+        \foreach \i in {0,...,11} {
+          \foreach \j in {0,...,11} {
+            \draw[coolgray!50, fill=boxgray] (\i,\j) rectangle (\i+1,\j+1);
+          }
+        }
+        \foreach \i/\j in {2/8, 3/8, 2/7, 3/7} {
+          \fill[cardinalred!55] (\i,\j) rectangle (\i+1,\j+1);
+        }
+        \foreach \i/\j in {8/3, 8/2, 9/3} {
+          \fill[darkcyan!55] (\i,\j) rectangle (\i+1,\j+1);
+        }
+        \fill[cardinalred] (3,8) circle (2.2pt);
+        \fill[darkcyan!60!black] (8.8,2.8) circle (2.2pt);
+        \node[cardinalred] at (3,10.4) {box};
+        \node[darkcyan!60!black] at (9.5,1.2) {wheel};
+        \node[below] at (6,-0.2) {$12 \times 12$ cells for $96 \times 96$
+          pixels};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \begin{itemize}
+        \item FOMO: ``Faster Objects, More Objects'', a method of Edge
+              Impulse.
+        \item It divides the image into cells of $8 \times 8$ pixels.
+        \item For each cell, it gives a probability for each class and for
+              the background.
+        \item Neighbour cells of one class make one object. The output is
+              the centre of the object: its centroid.
+        \item It gives no box and no size.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{Many products need only the class, the position, and the
+    number of objects. FOMO gives these three, at the cost of a
+    classifier.}
+  \source{Kit lab ``Object Detection'' of \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{How FOMO works}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=1.05cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Image};
+    \node[b, draw=darkcyan] (b) at (2.9,0)
+      {First blocks of\\MobileNetV2};
+    \node[b, draw=cardinalred] (c) at (5.8,0) {Classifier\\for each cell};
+    \node[b] (d) at (8.7,0)  {Centroids};
+    \foreach \a/\b in {a/b, b/c, c/d} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)   {$96 \times 96$};
+    \node[lab] at (2.9,-0.95) {map of $12 \times 12$\\with 96 channels};
+    \node[lab] at (5.8,-0.95) {$12 \times 12$ cells,\\one value for each
+      class};
+    \node[lab] at (8.7,-0.95) {class, x, y};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item A normal MobileNet makes the map smaller in five steps, down to
+          $3 \times 3$. FOMO stops after three steps: one cell for
+          $8 \times 8$ pixels.
+    \item The last layers are convolutions of $1 \times 1$. They classify
+          each cell with the same weights.
+    \item The cut model is small: the first blocks have about 17\,600
+          parameters for a width multiplier of 0.35.
+    \item Training: you draw boxes. The tool makes the label of each cell
+          from the centre of each box.
+  \end{itemize}
+  \source{Method: kit lab ``Object Detection''. Parameter count: a
+    calculation with the Keras model of MobileNetV2, cut at the map of
+    $12 \times 12$.}
+\end{frame}
+
+\begin{frame}{FOMO: the cost and the limits}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}L{0.50\textwidth}r@{}}
+        \toprule
+        \textbf{Number of the kit lab} & \textbf{Value} \\
+        \midrule
+        RAM, estimate of the Studio   & 250 KB \\
+        Flash, estimate of the Studio & 80 KB \\
+        Latency on the XIAO ESP32S3   & 143 ms \\
+        Frames each second            & about 7 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{The limits}
+        \begin{itemize}
+          \item No size of the object.
+          \item Two objects in neighbour cells become one object.
+          \item The objects must have a similar size, near the size of a
+                cell or some cells.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The metric is the F1 score, not the accuracy: almost all cells
+          are background, so a model that finds nothing has a high
+          accuracy.
+    \item The method shows a general idea: change the question until the
+          model fits.
+  \end{itemize}
+  \source{Kit lab ``Object Detection'' of \emph{Machine Learning Systems}.
+    Its author measured the latency. Nobody measured it on the kit of this
+    course.}
+\end{frame}
+
+\begin{frame}{Which model for which question}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.26\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{The product must know} & \textbf{Model} & \textbf{Smallest
+      device} \\
+    \midrule
+    Is the object there?            & Image classifier
+        & Microcontroller \\
+    Where are the objects, and how many? & FOMO
+        & Microcontroller \\
+    The size of each object, or objects of very different sizes
+        & SSD, YOLO & Raspberry Pi (Day 8) \\
+    A description of the scene in words & Vision-language model
+        & Raspberry Pi with 8 GB (Day 10) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The table has the form of a cascade also: a classifier on a
+          microcontroller can wake a detector on a Raspberry Pi.
+    \item Week 3 connects the two boards of this course in this way.
+  \end{itemize}
+  \keypoint{Ask what the product must know. The answer selects the
+    smallest model, and the smallest model selects the device.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{design a cascade}{%
+  \small
+  A camera for a garden has a battery of 7.4 Wh. The user says ``photo''.
+  The camera takes an image, and it stores the image only if a bird is in
+  it.
+  \vskip 0.1em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+    \toprule
+    Keyword model, always on (example value) & 10 mW \\
+    Camera and image model on the XIAO ESP32S3 & 830 mW \\
+    Time of stage 2 for one event & 5 s \\
+    Real commands each day & 20 \\
+    False accepts of the keyword stage each day & 2 \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.2em
+  \begin{enumerate}
+    \item Draw the cascade. Which stage is always on? What is the wake
+          signal?
+    \item Calculate the mean power and the battery life. Compare with a
+          camera that runs the image model all the time.
+    \item The user says: ``I must say the word two times.'' Which
+          parameter do you change? What does the change cost?
+    \item What does the image model do with a false accept of stage 1?
+  \end{enumerate}
+  Work with your neighbour for 10 minutes.
+}
+
+\answerframe{design a cascade}{%
+  \small
+  \begin{enumerate}
+    \item Stage 1: the microphone and the keyword model, always on. The
+          wake signal is the event ``photo'' after the smoothing. Stage 2:
+          the camera and the image classifier with the classes ``bird''
+          and ``background''. Then the device stores the image.
+    \item Stage 2 is on for $22 \times 5 = 110$ s each day:
+          $f = 110 / 86\,400 = 0.13$ percent. The mean power is
+          $10 + 0.0013 \times 830 = 11.1$ mW. The battery gives
+          $7.4 / 0.0111 = 669$ hours: 28 days. With stage 2 always on, the
+          battery gives $7.4 / 0.83 = 8.9$ hours.
+    \item A false reject. Use a lower threshold, or fewer windows for the
+          mean. The cost: more false accepts. Each of them costs 5 s of
+          stage 2, which is little energy. So stage 1 can be tolerant.
+    \item It takes an image and finds no bird. It stores nothing. Stage 2
+          is the second check of stage 1: the user sees no wrong photo.
+  \end{enumerate}
+  \vskip 0.2em
+  The power of stage 1 decides the battery life. With 5 mW in place of
+  10 mW, the battery gives about 51 days.
+}

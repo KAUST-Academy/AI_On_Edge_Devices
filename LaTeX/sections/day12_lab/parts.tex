@@ -1,0 +1,229 @@
+% The four parts of the Day 12 lab. The steps follow Labs/day12/README.md.
+%
+% Hardware status: not tested on hardware. A value that only the lab
+% hardware can give is written as "..." and the students measure it.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: the broker (30 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Copy the files, start the broker for the lab network & 10 min \\
+    2 & Publish and subscribe, wildcards & 10 min \\
+    3 & QoS, retained message, last will & 10 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+scp -r ../day12 ../hardware/HW-07 edge@pi-07.local:edgeai/   # laptop
+sudo cp ~/edgeai/HW-07/mosquitto_lab.conf /etc/mosquitto/conf.d/lab.conf
+sudo systemctl restart mosquitto && ss -tln | grep 1883      # Pi
+mosquitto_sub -h localhost -t 'edgeai/g07/#' -v              # terminal 1
+mosquitto_pub -h pi-07.local -t edgeai/g07/test/a -m hello   # terminal 2
+\end{lstlisting}
+  \begin{itemize}
+    \item Copy \code{lab.conf} only if it is not in the folder. With no
+          \code{listener} line, Mosquitto 2 accepts only local clients.
+    \item \textbf{You see:} \code{ss} shows \code{0.0.0.0:1883}. Terminal 1
+          shows \code{edgeai/g07/test/a hello}.
+    \item \textbf{You record:} which of the three test messages each filter
+          gets: \code{edgeai/g07/\#} and \code{edgeai/+/test/a}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: QoS, retained message, last will}
+\begin{lstlisting}[style=shell]
+mosquitto_pub -h pi-07.local -t edgeai/g07/test/q -m x -q 2 -d  # -q 1, -q 0
+mosquitto_pub -h pi-07.local -t edgeai/g07/test/state -m on -r
+mosquitto_sub -h pi-07.local -t edgeai/g07/test/state -v -C 1
+mosquitto_pub -h pi-07.local -t edgeai/g07/test/state -n -r     # delete it
+mosquitto_sub -h pi-07.local -t edgeai/g07/none -k 5 \
+    --will-topic edgeai/g07/laptop/status --will-payload offline &
+kill -9 %1
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{-d} prints each packet of the client:
+\begin{lstlisting}[style=shell]
+Client (null) sending PUBLISH (d0, q2, r0, m1, 'edgeai/g07/test/q', ...
+Client (null) received ...
+\end{lstlisting}
+    \item \textbf{You record:} the packets of each QoS level, whether the
+          new subscriber gets the retained message, and the time from
+          \code{kill -9} to \code{offline} in terminal 1.
+    \item Compare with the lecture: which of the three ends of a
+          connection is this?
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: IMU readings with MicroPython (20 min)}
+  \small
+  \begin{enumerate}
+    \item Write the MicroPython firmware: steps 1 to 3 of
+          \code{../hardware/HW-01/README.md}, as on Day 2.
+    \item Write the Wi-Fi password, the address of your Raspberry Pi, and
+          your group in \code{../hardware/HW-07/micropython/config.py}.
+  \end{enumerate}
+\begin{lstlisting}[style=shell]
+mpremote connect PORT fs cp ../hardware/HW-01/board/lsm6ds3.py :lsm6ds3.py
+mpremote connect PORT fs cp ../hardware/HW-07/micropython/config.py :config.py
+mpremote connect PORT run ../hardware/HW-07/micropython/mqtt_imu.py
+python3 ../hardware/HW-07/host/mqtt_check.py --broker pi-07.local \
+    --group g07 --seconds 30
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You see:} a table with one line for
+          \code{edgeai/g07/xiao/imu} and a \code{RESULT} line. The nominal
+          rate is 5 messages each second.
+    \item \textbf{You record:} the messages, the lost messages, the rate.
+          Then remove the USB cable for 10 s, connect it again, and record
+          the gap in \code{seq}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: keyword events with the sketch (25 min)}
+  \small
+  \begin{enumerate}
+    \item Open \code{sketches/kws\_mqtt/kws\_mqtt.ino}. Add the ZIP library
+          of your Day 5 project, and change the \code{\#include} line to
+          its header.
+    \item In \code{arduino\_secrets.h}: the Wi-Fi password, the address of
+          your Raspberry Pi, your group.
+    \item Board \code{XIAO\_ESP32S3}, \code{Tools > PSRAM > OPI PSRAM},
+          \code{Erase All Flash Before Sketch Upload > Enabled}. Upload,
+          then set the erase option back to \code{Disabled}.
+  \end{enumerate}
+\begin{lstlisting}[style=shell]
+MQTT: connecting to 192.168.8.107 ... connected
+MQTT sent: {"seq":1,"ms":...,"label":"yes","score":...}
+\end{lstlisting}
+  \begin{itemize}
+    \item Say ``yes'' and ``no''. Terminal 1 of Part A shows the events on
+          \code{edgeai/g07/xiao/result}, and one \code{stats} message each
+          10 s.
+    \item Send \code{led=1} by hand to \code{edgeai/g07/xiao/cmd} with
+          \code{-q 1}: the LED goes on.
+    \item \textbf{You record:} the events for 10 spoken words of each
+          keyword.
+  \end{itemize}
+  \source{The values of the lines come from your board.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: Task C1, the state machine (15 min)}
+  \begin{columns}[c]
+    \begin{column}{0.44\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth,
+          s/.style={draw=coolgray, circle, fill=boxgray, minimum size=0.95cm}]
+        \node[s] (off) at (0,0) {OFF};
+        \node[s, fill=darkcyan!20] (on) at (3.2,0) {ON};
+        \node[s, fill=cardinalred!20] (f) at (1.6,-2.3) {FAULT};
+        \draw[->] (off) -- node[below] {yes} (on);
+        \draw[->] (on) to[bend right=40] node[above, align=center]
+          {no, or 60 s with no yes} (off);
+        \draw[->] (on) -- node[right] {offline} (f);
+        \draw[->] (off) -- node[right, pos=0.55] {offline} (f);
+        \draw[->] (f) to[bend left=40] node[left] {online} (off);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \small
+      \begin{itemize}
+        \item Complete \code{next\_state} in \code{pi/decide.py}. The
+              docstring gives the six rules, in their order.
+        \item A keyword below the threshold (0.8) changes nothing. In FAULT,
+              only ``online'' changes the state.
+        \item The program checks your function with a table of 12
+              transitions.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\begin{lstlisting}[style=shell]
+scp pi/decide.py edge@pi-07.local:edgeai/day12/pi/           # laptop
+cd ~/edgeai/day12/pi && ~/yolo/bin/python decide.py --group g07  # Pi
+\end{lstlisting}
+  \small
+  \textbf{You see:} \code{Task C1: complete} as the first line.
+\end{frame}
+
+\begin{frame}[fragile]{Part C: run the decision (25 min)}
+\begin{lstlisting}[style=shell]
+Task C1: complete
+Settings: threshold 0.80, light on for 60 s after a yes
+event   yes      score ...  seq ...
+state   OFF   -> ON     yes ...  command led=1  (... ms)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The time in brackets is the local time on the Raspberry Pi, from
+          the event to the command.
+    \item Say ``yes'': the LED goes on. Say ``no'': it goes off. Say ``yes''
+          and wait 60 s: it goes off.
+    \item \textbf{You record:} some local times, and the delay from the word
+          to the LED as you see it.
+    \item \textbf{A failed part (10 min):} remove the USB cable of the XIAO.
+          Record the seconds until \code{-> FAULT  status offline}. Connect
+          the cable again: the state goes to OFF.
+  \end{itemize}
+  \source{The values ``...'' come from your boards. Nobody measured them on
+    the lab hardware.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}[fragile]{Part D: forward to the cloud (15 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Task D1 (5 min):} complete \code{count\_sequence} in
+          \code{cloud\_check.py} on the laptop.
+    \item \textbf{Start the two programs (10 min).} Keep \code{decide.py}
+          running.
+  \end{enumerate}
+\begin{lstlisting}[style=shell]
+cd ~/edgeai/day12/pi                                   # second SSH terminal
+~/yolo/bin/python forwarder.py --group g07 --cloud 192.168.8.10 --reset
+python3 cloud_check.py --broker 192.168.8.10 --group g07 --seconds 600
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You see} on the Raspberry Pi \code{Cloud broker: connected},
+          then one line each 5 s:
+  \end{itemize}
+\begin{lstlisting}[style=shell]
+queue     0  stored     12  forwarded     12  link up
+\end{lstlisting}
+  \begin{itemize}
+    \item On the laptop: \code{Task D1: complete}, then one line for each
+          message of the group on the cloud broker.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part D: cut and restore the link (20 min)}
+\begin{lstlisting}[style=shell]
+bash ~/edgeai/day12/pi/link.sh down 192.168.8.10      # third SSH terminal
+bash ~/edgeai/day12/pi/link.sh up 192.168.8.10        # after 3 minutes
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{down} adds a blackhole route: the Raspberry Pi drops each
+          packet to the cloud broker, with no answer. All other traffic
+          continues.
+    \item During the cut, say ``yes'' and ``no'': the LED must follow each
+          word. The forwarder prints \code{link lost} after the keep-alive
+          finds the cut, and the queue grows.
+    \item After \code{up}: \code{Cloud broker: connected}, the queue goes
+          to 0, and \code{cloud\_check.py} marks the old messages with
+          \code{late ... s}.
+    \item Stop \code{cloud\_check.py} with \code{Ctrl-C}. It prints a table
+          for each topic and the result line.
+  \end{itemize}
+\begin{lstlisting}[style=shell]
+topic                          received   unique   lost double
+RESULT: ...
+\end{lstlisting}
+  \textbf{You record:} the seconds until \code{link lost}, the queue each
+  minute, the seconds until the queue is 0, the largest \code{late}, the
+  table.
+\end{frame}

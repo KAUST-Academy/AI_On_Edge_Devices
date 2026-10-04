@@ -1,0 +1,16 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A LiteRT file is a FlatBuffer: the graph, the operators, and the
+          weights in one file that the device reads with no parsing step.
+    \item A conversion fails when the target runtime has no kernel for an
+          operator of the model.
+    \item TensorFlow Lite Micro is an interpreter with no dynamic allocation.
+          All tensors are in one arena that the program gives.
+    \item Features from signal processing make the input smaller. A smaller
+          input needs a smaller model and a smaller arena.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Three numbers describe a deployed model: the flash use, the arena
+            size, and the latency. Measure all three on the device.}
+\end{frame}

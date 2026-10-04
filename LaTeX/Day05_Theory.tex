@@ -1,0 +1,32 @@
+% Theory deck of Day 5. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day05_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 5]{Day 5: Audio and vision on microcontrollers}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditxiao
+  \creditbigpower
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day05/outcomes}
+\input{sections/day05/toc}
+\input{sections/day05/part1}
+\input{sections/day05/part2}
+\input{sections/day05/part3}
+\input{sections/day05/recap}
+\input{sections/day05/further_reading}
+\input{sections/credits}
+
+\end{document}

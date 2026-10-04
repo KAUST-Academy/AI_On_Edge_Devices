@@ -1,0 +1,229 @@
+% The four parts of the Day 13 lab. The steps follow Labs/day13/README.md.
+%
+% Hardware status: not tested on hardware. A value that only the lab
+% hardware can give is written as "..." and the students measure it.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: Tasks A1 and A2 (20 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Copy the lab folder, check the Day 8 folder and its model & 5 min \\
+    2 & Tasks A1 and A2 in \code{pi/monitor.py} & 15 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+scp -r day13 edge@pi-07.local:edgeai/                           # laptop
+ls ~/edgeai/day08/pi/detector.py ~/edgeai/day08/models/cupbottle_320_ncnn_model
+cd ~/edgeai/day13/pi && ~/yolo/bin/python monitor.py            # Pi
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{Task A1} \code{input\_stats(frame)}: the grey image with
+          \code{cv2.cvtColor}, its mean (brightness), and the variance of
+          \code{cv2.Laplacian} (sharpness).
+    \item \textbf{Task A2} \code{summarize(records, seconds)}: the ten keys
+          of the docstring. The p95 uses \code{percentile()}, the
+          nearest-rank rule of Day 9.
+    \item \textbf{You see:} \code{Task A1: complete} and \code{Task A2:
+          complete}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: run the detector, read the log (20 min)}
+  \small
+  Put the cup and the bottle in front of the camera.
+\begin{lstlisting}[style=shell]
+~/yolo/bin/python monitor_detect.py \
+    --model ../../day08/models/cupbottle_320_ncnn_model \
+    --group g07 --no-mqtt --seconds 120
+wc -l -c ../logs/detector.jsonl
+tail -n 1 ../logs/detector.jsonl | python3 -m json.tool
+\end{lstlisting}
+  \textbf{You see} one line each 10 s (here in two parts):
+\begin{lstlisting}[basicstyle=\ttfamily\tiny]
+10:21:40   ... frames/s  latency .../... ms  confidence ...  low ...  objects ...
+  brightness ...  sharpness ...  ... C  rss ... MB
+\end{lstlisting}
+  \begin{itemize}
+    \item The log has one JSON record on each line: \code{start}, one
+          \code{summary} each 10 s, \code{stop}. It has at most 1 MB and 5
+          old files.
+    \item Cover the lens for 10 s: which values change?
+    \item \textbf{You record:} one line, the records and the bytes of the
+          log, and the WARNING records of a run with \code{--slow-ms 50}
+          (\code{grep -c slow\_frame}).
+  \end{itemize}
+  \source{The values of the lines come from your board.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: the live dashboard (25 min)}
+  \small
+\begin{lstlisting}[style=shell]
+systemctl is-active mosquitto                       # active (Day 12)
+cd ~/edgeai/day13/dashboard
+~/yolo/bin/python dashboard.py --group g07          # second SSH terminal
+cd ~/edgeai/day13/pi                                # first terminal
+~/yolo/bin/python monitor_detect.py \
+    --model ../../day08/models/cupbottle_320_ncnn_model --group g07
+\end{lstlisting}
+  \begin{itemize}
+    \item Open \code{http://pi-07.local:8080} on the laptop. The state bar
+          says \code{Waiting for data ...}, then \code{no alert program}.
+    \item The eight charts get one point each 10 s: frame rate, latency
+          p95, temperature, memory of the detector, mean top score, part
+          below 0.5, objects, brightness.
+    \item On the laptop:
+          \code{mosquitto\_sub -h pi-07.local -t 'edgeai/g07/pi/\#' -v}.
+    \item \textbf{You record:} the messages and the lost messages of the
+          state bar after 5 minutes, and the name of the CSV file in
+          \code{dashboard/metrics\_log/}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part B: reference period and Task C1 (20 min)}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.85cm]
+    \draw[->, coolgray] (0,0) -- (12.4,0) node[below left] {time};
+    \fill[treegreen!35] (0.2,0.12) rectangle (6.0,0.82);
+    \node at (3.1,0.47) {reference: 10 min of the normal scene};
+    \fill[darkorange!40] (6.6,0.12) rectangle (8.6,0.82);
+    \node[align=center] at (7.6,0.47) {dim light\\ 3 min};
+    \fill[darkorange!25] (9.6,0.12) rectangle (11.6,0.82);
+    \node[align=center] at (10.6,0.47) {unknown\\ object};
+    \node[below] at (0.2,0) {B4}; \node[below] at (6.6,0) {C2};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Keep the scene normal for 10 minutes: the cup and the bottle in
+          view, the normal light. People can move as usual. Do not stop the
+          detector.
+    \item Write the start and the end time. Write which panels move and
+          which stay flat.
+    \item During this time, complete \textbf{Task C1}
+          \code{threshold\_from\_history(values, window, k)} in
+          \code{pi/reference.py}: the means of 6 summaries in a row, their
+          mean and standard deviation, the threshold mean $-$ 3 sd, and the
+          clear value mean $-$ 1 sd.
+  \end{itemize}
+  \keypoint{The reference must show the normal variation of your scene.
+    A still scene with no variation gives a threshold that fires too
+    often.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: a threshold from the reference (10 min)}
+\begin{lstlisting}[style=shell]
+~/yolo/bin/python reference.py \
+    --csv ../dashboard/metrics_log/metrics_2026-10-05.csv \
+    --start 10:20 --end 10:30 --group g07
+\end{lstlisting}
+  \textbf{You see:}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+Task C1: complete
+Reference: ... rows from 10:20:00 to 10:30:00, metric confidence
+Rows:      mean ...  sd ...  min ...  max ...
+Means of 6 rows: ... means, mean ...  sd ...
+Threshold: ...   clear: ...   (mean - ..., mean - ...)
+Command: python alert.py --group g07 --metric confidence --threshold ...
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Use the date of today and the times of your reference.
+    \item A \code{WARNING: the reference has almost no variation}: run it
+          again with \code{--min-margin 0.05}.
+    \item Run it also with \code{--metric brightness}. \textbf{You record:}
+          the mean, the standard deviation, the threshold, and the clear
+          value.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part C: two drift events (30 min)}
+  \small
+  Make each event for 3 minutes, with 3 minutes of the normal scene between
+  them. Write the start and the end time.
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.38\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Event} & \textbf{What you do} & \textbf{Watch} \\
+    \midrule
+    Dim light & Switch off the light of the room, or turn the lamp away &
+      Mean top score, objects, brightness \\
+    Unknown object & Put your unknown object in place of the cup & Mean top
+      score, part below 0.5, objects \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item \textbf{You record:} for each event, the mean top score, the part
+          below 0.5, the objects, the brightness, and the sharpness of the
+          printed lines (the table of the report).
+    \item Which metric shows each event most clearly? Which metric names
+          the cause? The model gives no error in either event.
+    \item With no lamp to switch: \code{--dim-after 60 --dim-gain 0.1}
+          multiplies each frame by 0.1 for 3 minutes.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}{Part D: Task D1, the alert rule (10 min)}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.7cm, y=1.6cm]
+    \draw[->, coolgray] (0,0) -- (13.6,0) node[below left] {time};
+    \draw[->, coolgray] (0,0) -- (0,1.15) node[above right] {mean of 6};
+    \draw[cardinalred, dashed] (0,0.45) -- (13.3,0.45);
+    \node[cardinalred, above right] at (11.2,0.36) {threshold};
+    \draw[treegreen, dashed] (0,0.62) -- (13.3,0.62);
+    \node[treegreen, above right] at (11.2,0.6) {clear};
+    \draw[darkcyan, thick] (0,0.85) -- (3,0.85) -- (5,0.3) -- (9,0.3)
+      -- (10.5,0.8) -- (13,0.85);
+    \fill[cardinalred!20] (4.3,0.02) rectangle (6.8,0.12);
+    \node[above, text=cardinalred] at (5.55,0.1) {duration};
+    \draw[->, cardinalred] (6.8,0.95) node[above] {fire} -- (6.8,0.3);
+    \draw[->, treegreen] (10.1,0.95) node[above] {clear} -- (10.1,0.66);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item \textbf{Task D1} \code{AlertRule.update(t, value)} in
+          \code{pi/alert.py}: append the value; the mean of the last 6
+          values (60 s); fire when the mean stays below the threshold for
+          the duration; clear when the mean is above the clear value.
+    \item The clear value is above the threshold (hysteresis), so a mean
+          near the threshold does not switch the alert on and off.
+    \item The docstring gives the five steps. The program checks the
+          method with a known sequence before it connects.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part D: test the alert (15 min)}
+\begin{lstlisting}[style=shell]
+~/yolo/bin/python alert.py --group g07 --metric confidence \
+    --threshold ... --clear ... --window 6          # the command of C1
+\end{lstlisting}
+  \textbf{You see} during the dim light event:
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+Task D1: complete
+Rule: mean of 6 summaries of confidence below ... for 60 s; clear above ...
+HH:MM:SS ALERT ON    confidence: mean of 60 s ..., threshold ..., clear ...
+HH:MM:SS ALERT OFF   confidence: mean of 60 s ..., threshold ..., clear ...
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The state bar of the dashboard is red during the alert. With the
+          XIAO of Day 12, \code{--xiao-led} switches its LED.
+    \item A second copy with \code{--metric brightness} and its own
+          threshold can watch the light.
+    \item \textbf{You record:} the seconds from the start of the event to
+          \code{ALERT ON}, and from its end to \code{ALERT OFF}. Then write
+          the incident report.
+  \end{itemize}
+\end{frame}

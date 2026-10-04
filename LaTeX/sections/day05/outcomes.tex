@@ -1,0 +1,28 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 5 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item A microphone and a camera give much more data than an accelerometer:
+          16 000 samples each second, and 27 648 values for one small image.
+    \item The model cannot take this data directly. Features make an audio
+          signal small, and a small image and a narrow network make a vision
+          model small.
+    \item A device that listens all the time makes many decisions each second.
+          The post-processing decides how many of them are false activations.
+    \item In the lab you put a keyword spotting model and an image classifier
+          on the XIAOML Kit, and you measure their latency and their RAM.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Compute a spectrogram and MFCC features from an audio signal.
+    \item Describe the keyword spotting pipeline and the cascade design.
+    \item Explain why peak activation memory limits vision models on a
+          microcontroller.
+    \item Deploy a keyword spotting model and an image classifier on the
+          XIAOML Kit.
+    \item Tune the post-processing to reduce false activations.
+  \end{itemize}
+\end{frame}

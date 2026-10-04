@@ -1,0 +1,68 @@
+% Goal and plan of the Day 8 lab.
+% The parts and the times come from the Day 8 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has a live detection on the Raspberry
+          Pi 5, with a custom model for two classes: a bottle and a cup.
+    \item \textbf{Board:} the Raspberry Pi 5 with the camera.
+    \item \textbf{Deliverable:} a live demonstration, and the frame-rate
+          table and the Decision Log in the file \code{report.md}.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the method: the candidates of a detector, the
+    suppression, the IoU, the mAP, and the four decisions of a deployment.
+    All its times are from an x86 processor. In the lab, you train a
+    detector, you export it, and you measure its frame rate and its
+    accuracy for the board.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{A frame rate has no value without the accuracy of the same
+    file. The table of this lab has the two numbers in each row.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (30,0.8);
+    \fill[treegreen!60]   (30,0)  rectangle (80,0.8);
+    \fill[darkorange!55]  (80,0)  rectangle (120,0.8);
+    \fill[cardinalred!55] (120,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (30,0) -- (30,0.8) (80,0) -- (80,0.8)
+      (120,0) -- (120,0.8) (150,0) -- (150,0.8);
+    \node at (15,0.4)  {\textbf{A}: 30};
+    \node at (55,0.4)  {\textbf{B}: 50 min};
+    \node at (100,0.4) {\textbf{C}: 40 min};
+    \node at (135,0.4) {\textbf{D}: 30};
+    \node at (165,0.4) {check};
+    \foreach \t in {0,30,80,120,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Pre-trained models: an SSD model and a YOLO model on test images,
+        on the board & 30 min \\
+    B & Custom model: train a YOLO model on a small dataset with two
+        classes, on the laptop & 50 min \\
+    C & Export and deploy: NCNN and LiteRT \code{int8}, and the live
+        detection with the camera & 40 min \\
+    D & Measure: the frame rate for two image sizes and two precisions,
+        and the accuracy loss of \code{int8} & 30 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

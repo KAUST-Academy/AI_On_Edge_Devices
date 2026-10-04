@@ -1,0 +1,73 @@
+% Goal and plan of the Day 11 lab.
+% The parts and the times come from the Day 11 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} the Day 8 detector runs on a live network video
+          stream, and you know the age of the image that it sees.
+    \item \textbf{Boards:} the Raspberry Pi 5 with its camera, and the
+          XIAOML Kit with its camera.
+    \item \textbf{Deliverable:} a live demonstration, and the file
+          \code{report.md} with the network values, the latency for two
+          stream settings, the values of the XIAO stream, and the Decision
+          Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the network tools, the bit rates of MJPEG and H.264,
+    RTSP, and the buffers that make a frame old. Its values came from one
+    computer with no network and no camera. Today you measure the lab
+    network, the two cameras, and the complete path from the camera to the
+    boxes on the screen.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{Measure the age of the image at the moment of the result, not
+    only the time of the model.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[coolgray!25]    (0,0)   rectangle (20,0.8);
+    \fill[darkcyan!55]    (20,0)  rectangle (40,0.8);
+    \fill[treegreen!60]   (40,0)  rectangle (80,0.8);
+    \fill[darkorange!55]  (80,0)  rectangle (125,0.8);
+    \fill[cardinalred!35] (125,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (20,0) -- (20,0.8) (40,0) -- (40,0.8)
+      (80,0) -- (80,0.8) (125,0) -- (125,0.8) (150,0) -- (150,0.8);
+    \node at (10,0.4)    {quiz};
+    \node at (30,0.4)    {\textbf{A}};
+    \node at (60,0.4)    {\textbf{B}: 40 min};
+    \node at (102.5,0.4) {\textbf{C}: 45 min};
+    \node at (137.5,0.4) {\textbf{D}};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,20,40,80,125,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.66\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    Quiz & The quiz of Week 2 (Days 6 to 10) & 20 min \\
+    A & Network tools: find the devices, measure the throughput & 20 min \\
+    B & RTSP server: publish the camera with MediaMTX, open the stream
+      & 40 min \\
+    C & Inference on the stream: the detector, the latency, two settings
+      & 45 min \\
+    D & Microcontroller camera: an MJPEG stream of the XIAO, a comparison
+      & 25 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

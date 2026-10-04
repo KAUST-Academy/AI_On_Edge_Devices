@@ -1,0 +1,9 @@
+# Files that the lab makes. They are not part of the repository.
+data/
+runs/
+images/
+models/*.pt
+models/cupbottle_*
+*_result.jpg
+results.csv
+__pycache__/

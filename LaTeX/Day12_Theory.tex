@@ -1,0 +1,31 @@
+% Theory deck of Day 12. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day12_Theory.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 12]{Day 12: Local decision-making and MQTT}
+
+% Name only the sources that this deck uses. preamble/course.tex gives one
+% command for each source: \creditmlsys, \creditraspi, \creditxiao,
+% \creditbigpower, \credittinymlx, \credittflm.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditbigpower
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day12/outcomes}
+\input{sections/day12/toc}
+\input{sections/day12/part1}
+\input{sections/day12/part2}
+\input{sections/day12/part3}
+\input{sections/day12/recap}
+\input{sections/day12/further_reading}
+\input{sections/credits}
+
+\end{document}

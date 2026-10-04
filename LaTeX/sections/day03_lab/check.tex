@@ -1,0 +1,48 @@
+% Check criterion, deliverable, and the Decision Log question of Day 3.
+% The criterion and the deliverable come from the Day 3 section of the
+% syllabus and from Labs/day03/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ The notebook prints \code{complete} for tasks 1, 2, and 4.
+    \item \cmark\ The Serial Monitor shows \code{Self-test: PASS}.
+    \item \cmark\ The board shows the correct class for each of the four
+          motions.
+    \item \cmark\ The report has the three predictions: task 3, the arena
+          estimate, and the PSRAM question. You wrote them before the
+          measurement.
+    \item \cmark\ The comparison table has measured numbers for your
+          sketch: flash, arena, and latency, with PSRAM and with no PSRAM.
+    \item \cmark\ The comparison table has numbers for the path of Edge
+          Impulse. Each number says if it is a measurement or an estimate.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}. Show the kit to the
+  instructor.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    A product must classify the motion of a package for one year with a
+    battery. Which path do you select for the firmware?
+    \begin{itemize}
+      \item Your own sketch with TensorFlow Lite Micro.
+      \item The library of Edge Impulse.
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the flash, the RAM, and the latency of the two paths from
+          your table,
+    \item says what the latency means for the time that the processor can
+          sleep,
+    \item names what you lose with your decision. Example: control of the
+          code against the speed of optimized kernels.
+  \end{itemize}
+\end{frame}

@@ -1,0 +1,591 @@
+% Part 2 of Day 7: The runtime stack.
+%
+% Topics of the syllabus: model format, graph optimizer, kernel library; ONNX
+% Runtime, LiteRT, NCNN, ExecuTorch; threads and execution providers.
+% Exercise: select a runtime for three deployment cases.
+%
+% The measured numbers of this part are results of an experiment of this
+% course on the work computer: MobileNetV2 of torchvision with its ImageNet
+% weights, on an x86 processor with AVX2. They say nothing about a board.
+% Each frame with such a number says so in its source line. The numbers for
+% the Raspberry Pi 5 are numbers that the author of the companion code
+% published. The frame names the source.
+
+\theorypart{The runtime stack}%
+  {select a runtime for three deployment cases}
+
+% --------------------------------------------------------- why a runtime
+\begin{frame}{Why not PyTorch on the device?}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.32\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    & \textbf{Training framework} & \textbf{Inference runtime} \\
+    \midrule
+    Work   & Forward pass, gradients, updates & The forward pass only \\
+    Graph  & Python code makes it at each call & Fixed. It comes from a
+                                                 file. \\
+    Installed size     & 733 MB (PyTorch) & 21 to 57 MB \\
+    Load the model     & 2.8 s            & 0.05 to 0.11 s \\
+    One inference      & 31.9 ms          & 11.7 to 16.6 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item A training framework can do each operation on each tensor. This
+          freedom costs time and memory.
+    \item A runtime knows the complete graph before the first inference.
+          It can prepare the work.
+  \end{itemize}
+  \keypoint{Train in the framework. Export the model one time. Run the
+    exported file in a runtime.}
+  \source{MobileNetV2 with one thread in ONNX Runtime, LiteRT, and NCNN:
+    an experiment of this course on an x86 processor with AVX2.}
+\end{frame}
+
+\begin{frame}{The three layers of a runtime}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.1cm, minimum height=1.25cm, align=center}]
+    \node[b, draw=darkcyan]    (f) at (0,0)    {\textbf{Model format}\\the file};
+    \node[b, draw=darkorange]  (o) at (2.7,0)
+      {\textbf{Graph}\\\textbf{optimizer}};
+    \node[b, draw=cardinalred] (k) at (5.4,0)
+      {\textbf{Kernel}\\\textbf{library}};
+    \node[b]                   (h) at (8.1,0) {Processor\\or accelerator};
+    \draw[->] (f) -- (o); \draw[->] (o) -- (k); \draw[->] (k) -- (h);
+    \node[coolgray] at (0,-1.0)    {What is the model?};
+    \node[coolgray] at (2.7,-1.0) {What work is left?};
+    \node[coolgray] at (5.4,-1.0)  {How is it done?};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item \textbf{Model format:} the graph, the operators, and the weights
+          in one file.
+    \item \textbf{Graph optimizer:} it changes the graph before the first
+          inference. The result of the model stays the same. Part 3 gives
+          the details.
+    \item \textbf{Kernel library:} the code of each operator for one type
+          of processor. A kernel uses the SIMD instructions and the
+          threads of Part 1.
+  \end{itemize}
+  \keypoint{Compare two runtimes layer by layer: which file, which
+    optimizations, which kernels.}
+\end{frame}
+
+% ------------------------------------------------------------------ format
+\begin{frame}{Layer 1: the model format}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.19\textwidth}L{0.22\textwidth}L{0.26\textwidth}r@{}}
+    \toprule
+    \textbf{Runtime} & \textbf{File} & \textbf{Made by}
+    & \textbf{MobileNetV2} \\
+    \midrule
+    LiteRT       & \code{.tflite} & The LiteRT converter & 14\,078\,620 \\
+    ONNX Runtime & \code{.onnx}   & \code{torch.onnx.export}
+                 & 14\,216\,752 \\
+    NCNN         & \code{.param} and \code{.bin} & The tool \code{pnnx}
+                 & 7\,020\,315 \\
+    ExecuTorch   & \code{.pte}    & The ExecuTorch export & 13.58 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The sizes are in bytes. The model has 3\,504\,872 parameters:
+          14\,019\,488 bytes in \code{float32}. The graph adds a small
+          part.
+    \item The NCNN file is half as large: the tool stores the weights in
+          \code{float16}.
+    \item A \code{.tflite} file is the FlatBuffer of Day 3. An
+          \code{.onnx} file has a different container, and it holds the
+          same three things.
+  \end{itemize}
+  \source{File sizes: an export of this course from one PyTorch model.
+    ExecuTorch file: the guide ``Image Classification with EXECUTORCH'' of
+    \emph{EdgeML with Raspberry Pi}.}
+\end{frame}
+
+\begin{frame}[fragile]{ONNX: one format between the frameworks}
+\begin{lstlisting}[style=python]
+import torch, torchvision
+
+model = torchvision.models.mobilenet_v2(weights="IMAGENET1K_V1").eval()
+example = torch.randn(1, 3, 224, 224)
+
+torch.onnx.export(model, (example,), "mnv2_static.onnx",
+                  input_names=["image"], output_names=["logits"],
+                  dynamo=True, external_data=False)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item ONNX is an open standard for model files. It defines a list of
+          operators. The list has a version number: the \textbf{opset}.
+    \item The export follows the example input through the model and
+          writes the graph. The model must be in the mode \code{eval()}.
+    \item This file has 100 nodes: 52 \code{Conv}, 35 \code{Clip}, 10
+          \code{Add}, and 3 more. The opset is 20.
+    \item Many tools read ONNX. So ONNX is also a step on the way to a
+          different format.
+  \end{itemize}
+  \keypoint{Open each exported file in Netron. Check the input shape, the
+    operators, and the output.}
+\end{frame}
+
+% -------------------------------------------------------------- optimizer
+\begin{frame}{Layer 2: the graph optimizer}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.33\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    \textbf{When} & \textbf{Who} & \textbf{Example} \\
+    \midrule
+    At the export & The converter on the laptop
+                  & The LiteRT converter, \code{pnnx} \\
+    When the program loads the model & The runtime on the device
+                  & ONNX Runtime \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item An optimization at the export costs no time on the device. The
+          file is then made for one runtime.
+    \item An optimization at the load can use facts about the device. It
+          makes the start of the program slower.
+    \item ONNX Runtime with MobileNetV2 and one thread: 26.4 ms with no
+          graph optimization, and 11.7 ms with all optimizations. A part
+          of this gain exists only on an x86 processor.
+  \end{itemize}
+  \keypoint{One file gives a different latency at each optimization
+    level.}
+  \source{An experiment of this course on an x86 processor with AVX2.}
+\end{frame}
+
+% ----------------------------------------------------------------- kernels
+\begin{frame}{Layer 3: the kernel library}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{A reference kernel}
+        \begin{itemize}
+          \item Simple loops, as the listing of Part 1.
+          \item It is easy to read and to test.
+          \item It is the same code for each processor.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{An optimized kernel}
+        \begin{itemize}
+          \item SIMD instructions of one processor type.
+          \item Blocks of data that fit in a cache.
+          \item Work for more than one thread.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
+    \toprule
+    \textbf{Library} & \textbf{Used by} \\
+    \midrule
+    XNNPACK   & LiteRT (the default on a CPU), ExecuTorch, and ONNX Runtime
+                as an option \\
+    MLAS      & ONNX Runtime (the default on a CPU) \\
+    NCNN      & Its own kernels, written first for the Arm processors of
+                phones \\
+    CMSIS-NN  & TensorFlow Lite Micro on Arm Cortex-M (Day 3) \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Measured: one file, three sets of kernels}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.0185cm, y=0.62cm]
+    \foreach \k/\v/\l/\c in {
+        0/362.7/{Reference kernels}/coolgray!55,
+        1/41.8/{Built-in kernels}/darkorange!55,
+        2/11.7/{XNNPACK kernels}/darkcyan!60} {
+      \fill[\c] (0,-\k) rectangle (\v,-\k+0.7);
+      \node[anchor=east] at (-6,-\k+0.35) {\l};
+      \node[anchor=west] at (\v+4,-\k+0.35) {\v\ ms};
+    }
+    \draw[coolgray] (0,1.0) -- (0,-2.3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item One \code{.tflite} file of MobileNetV2 in LiteRT, with one
+          thread. Only the kernels change.
+    \item From the reference kernels to XNNPACK: a factor of 31.
+    \item The three runs give the same class.
+    \item LiteRT selects XNNPACK with no setting. When it starts, it prints
+          \code{Created TensorFlow Lite XNNPACK delegate for CPU}.
+  \end{itemize}
+  \keypoint{The kernel library alone can change the latency by a factor of
+    30.}
+  \source{An experiment of this course on an x86 processor with AVX2. The
+    values say nothing about a board.}
+\end{frame}
+
+\begin{frame}{Published for the Raspberry Pi 5}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.44\textwidth}rr@{}}
+    \toprule
+    \textbf{MobileNetV2 in ExecuTorch} & \textbf{File} & \textbf{Latency} \\
+    \midrule
+    \code{float32}, kernels with no optimization & 13.58 MB & 2440 ms \\
+    \code{float32}, XNNPACK                      & 13.35 MB & 10.84 ms \\
+    \code{int8}, XNNPACK                         & 3.59 MB  & 3.69 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The latency is the median of 50 runs on a Raspberry Pi 5. With
+          XNNPACK, the same model is 225 times as fast.
+    \item The calculation of Part 1 with one MAC in each clock cycle gave
+          125 ms. XNNPACK is more than 11 times faster than this.
+    \item \code{int8} is 2.9 times as fast as \code{float32}. On the work
+          computer of Day 6, \code{int8} was slower. The processor and its
+          kernels make the difference.
+  \end{itemize}
+  \keypoint{An export with no optimized backend runs. You cannot use its
+    latency.}
+  \source{The guide ``Image Classification with EXECUTORCH'' of
+    \emph{EdgeML with Raspberry Pi}, by M.~Rovai.}
+\end{frame}
+
+% ------------------------------------------------------------ four runtimes
+\begin{frame}[fragile]{LiteRT}
+\begin{lstlisting}[style=python]
+from ai_edge_litert.interpreter import Interpreter
+
+interpreter = Interpreter(model_path="mnv2.tflite", num_threads=4)
+interpreter.allocate_tensors()
+inp = interpreter.get_input_details()[0]
+out = interpreter.get_output_details()[0]
+
+interpreter.set_tensor(inp["index"], image)
+interpreter.invoke()
+scores = interpreter.get_tensor(out["index"])
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item LiteRT is the new name of TensorFlow Lite. TensorFlow Lite Micro
+          of Day 3 is its version for microcontrollers.
+    \item It is an interpreter: it reads the \code{.tflite} file and calls
+          one kernel for each operator.
+    \item \code{allocate\_tensors()} plans the memory of all tensors one
+          time, as the arena of Day 3.
+    \item A \textbf{delegate} takes a part of the graph. XNNPACK is the
+          default delegate for the CPU.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{ONNX Runtime}
+\begin{lstlisting}[style=python]
+import onnxruntime as ort
+
+options = ort.SessionOptions()
+options.intra_op_num_threads = 4
+options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+
+session = ort.InferenceSession("mnv2_static.onnx", options,
+                               providers=["CPUExecutionProvider"])
+scores = session.run(None, {"image": image})[0]
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item ONNX Runtime runs \code{.onnx} files from each framework that can
+          export ONNX.
+    \item It optimizes the graph when it makes the session. The level is a
+          setting.
+    \item An \textbf{execution provider} is its name for a backend. The
+          list \code{providers} gives the order. The CPU provider can run
+          each operator.
+    \item One file runs on a laptop, on a server, and on the Raspberry Pi.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{NCNN}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{block}{What it is}
+        \begin{itemize}
+          \item A runtime that was made for phones.
+          \item It has its own kernels for Arm processors with NEON.
+          \item It needs no other library.
+          \item Two files: \code{.param} is the graph as text, and
+                \code{.bin} holds the weights.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{How you get a model}
+        \begin{itemize}
+          \item From PyTorch with the tool \code{pnnx}.
+          \item From a training tool that exports NCNN. The YOLO tool of
+                Day 8 does this with one command.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The export fuses each convolution with its activation. The graph
+          of MobileNetV2 has 77 layers.
+    \item The kit lab for object detection reports the best speed on the
+          Raspberry Pi for the NCNN format. You measure this on Day 8.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, hardware kits, Raspberry Pi,
+    ``Object Detection''. Number of layers: an export of this course.}
+\end{frame}
+
+\begin{frame}{ExecuTorch}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[b] (a) at (0,0)    {PyTorch\\model};
+    \node[b] (b) at (2.2,0)  {\texttt{export()}\\the graph};
+    \node[b] (c) at (4.4,0)  {\texttt{to\_edge()}\\edge operators};
+    \node[b, draw=cardinalred] (d) at (6.6,0)
+      {\texttt{to\_backend()}\\XNNPACK};
+    \node[b, draw=darkcyan] (e) at (8.8,0)
+      {\texttt{to\_executorch()}\\\texttt{.pte} file};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item ExecuTorch is the runtime of PyTorch for edge devices. The model
+          stays in the PyTorch tools from the training to the device.
+    \item All steps run on the laptop, before the deployment. The runtime
+          on the device is small: it reads the \code{.pte} file and runs
+          the plan.
+    \item The step \code{to\_backend()} gives the parts of the graph that
+          XNNPACK supports to XNNPACK. Without this step, the file uses
+          kernels with no optimization.
+    \item It is newer than LiteRT (2023 against 2017). LiteRT has more
+          documents and more ready models.
+  \end{itemize}
+  \source{The guide ``Image Classification with EXECUTORCH'' of
+    \emph{EdgeML with Raspberry Pi}, by M.~Rovai.}
+\end{frame}
+
+\begin{frame}{Measured: one model in four programs}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.30\textwidth}rrrrr@{}}
+    \toprule
+    \textbf{Median latency in ms}
+    & \textbf{1 thread} & \textbf{2 threads} & \textbf{4 threads}
+    & \textbf{Gain} & \textbf{Load} \\
+    \midrule
+    PyTorch, no export & 31.9 & 26.7 & 19.8 & 1.6 & 2.80 s \\
+    ONNX Runtime       & 11.7 & 6.3  & 3.6  & 3.3 & 0.11 s \\
+    LiteRT             & 11.7 & 6.4  & 3.5  & 3.4 & 0.05 s \\
+    NCNN               & 16.6 & 9.8  & 5.8  & 2.9 & 0.05 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item ONNX Runtime and LiteRT are equal on this processor. They are 2.7
+          times as fast as PyTorch.
+    \item The kernels of NCNN are made for Arm, not for this x86 processor.
+          On the Raspberry Pi, the order can change.
+    \item The gain from 1 thread to 4 threads is near 3, not 4. Possible
+          reasons: work that is not parallel, and memory-bound layers.
+  \end{itemize}
+  \keypoint{This table is valid for one model on one processor. In the lab
+    you make the same table on the Raspberry Pi.}
+  \source{MobileNetV2 on an x86 processor: an experiment of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------ threads
+\begin{frame}{Threads: set the number}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.19\textwidth}L{0.51\textwidth}L{0.21\textwidth}@{}}
+    \toprule
+    \textbf{Runtime} & \textbf{Setting} & \textbf{With no setting} \\
+    \midrule
+    LiteRT       & \code{Interpreter(num\_threads=4)} & 1 thread \\
+    ONNX Runtime & \code{options.intra\_op\_num\_threads = 4} & All cores \\
+    NCNN         & \code{net.opt.num\_threads = 4}            & All cores \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The threads of this table split the work of one operator.
+    \item Do not use more threads than free cores. In the experiment, NCNN
+          got 4 cores of a computer with 24 cores and no setting. It
+          needed 20.1 ms. With one thread it needed 16.6 ms.
+    \item LiteRT with no setting needed 11.6 ms: the time of one thread.
+    \item Your program needs a core for the camera and for the
+          pre-processing. Four threads for the model can make the complete
+          pipeline slower.
+    \item Four busy cores make more heat on the Raspberry Pi (Day 9).
+  \end{itemize}
+  \source{An experiment of this course on an x86 processor with AVX2.}
+\end{frame}
+
+% --------------------------------------------------- providers and delegates
+\begin{frame}{Delegates and execution providers}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      n/.style={draw=treegreen, rounded corners=2pt, fill=treegreen!15,
+                minimum width=1.3cm, minimum height=0.55cm, align=center},
+      c/.style={draw=darkcyan, rounded corners=2pt, fill=darkcyan!15,
+                minimum width=1.3cm, minimum height=0.55cm, align=center}]
+    \node[n] (a) at (0,0)   {Conv};
+    \node[n] (b) at (1.7,0) {Conv};
+    \node[n] (d) at (3.4,0) {Add};
+    \node[c] (x) at (5.1,0) {Special};
+    \node[n] (e) at (6.8,0) {Dense};
+    \foreach \a/\b in {a/b, b/d, d/x, x/e} { \draw[->] (\a) -- (\b); }
+    \draw[treegreen, dashed] (-0.85,-0.45) rectangle (4.25,0.45);
+    \draw[treegreen, dashed] (5.95,-0.45) rectangle (7.65,0.45);
+    \node[treegreen!70!black] at (1.7,-0.75) {part 1: the backend};
+    \node[darkcyan!80!black]  at (5.1,-0.75) {the default kernels};
+    \node[treegreen!70!black] at (7.2,-0.75) {part 2};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A backend is a kernel library or an accelerator. It supports a
+          list of operators.
+    \item The runtime cuts the graph into parts. A part with supported
+          operators goes to the backend. The other operators run with the
+          default kernels.
+    \item The names: a \textbf{delegate} in LiteRT, an \textbf{execution
+          provider} in ONNX Runtime, a \textbf{backend} in ExecuTorch.
+    \item Each border between two parts costs time. One operator with no
+          support in the middle of the graph makes two borders.
+    \item On the Raspberry Pi 5, the backend is a CPU library. With an NPU,
+          the same method sends the parts to the NPU.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The same model, the same result?}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.34\textwidth}L{0.30\textwidth}r@{}}
+    \toprule
+    \textbf{Runtime} & \textbf{Weights} & \textbf{Largest difference} \\
+    \midrule
+    ONNX Runtime & \code{float32} & 0.00007 percent \\
+    LiteRT       & \code{float32} & 0.00011 percent \\
+    NCNN         & \code{float16} & 1.0 percent \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item For one input, the table compares the 1000 outputs with the
+          outputs of PyTorch. The unit is the largest output.
+    \item Two \code{float32} runtimes do the additions in a different
+          order. The rounding gives a small difference.
+    \item A lower precision gives a larger difference. Here, all runtimes
+          give the same class.
+    \item After each conversion, measure the accuracy on the test set, as
+          on Day 4. One input is not a test.
+  \end{itemize}
+  \keypoint{A conversion can change the result. A model that loads with no
+    error is not a model that is correct.}
+  \source{An experiment of this course with MobileNetV2.}
+\end{frame}
+
+% ---------------------------------------------------------------- selection
+\begin{frame}{How to select a runtime}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
+    \toprule
+    \textbf{Runtime} & \textbf{A good first choice when} \\
+    \midrule
+    LiteRT       & The model comes from Keras or TensorFlow. The same
+                   \code{.tflite} family also runs on a microcontroller. \\
+    ONNX Runtime & The model comes from PyTorch, and one file must run on
+                   different computers. \\
+    NCNN         & The target is an Arm processor, and the training tool
+                   exports NCNN. \\
+    ExecuTorch   & The team works with PyTorch and wants one tool from the
+                   training to the device. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  The table gives candidates. Answer these questions, and then measure on
+  the device:
+  \begin{enumerate}
+    \item Does the runtime have an optimized kernel for each operator of
+          the model, on this processor?
+    \item Does it support the precision that you need: \code{int8},
+          \code{float16}?
+    \item Does it support the accelerator of the product?
+    \item Can your program use it: Python, C++, the size of the install?
+  \end{enumerate}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{select a runtime for three cases}{%
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.88\textwidth}@{}}
+    A & A team trains an image classifier in PyTorch. The first target is
+        a Raspberry Pi 5 with a Python program. Later, the same model file
+        must run on a laptop with an x86 processor. \\
+    B & A keyword model comes from Keras, in \code{int8}. It runs on a
+        microcontroller with TensorFlow Lite Micro. The team wants the
+        same model on a Raspberry Pi that collects the results. \\
+    C & An object detector must run on a Raspberry Pi 5 with a camera. The
+        frame rate is the main goal. The training tool exports ONNX,
+        LiteRT, and NCNN. \\
+  \end{tabular}
+  \vskip 0.2em
+  For each case:
+  \begin{enumerate}
+    \item Select one runtime. Give the reason with the three layers:
+          format, graph optimizer, kernel library.
+    \item Name one fact that you check before the decision is final.
+    \item Give the number of threads for the model, and the reason.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{select a runtime for three cases}{%
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.15\textwidth}L{0.40\textwidth}L{0.31\textwidth}@{}}
+    \toprule
+    & \textbf{Runtime} & \textbf{Reason} & \textbf{Check} \\
+    \midrule
+    A & ONNX Runtime
+      & PyTorch exports ONNX. One file runs on Arm and on x86, with
+        optimized kernels.
+      & The accuracy of the exported file \\
+    B & LiteRT
+      & The \code{.tflite} file of the microcontroller runs with no new
+        conversion.
+      & The same class on the two devices for test inputs \\
+    C & NCNN first
+      & Its kernels are made for Arm. The tool exports it with one
+        command.
+      & The frame rate and the accuracy of the three formats on the
+        board \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item ExecuTorch with XNNPACK is a second good answer for case A, if
+          the laptop is not a hard requirement.
+    \item Threads: 4 for a model that runs alone (A). For case C, compare
+          3 and 4 threads on the complete pipeline, because the camera
+          needs a core. For case B, the model is small: start with 1.
+  \end{itemize}
+}

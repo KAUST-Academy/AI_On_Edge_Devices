@@ -1,0 +1,589 @@
+% Part 2 of Day 3: TensorFlow Lite Micro internals.
+%
+% Topics of the syllabus: interpreter, operator resolver, tensor arena, static
+% memory plan, no dynamic allocation; optimized kernels (ESP-NN, CMSIS-NN);
+% the on-device loop: initialize, pre-process, infer, post-process. Exercise:
+% estimate the arena size of a small model from its largest activations.
+%
+% The flash numbers of this part are results of the compiler for the sketch
+% Labs/hardware/HW-02/sketches/tflm_hello (esp32 core 3.3.12, library
+% Chirale_TensorFlowLite 2.0.0). Nobody measured an arena size or a latency
+% on the board. The frames give no such value.
+
+\theorypart{TensorFlow Lite Micro internals}%
+  {estimate the arena size of a small model}
+
+% ------------------------------------------------------------------ overview
+\begin{frame}{A runtime for a device with no operating system}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item TensorFlow Lite Micro (TFLM) is a C++ library. It is a part
+              of your firmware.
+        \item It needs no operating system, no file system, and no
+              \code{malloc}.
+        \item It reads the LiteRT file in place, from the flash.
+        \item It runs the model with a small interpreter.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.3}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}L{0.62\textwidth}r@{}}
+        \toprule
+        \textbf{Sketch for the XIAO} & \textbf{Flash} \\
+        \midrule
+        Empty sketch & 271\,457 \\
+        With TFLM, one operator, and a small model & 336\,157 \\
+        \midrule
+        Difference & 64\,700 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.7em
+  \keypoint{The runtime with one operator and a model of 2488 bytes adds
+    about 65 KB to the firmware. A training framework has hundreds of
+    megabytes.}
+  \source{Flash in bytes: results of the compiler for the sketch
+    \texttt{tflm\_hello} of \texttt{Labs/hardware/HW-02/}.}
+\end{frame}
+
+\begin{frame}{The four parts of a TFLM program}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.6cm, minimum height=1.0cm, align=center}]
+    \draw[coolgray, dashed, rounded corners=4pt] (-1.6,-0.8) rectangle (4.6,2.5);
+    \draw[coolgray, dashed, rounded corners=4pt] (5.0,-0.8) rectangle (9.0,2.5);
+    \node[coolgray, anchor=north west] at (-1.5,2.45) {flash};
+    \node[coolgray, anchor=north west] at (5.1,2.45) {RAM};
+    \node[b] (m) at (0,1.2)   {Model\\{\scriptsize the LiteRT array}};
+    \node[b] (r) at (3.0,1.2) {Operator resolver\\{\scriptsize the kernels}};
+    \node[b, draw=cardinalred] (i) at (1.5,-0.1)
+      {Interpreter\\{\scriptsize the code that runs the model}};
+    \node[b] (a) at (7.0,0.55) {Tensor arena\\{\scriptsize all tensors}};
+    \draw[->] (m) -- (i);
+    \draw[->] (r) -- (i);
+    \draw[<->] (i.east) -- (a.west);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{description}\itemsep 0.2em
+    \item[Model] The graph and the weights. Constant data in the flash.
+    \item[Operator resolver] The list of the kernels that the firmware
+      holds.
+    \item[Tensor arena] One array in RAM. The program gives it to the
+      interpreter.
+    \item[Interpreter] It reads the graph, and it calls one kernel for each
+      operator.
+  \end{description}
+\end{frame}
+
+% --------------------------------------------------------------- interpreter
+\begin{frame}{The interpreter}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=0.9cm, align=center}]
+    \node[b] (a) at (0,0)   {Read the next\\operator};
+    \node[b] (b) at (2.85,0) {Find its\\kernel};
+    \node[b, draw=cardinalred] (c) at (5.7,0) {Call the\\kernel};
+    \node[b] (d) at (8.55,0) {Output\\tensor};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \draw[->, coolgray] (d.south) -- ++(0,-0.5) -| node[pos=0.25, below]
+      {one time for each operator of the graph} (a.south);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item The interpreter does not know the model at build time. It reads
+          the graph from the array when the program starts.
+    \item A different model needs no different code. You change the array,
+          and perhaps the list of the operators.
+    \item The cost: one function call for each operator. This cost is small.
+          The kernel does the work.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The alternative is a compiler that makes C code for one model.
+    That code can be smaller. TFLM selects the interpreter, because one
+    runtime then works for all models.}
+\end{frame}
+
+\begin{frame}[fragile]{The operator resolver}
+\begin{lstlisting}[style=cpp]
+#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
+
+// The example model: three fully connected operators and one softmax.
+// These are two operator types.
+static tflite::MicroMutableOpResolver<2> resolver;
+
+resolver.AddFullyConnected();
+resolver.AddSoftmax();
+\end{lstlisting}
+  \begin{itemize}
+    \item The number in \code{<2>} is the number of operator types, not the
+          number of operators.
+    \item Each \code{Add...()} call puts one kernel in the firmware. The
+          linker removes each kernel that the program does not name.
+    \item Netron shows the operator types of your model.
+  \end{itemize}
+  \vskip 0.3em
+  \keypoint{The model selects the operators. An operator with no
+    \code{Add...()} call gives the error of Part 1 on the device.}
+\end{frame}
+
+\begin{frame}{The cost of all operators}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.000032cm, y=1cm]
+    % 1 unit = 1 byte of flash that TFLM adds to the empty sketch.
+    \node[anchor=east] at (-4000,1.5) {One operator};
+    \fill[treegreen!60] (0,1.2) rectangle (64700,1.8);
+    \node[anchor=west] at (68000,1.5) {64\,700 bytes};
+    \node[anchor=east] at (-4000,0.5) {All operators};
+    \fill[cardinalred!55] (0,0.2) rectangle (286080,0.8);
+    \node[anchor=west, text=white] at (3000,0.5) {286\,080 bytes};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item The library has a resolver with all operators. It is easy to use:
+          each model runs.
+    \item It adds 221\,380 bytes to the firmware in comparison with one
+          operator.
+    \item On the XIAO, this is 7 percent of the program space. On a
+          microcontroller with 1 MB of flash, it is 21 percent.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Name only the operators of your model. The flash that you save
+    is space for a larger model.}
+  \source{Results of the compiler for the sketch \texttt{tflm\_hello} with
+    \texttt{MicroMutableOpResolver<1>} and with all operators. The bars
+    show the flash that TFLM adds to an empty sketch.}
+\end{frame}
+
+% ----------------------------------------------------------------------- arena
+\begin{frame}[fragile]{The tensor arena}
+\begin{lstlisting}[style=cpp]
+constexpr int kTensorArenaSize = 4 * 1024;
+alignas(16) uint8_t tensor_arena[kTensorArenaSize];
+\end{lstlisting}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1cm, y=0.8cm,
+      >={Stealth[length=4pt]}]
+    \fill[darkcyan!35]    (0,0) rectangle (3.2,1);
+    \fill[white]          (3.2,0) rectangle (6.6,1);
+    \fill[cardinalred!30] (6.6,0) rectangle (10,1);
+    \draw[coolgray] (0,0) rectangle (10,1);
+    \draw[coolgray] (3.2,0) -- (3.2,1) (6.6,0) -- (6.6,1);
+    \node at (1.6,0.5) {activations};
+    \node at (4.9,0.5) {not used};
+    \node at (8.3,0.5) {data of the interpreter};
+    \draw[->, darkcyan] (0.1,1.25) -- (3.1,1.25);
+    \draw[->, cardinalred] (9.9,1.25) -- (6.7,1.25);
+    \draw[<->, coolgray] (0,-0.3) -- node[below, text=black]
+      {\texttt{kTensorArenaSize} bytes of RAM} (10,-0.3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The arena is one array. The program defines it. The linker gives
+          it a fixed place in RAM.
+    \item From one end: the activations, that is the input, the output, and
+          each tensor between two operators.
+    \item From the other end: the data that the interpreter keeps for each
+          tensor and for each operator.
+    \item The weights are not in the arena. They stay in the flash.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{No dynamic allocation}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{With \code{malloc}}
+        \begin{itemize}
+          \item The program asks for memory when it needs it.
+          \item Free blocks become small pieces. A large request then
+                fails, with enough free memory in total.
+          \item The failure can come after days of operation.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{With the arena}
+        \begin{itemize}
+          \item The interpreter takes all its memory one time, in
+                \code{AllocateTensors()}.
+          \item After that call, it takes no more memory.
+          \item If the arena is too small, the program fails at the start,
+                on your desk.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A device that operates for years with no reset needs memory use
+          that does not change.
+  \end{itemize}
+  \keypoint{If \code{AllocateTensors()} returns with no error, an inference
+    cannot fail later because of memory.}
+\end{frame}
+
+\begin{frame}{The static memory plan}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1.45cm, y=0.5cm]
+    % lifetime of each tensor of the example model over the four operators
+    \foreach \k/\n in {1/FC 1, 2/FC 2, 3/FC 3, 4/softmax} {
+      \node[coolgray] at (\k+0.5,5.6) {\n};
+      \draw[coolgray!50] (\k,0) -- (\k,5.2);
+    }
+    \draw[coolgray!50] (5,0) -- (5,5.2);
+    \foreach \y/\n/\a/\b/\c in {4.2/input: 1200 bytes/1/2/darkcyan,
+        3.2/tensor 1: 80 bytes/1/3/cardinalred,
+        2.2/tensor 2: 40 bytes/2/4/treegreen,
+        1.2/tensor 3: 16 bytes/3/5/coolgray,
+        0.2/output: 16 bytes/4/5/darkcyan} {
+      \node[anchor=east] at (0.9,\y+0.35) {\n};
+      \fill[\c!55] (\a,\y) rectangle (\b,\y+0.7);
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item Each activation has a lifetime: from the operator that writes it
+          to the last operator that reads it.
+    \item Two tensors with lifetimes that do not overlap can use the same
+          bytes. The input and tensor 2 are never in use at the same time.
+    \item The interpreter calculates this plan one time, in
+          \code{AllocateTensors()}. Each tensor gets a fixed position in
+          the arena.
+  \end{itemize}
+  \keypoint{The plan is static: the positions do not change between two
+    inferences.}
+\end{frame}
+
+\begin{frame}{The peak of the plan}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}llrrr@{}}
+    \toprule
+    \textbf{Operator} & \textbf{Tensors in use} & \textbf{Input}
+    & \textbf{Output} & \textbf{Sum in bytes} \\
+    \midrule
+    FC 1    & input, tensor 1    & 1200 & 80 & \textbf{1280} \\
+    FC 2    & tensor 1, tensor 2 & 80   & 40 & 120 \\
+    FC 3    & tensor 2, tensor 3 & 40   & 16 & 56 \\
+    Softmax & tensor 3, output   & 16   & 16 & 32 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item The example model has 300, 20, 10, and 4 values of
+          \code{float32}: 4 bytes for each value.
+    \item The activations need 1280 bytes at the peak. With no reuse, they
+          need $1200 + 80 + 40 + 16 + 16 = 1352$ bytes.
+    \item This is the rule of Day 1: the peak is the largest sum of the
+          tensors that are in use at the same time.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{For a chain of layers, the peak is the layer with the largest
+    sum of input and output. In most models, this is the first layer.}
+\end{frame}
+
+\begin{frame}[fragile]{Find the arena size: measure it}
+  \small
+  The arena holds the activations and the data of the interpreter. The
+  second part depends on the number of tensors and operators. No simple
+  formula gives it.
+\begin{lstlisting}[style=cpp]
+if (interpreter->AllocateTensors() != kTfLiteOk) {
+  stop("ERROR: AllocateTensors() failed. The arena is too small.");
+}
+Serial.print("Arena used (bytes): ");
+Serial.println(interpreter->arena_used_bytes());
+\end{lstlisting}
+  \begin{enumerate}
+    \item Calculate the peak of the activations. Start with an arena that
+          is much larger.
+    \item Run the sketch. Read the value of \code{arena\_used\_bytes()}.
+    \item Set the arena size to this value plus a small margin.
+  \end{enumerate}
+  When the arena is too small, the library prints a message of this form:
+\begin{lstlisting}
+Failed to resize buffer. Requested: ..., available ..., missing: ...
+\end{lstlisting}
+  \source{Code: sketch \texttt{tflm\_hello}. Message text: library
+    Chirale\_TensorFlowLite 2.0.0.}
+\end{frame}
+
+% ------------------------------------------------------------ on-device loop
+\begin{frame}{The life of a TFLM program}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.85cm, minimum height=1.0cm, align=center}]
+    \node[b, draw=cardinalred] (i) at (0,0) {Initialize};
+    \node[b] (p) at (2.3,0)  {Pre-process};
+    \node[b] (n) at (4.5,0)  {Infer};
+    \node[b] (o) at (6.7,0)  {Post-process};
+    \node[b] (a) at (8.7,0) [minimum width=1.3cm] {Act};
+    \draw[->] (i) -- (p); \draw[->] (p) -- (n); \draw[->] (n) -- (o);
+    \draw[->] (o) -- (a);
+    \draw[->, coolgray] (a.south) -- ++(0,-0.45) -| node[pos=0.25, below]
+      {\code{loop()}: again for each window} (p.south);
+    \node[coolgray, font=\scriptsize] at (0,0.75) {\code{setup()}: one time};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{description}\itemsep 0.15em
+    \item[Initialize] Map the model, make the resolver and the interpreter,
+      allocate the tensors.
+    \item[Pre-process] Read the sensor, fill the window, calculate the
+      features, write the input tensor.
+    \item[Infer] Call \code{Invoke()}.
+    \item[Post-process] Read the output tensor, select the class, filter
+      the result.
+    \item[Act] Show the class on the display, switch a pin, send a message.
+  \end{description}
+\end{frame}
+
+\begin{frame}[fragile]{Initialize: one time in \code{setup()}}
+\begin{lstlisting}[style=cpp]
+#include <Chirale_TensorFlowLite.h>
+#include "model.h"                           // g_model, from the converter
+#include "tensorflow/lite/micro/micro_interpreter.h"
+#include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
+#include "tensorflow/lite/schema/schema_generated.h"
+
+constexpr int kTensorArenaSize = 4 * 1024;
+alignas(16) uint8_t tensor_arena[kTensorArenaSize];
+tflite::MicroInterpreter* interpreter = nullptr;
+
+void setup() {
+  const tflite::Model* model = tflite::GetModel(g_model);   // no copy
+
+  static tflite::MicroMutableOpResolver<2> resolver;
+  resolver.AddFullyConnected();
+  resolver.AddSoftmax();
+
+  static tflite::MicroInterpreter static_interpreter(
+      model, resolver, tensor_arena, kTensorArenaSize);
+  interpreter = &static_interpreter;
+  interpreter->AllocateTensors();            // the memory plan
+}
+\end{lstlisting}
+  \source{The code follows the sketch \texttt{tflm\_hello}, which adapts the
+    example \texttt{hello\_world} of the library Chirale\_TensorFlowLite
+    (Apache-2.0). The frame leaves out the error checks.}
+\end{frame}
+
+\begin{frame}[fragile]{Pre-process, infer, post-process: in \code{loop()}}
+\begin{lstlisting}[style=cpp]
+TfLiteTensor* input = interpreter->input(0);
+TfLiteTensor* output = interpreter->output(0);
+
+// Pre-process: copy the window into the input tensor.
+for (int i = 0; i < 300; i++) {
+  input->data.f[i] = window[i];
+}
+
+// Infer, and measure the time.
+const unsigned long t0 = micros();
+interpreter->Invoke();
+const unsigned long latency_us = micros() - t0;
+
+// Post-process: find the class with the largest probability.
+int best = 0;
+for (int k = 1; k < 4; k++) {
+  if (output->data.f[k] > output->data.f[best]) best = k;
+}
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{data.f} is for a \code{float32} tensor. A quantized model
+          uses \code{data.int8} (Day 4).
+    \item The input tensor and the output tensor are places in the arena.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The loop of the motion classifier}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.0155cm, y=1cm]
+    % 1 unit = 1 ms. Window 2000 ms, stride 200 ms.
+    \draw[->, coolgray] (0,0) -- (620,0) node[right] {ms};
+    \foreach \t in {0,200,400,600} {
+      \draw[coolgray] (\t,0) -- (\t,-0.1);
+      \node[below, coolgray] at (\t,-0.1) {\t};
+    }
+    \foreach \t in {0,20,...,600} { \draw[darkcyan] (\t,0.1) -- (\t,0.45); }
+    \node[darkcyan, anchor=west] at (0,0.75) {one sample each 20 ms};
+    \fill[cardinalred!55] (200,1.2) rectangle (212,1.7);
+    \fill[cardinalred!55] (400,1.2) rectangle (412,1.7);
+    \node[anchor=west] at (417,1.45) {features and inference};
+    \draw[<->] (200,2.0) -- node[above] {stride: 200 ms} (400,2.0);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The sampling continues at 50 Hz. A ring buffer holds the newest
+          2 s: the window.
+    \item After each stride of 200 ms, the program calculates the features
+          of the window and runs the model.
+    \item This work must be complete before the next sample: in less than
+          20 ms. If not, the sampling rate changes, or a timer interrupt
+          must read the sensor.
+  \end{itemize}
+  \keypoint{The latency of the model is one part of a time budget.}
+  \source{The length of the red bars is an example, not a measured value.}
+\end{frame}
+
+\begin{frame}{Post-processing: from probabilities to a decision}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{Class} & \textbf{Window 1} & \textbf{Window 2} \\
+        \midrule
+        idle        & 0.02 & 0.30 \\
+        terrestrial & 0.05 & 0.25 \\
+        lift        & 0.90 & 0.28 \\
+        maritime    & 0.03 & 0.17 \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.5em
+      Window 1: a clear result.\\
+      Window 2: the largest value is 0.30. This is not a decision.
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{itemize}
+        \item \textbf{Threshold:} accept a class only if its probability
+              is above a limit, for example 0.6. If not, show ``uncertain''.
+        \item \textbf{Filter in time:} use the class that wins in three of
+              the last five windows.
+        \item \textbf{Delay:} the filter makes the output stable. It also
+              makes it later.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{The model gives numbers. The post-processing makes the
+    decision. Its settings are part of the system design.}
+  \source{The probabilities and the limits are examples.}
+\end{frame}
+
+% ---------------------------------------------------------- optimized kernels
+\begin{frame}{Optimized kernels}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.30\textwidth}L{0.40\textwidth}@{}}
+    \toprule
+    \textbf{Kernels} & \textbf{Processor} & \textbf{Method} \\
+    \midrule
+    Reference & All processors & Portable C++. Simple and slow. \\
+    CMSIS-NN  & Arm Cortex-M & Instructions of the processor that calculate
+                               on some values at the same time \\
+    ESP-NN    & ESP32-S3 and other chips of Espressif
+              & The vector instructions of the ESP32-S3 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item A model spends almost all its time in the kernels. An optimized
+          kernel gives the same result in less time. The model file does
+          not change.
+    \item Most optimized kernels are for \code{int8} models. This is one
+          more reason for the quantization of Day 4.
+  \end{itemize}
+  \begin{block}{In the lab}
+    Your own sketch uses a library with reference kernels on the ESP32-S3.
+    The library of Edge Impulse uses ESP-NN. Part D compares the two
+    latencies.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Three numbers that you measure on the device}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.12\textwidth}L{0.38\textwidth}L{0.42\textwidth}@{}}
+    \toprule
+    \textbf{Number} & \textbf{Where it comes from}
+    & \textbf{What changes it} \\
+    \midrule
+    Flash   & The line ``Sketch uses \dots{} bytes'' of the build
+            & The size of the model file, the number of operator types \\
+    Arena   & The call \code{arena\_used\_bytes()} of the interpreter
+            & The largest activations, the number of tensors \\
+    Latency & \code{micros()} before and after \code{Invoke()}
+            & The operations of the model, the kernels, the clock
+              frequency \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item These are the three budgets of Day 1 on a real device:
+          parameters, activation memory, and operations.
+    \item Measure the latency many times. Report the median and the
+          maximum, not one value.
+    \item In the lab, you measure the three numbers with PSRAM and with no
+          PSRAM.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{A number from the laptop is an estimate. Only the number from
+    the board is a result.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{estimate the arena size}{%
+  \small
+  \textbf{Model A.} The example model of this part, converted to
+  \code{int8}: 300 inputs, then 20, 10, and 4 values. Each value needs
+  1 byte.
+  \vskip 0.3em
+  \textbf{Model B.} A small network for images, in \code{int8}:
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Layer} & \textbf{Input} & \textbf{Output} \\
+    \midrule
+    Convolution, stride 2, 8 filters  & $96 \times 96 \times 1$
+        & $48 \times 48 \times 8$ \\
+    Convolution, stride 2, 16 filters & $48 \times 48 \times 8$
+        & $24 \times 24 \times 16$ \\
+    Global average pooling            & $24 \times 24 \times 16$ & 16 \\
+    Fully connected                   & 16 & 4 \\
+    \bottomrule
+  \end{tabular}}
+  \begin{enumerate}
+    \item Calculate the peak of the activations of each model, in bytes.
+    \item Which layer gives the peak?
+    \item Which arena size do you try first for each model?
+    \item Model B has 1316 parameters. Model A has 6274. Which model needs
+          more flash? Which model needs more RAM?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{estimate the arena size}{%
+  \small
+  \begin{enumerate}
+    \item \textbf{Model A:} $300 + 20 = 320$ bytes.
+          \textbf{Model B:} $96 \times 96 \times 1 = 9216$ and
+          $48 \times 48 \times 8 = 18\,432$. The sum is 27\,648 bytes.
+    \item The first layer in the two models. In model B, the second layer
+          needs $18\,432 + 9216 = 27\,648$ bytes also: the same sum.
+    \item The peak is the minimum. The arena also holds the data of the
+          interpreter. Start with much more: 4 KB for model A, and 40 KB
+          for model B. Then read \code{arena\_used\_bytes()} and decrease
+          the size.
+    \item Model A needs more flash: 6274 parameters against 1316.
+          Model B needs more RAM: 27\,648 bytes of activations against 320.
+  \end{enumerate}
+  \vskip 0.2em
+  The parameters decide the flash. The activations decide the RAM. A model
+  with few parameters can need much RAM.
+}

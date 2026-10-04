@@ -1,0 +1,28 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 8 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item Days 5 and 7 gave one label for a complete image. A detector answers
+          two questions for each object: which class it has, and where it is.
+          Its output is a list of boxes, each with a class and a score.
+    \item A single-stage detector gives thousands of candidate boxes for one
+          image. The post-processing removes the duplicates. This step runs on
+          the processor after the model, and it is a part of the latency.
+    \item One accuracy value does not describe a detector. IoU, precision,
+          recall, and mAP say how good the boxes are. The input resolution
+          changes the frame rate and the smallest object that the model finds.
+    \item In the lab you run an SSD model and a YOLO model on the Raspberry
+          Pi, train a YOLO model on a small custom dataset, export it to NCNN
+          and to LiteRT in int8, and measure the frame rate with the camera.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Describe the structure of a single-stage detector.
+    \item Compute IoU, apply non-maximum suppression, and read an mAP result.
+    \item Train a custom YOLO model and export it for the Raspberry Pi.
+    \item Tune input resolution and precision for a target frame rate.
+  \end{itemize}
+\end{frame}

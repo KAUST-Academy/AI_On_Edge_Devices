@@ -1,0 +1,17 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item Latency, bandwidth, privacy, cost, and availability move inference
+          to the edge. The four paradigms are cloud, edge, mobile, and
+          TinyML.
+    \item A model has three budgets: parameters, operations, and activation
+          memory. A model can meet one budget and fail a different one.
+    \item Depthwise separable convolutions and inverted residuals decrease
+          the parameters and the operations. They do not decrease the RAM.
+    \item The edge AI workflow has six stages: data, training, optimization,
+          conversion, deployment, and monitoring.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Compare the flash and the RAM of the device with the size and
+            the peak activation memory of the model before you deploy.}
+\end{frame}

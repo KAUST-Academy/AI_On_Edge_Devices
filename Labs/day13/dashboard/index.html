@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!--
+  index.html - the page of dashboard.py (Day 13 lab)
+  The page loads /data.json each second and draws eight line charts of the
+  last 15 minutes. It uses no library and no file from the internet.
+  It is the page of Labs/hardware/HW-08/python_dashboard/ with other charts.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 13: detector metrics</title>
+<style>
+  body { font-family: sans-serif; margin: 16px; background: #f4f4f4; color: #222; }
+  h1 { font-size: 20px; margin: 0 0 8px 0; }
+  #state { padding: 8px 12px; border-radius: 4px; margin-bottom: 12px;
+           background: #dfe9df; }
+  #state.alert { background: #c62828; color: #fff; font-weight: bold; }
+  #state.stale { background: #f0c040; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+          gap: 12px; }
+  .card { background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 8px; }
+  .card h2 { font-size: 14px; margin: 0 0 4px 0; }
+  .value { font-size: 22px; font-weight: bold; }
+  canvas { width: 100%; height: 140px; display: block; }
+</style>
+</head>
+<body>
+<h1>Detector metrics - group {{GROUP}}</h1>
+<div id="state">Waiting for data ...</div>
+<div class="grid" id="grid"></div>
+
+<script>
+// One chart for each metric: field name, title, unit, number of decimals.
+const CHARTS = [
+  ["fps",            "Frame rate",                  "1/s", 1],
+  ["latency_p95_ms", "Latency p95 of a frame",      "ms",  1],
+  ["cpu_temp_c",     "CPU temperature",             "C",   1],
+  ["rss_mb",         "Memory of the detector",      "MB",  1],
+  ["confidence",     "Mean top score",              "",    3],
+  ["low_conf",       "Part of frames below 0.5",    "",    2],
+  ["objects",        "Objects in a frame",          "",    2],
+  ["brightness",     "Brightness",                  "",    1],
+];
+const WINDOW_S = 900;      // the charts show the last 15 minutes
+
+const grid = document.getElementById("grid");
+for (const [field, title] of CHARTS) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = "<h2>" + title + "</h2><div class='value' id='v_" + field +
+                   "'>-</div><canvas id='c_" + field + "'></canvas>";
+  grid.appendChild(card);
+}
+
+function draw(canvas, points, threshold) {
+  const ratio = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * ratio; canvas.height = h * ratio;
+  const g = canvas.getContext("2d");
+  g.scale(ratio, ratio);
+  g.clearRect(0, 0, w, h);
+  if (points.length < 2) { return; }
+
+  let lo = Infinity, hi = -Infinity;
+  for (const p of points) { lo = Math.min(lo, p[1]); hi = Math.max(hi, p[1]); }
+  if (threshold !== null) { lo = Math.min(lo, threshold); hi = Math.max(hi, threshold); }
+  if (hi === lo) { hi = lo + 1; }
+  const pad = (hi - lo) * 0.1; lo -= pad; hi += pad;
+  const now = Date.now() / 1000;
+  const x = t => w - (now - t) / WINDOW_S * w;
+  const y = v => h - (v - lo) / (hi - lo) * h;
+
+  g.strokeStyle = "#ddd"; g.fillStyle = "#666"; g.font = "10px sans-serif";
+  for (const v of [lo + pad, hi - pad]) {
+    g.beginPath(); g.moveTo(0, y(v)); g.lineTo(w, y(v)); g.stroke();
+    g.fillText(v.toFixed(2), 2, y(v) - 2);
+  }
+  if (threshold !== null) {
+    g.strokeStyle = "#c62828"; g.setLineDash([4, 3]);
+    g.beginPath(); g.moveTo(0, y(threshold)); g.lineTo(w, y(threshold)); g.stroke();
+    g.setLineDash([]);
+  }
+  g.strokeStyle = "#1565c0"; g.lineWidth = 1.5; g.beginPath();
+  points.forEach((p, i) => { if (i === 0) { g.moveTo(x(p[0]), y(p[1])); }
+                             else { g.lineTo(x(p[0]), y(p[1])); } });
+  g.stroke();
+}
+
+async function update() {
+  const state = document.getElementById("state");
+  try {
+    const data = await (await fetch("/data.json", {cache: "no-store"})).json();
+    const now = Date.now() / 1000;
+    const rows = data.rows.filter(r => now - r.ts <= WINDOW_S);
+    for (const [field, , unit, digits] of CHARTS) {
+      const points = rows.filter(r => typeof r[field] === "number")
+                         .map(r => [r.ts, r[field]]);
+      const last = points.length ? points[points.length - 1][1] : null;
+      document.getElementById("v_" + field).textContent =
+          last === null ? "-" : last.toFixed(digits) + " " + unit;
+      const threshold = field in data.alert.thresholds ? data.alert.thresholds[field] : null;
+      draw(document.getElementById("c_" + field), points, threshold);
+    }
+    let text = "Messages: " + data.received + ", lost: " + data.lost +
+               ", age of the last message: " +
+               (data.age_s === null ? "-" : data.age_s + " s") +
+               ", alert: " + data.alert.text;
+    state.textContent = text;
+    state.className = data.alert.active ? "alert"
+                    : (data.age_s === null || data.age_s > 25) ? "stale" : "";
+  } catch (error) {
+    state.textContent = "No connection to dashboard.py";
+    state.className = "stale";
+  }
+}
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>

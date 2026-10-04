@@ -1,0 +1,752 @@
+% Part 3 of Day 8: Deployment.
+%
+% Topics of the syllabus: input resolution and model scale; export formats;
+% int8 calibration for detectors; latency of the full pipeline: capture,
+% pre-process, infer, post-process. Exercise: predict the frame rate change
+% when the resolution goes from 640 to 320.
+%
+% The measured numbers of this part are results of an experiment of this
+% course: YOLO11n of Ultralytics, its exported files, and 500 images of the
+% validation set of COCO, on the work computer (an x86 processor with AVX2,
+% 4 threads). The times say nothing about a board. Each frame with such a
+% number says so in its source line. The times for a Raspberry Pi are
+% numbers that the author of the companion book published. The frame names
+% the source.
+
+\theorypart{Deployment}%
+  {predict the frame rate when the resolution goes from 640 to 320}
+
+% ---------------------------------------------------------------- decisions
+\begin{frame}{From a trained model to a frame rate}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[b] (a) at (0,0)    {Trained\\model};
+    \node[b, draw=darkcyan]    (b) at (2.2,0) {Image size\\and scale};
+    \node[b, draw=darkorange]  (c) at (4.4,0) {Export\\format};
+    \node[b, draw=cardinalred] (d) at (6.6,0) {Precision};
+    \node[b, draw=treegreen]   (e) at (8.8,0) {Pipeline on\\the board};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[coolgray] at (2.2,-0.8) {320 or 640};
+    \node[coolgray] at (4.4,-0.8) {NCNN, LiteRT};
+    \node[coolgray] at (6.6,-0.8) {\texttt{float32}, \texttt{int8}};
+    \node[coolgray] at (8.8,-0.8) {camera to result};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Part 2 gave the accuracy of a model. A product also needs a frame
+          rate: the detections of each second.
+    \item Four decisions set the frame rate. Each decision can cost
+          accuracy.
+    \item The syllabus of the lab asks for a table: two image sizes and two
+          precisions, with the frame rate and the accuracy of each row.
+    \item This part gives the method for each decision, with measured
+          values of YOLO11n.
+  \end{itemize}
+  \keypoint{Report the frame rate and the accuracy together, for the
+    file that runs on the board.}
+\end{frame}
+
+% --------------------------------------------------------------- resolution
+\begin{frame}{The cost grows with the pixels}
+  \begin{columns}[c]
+    \begin{column}{0.29\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.0044cm, y=0.0044cm]
+        \fill[darkcyan!12] (0,0) rectangle (640,640);
+        \draw[darkcyan] (0,0) rectangle (640,640);
+        \fill[darkcyan!26] (0,0) rectangle (480,480);
+        \draw[darkcyan] (0,0) rectangle (480,480);
+        \fill[darkcyan!42] (0,0) rectangle (320,320);
+        \draw[darkcyan] (0,0) rectangle (320,320);
+        \fill[darkcyan!60] (0,0) rectangle (224,224);
+        \draw[darkcyan] (0,0) rectangle (224,224);
+        \node[anchor=north east] at (640,640) {640};
+        \node[anchor=north east] at (480,480) {480};
+        \node[anchor=north east] at (320,320) {320};
+        \node[anchor=north east, white] at (224,224) {224};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.68\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{5pt}
+      \begin{tabular}{@{}rrrr@{}}
+        \toprule
+        \textbf{Image side} & \textbf{Pixels} & \textbf{Candidates}
+        & \textbf{GFLOP} \\
+        \midrule
+        640 & 100 percent & 8400 & 6.5 \\
+        480 & 56 percent  & 4725 & 3.7 \\
+        320 & 25 percent  & 2100 & 1.6 \\
+        224 & 12 percent  & 1029 & 0.8 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Each convolution does its work for each pixel of its map. One
+          half of the image side gives one quarter of the operations.
+    \item The parameters do not change: the file has the same size.
+    \item Measured for the network in ONNX Runtime: 49.6 ms at 640 pixels
+          and 13.6 ms at 320 pixels. The factor is 3.6.
+  \end{itemize}
+  \keypoint{The image size is the strongest control of the latency. It
+    needs no new model.}
+  \source{An experiment of this course on an x86 processor, 4 threads.}
+\end{frame}
+
+\begin{frame}{Measured: the resolution against the accuracy}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=1.15cm, y=6.0cm]
+        \foreach \k/\a/\b/\l in {0/0.574/0.417/640, 1/0.535/0.391/480,
+                                 2/0.451/0.319/320, 3/0.353/0.244/224} {
+          \fill[darkcyan!35] (\k,0) rectangle (\k+0.38,\a);
+          \fill[darkcyan!85] (\k+0.42,0) rectangle (\k+0.80,\b);
+          \node[above, font=\tiny] at (\k+0.19,\a) {\a};
+          \node[above, font=\tiny] at (\k+0.61,\b) {\b};
+          \node[below] at (\k+0.4,0) {\l};
+        }
+        \draw[coolgray] (-0.15,0) -- (4,0);
+        \node[coolgray] at (1.9,-0.1) {image side in pixels};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item Light bars: mAP50. Dark bars: mAP50-95.
+        \item The same weights, four image sizes. The model was trained
+              at 640 pixels.
+        \item From 640 to 480 pixels: 44 percent fewer operations, and
+              mAP50-95 falls by 0.026.
+        \item From 640 to 320 pixels: 75 percent fewer operations, and
+              mAP50-95 falls by 0.099.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{A smaller image is not free. Measure the mAP at each size that
+    you want to use.}
+  \source{YOLO11n on 500 images of COCO, an experiment of this course.}
+\end{frame}
+
+\begin{frame}{Small objects pay first}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=2.35cm, y=3.3cm]
+    \foreach \k/\a/\b/\c/\d/\l in {
+        0/0.23/0.16/0.07/0.01/{Small objects},
+        1/0.54/0.46/0.31/0.17/{Medium objects},
+        2/0.79/0.77/0.72/0.62/{Large objects}} {
+      \fill[darkcyan!90] (\k,0)      rectangle (\k+0.19,\a);
+      \fill[darkcyan!65] (\k+0.21,0) rectangle (\k+0.40,\b);
+      \fill[darkcyan!42] (\k+0.42,0) rectangle (\k+0.61,\c);
+      \fill[darkcyan!22] (\k+0.63,0) rectangle (\k+0.82,\d);
+      \node[above, font=\tiny] at (\k+0.095,\a) {\a};
+      \node[above, font=\tiny] at (\k+0.305,\b) {\b};
+      \node[above, font=\tiny] at (\k+0.515,\c) {\c};
+      \node[above, font=\tiny] at (\k+0.725,\d) {\d};
+      \node[below] at (\k+0.41,0) {\l};
+    }
+    \draw[coolgray] (-0.1,0) -- (3.0,0);
+    \node[anchor=west, align=left] at (3.05,0.52)
+      {Recall at\\640, 480, 320,\\and 224 pixels,\\from dark to light};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item Small: a label with an area below $32 \times 32$ pixels in the
+          photo. Large: above $96 \times 96$ pixels.
+    \item At 320 pixels, the model finds 7 percent of the small objects.
+          It still finds 72 percent of the large objects.
+    \item An object of 32 pixels covers 4 cells on a side of the finest
+          map. At one half of the image size, it covers 2 cells.
+  \end{itemize}
+  \keypoint{Ask how many pixels the smallest object of your product has.
+    This number selects the image size.}
+  \source{YOLO11n on 500 images of COCO: score threshold 0.25, IoU
+    threshold 0.5. An experiment of this course.}
+\end{frame}
+
+% -------------------------------------------------------------------- scale
+\begin{frame}{The model scale: n, s, m, l, x}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Parameters} & \textbf{GFLOP}
+    & \textbf{Published} & \textbf{500 images} \\
+    \midrule
+    YOLO11n & 2.6 million  & 6.5   & 0.395 & 0.417 \\
+    YOLO11s & 9.4 million  & 21.6  & 0.470 & 0.503 \\
+    YOLO11m & 20.1 million & 68.1  & 0.515 & 0.551 \\
+    YOLO11l & 25.3 million & 87.2  & 0.534 & not measured \\
+    YOLO11x & 56.9 million & 195.3 & 0.547 & not measured \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The two last columns give mAP50-95 at 640 pixels. A scale changes
+          the number of channels and the number of layers.
+    \item From n to s: 3.3 times the operations for 0.086 more mAP50-95.
+          From s to m: 3.2 times the operations for 0.047 more.
+    \item The gain of each step gets smaller. The cost of each step does
+          not.
+    \item The Raspberry Pi 5 has no accelerator. The lab uses the scale n.
+  \end{itemize}
+  \keypoint{Start with the smallest scale. Go up only when the accuracy is
+    not sufficient and the frame rate has a margin.}
+  \source{Published: the documentation of Ultralytics, 5000 images of
+    COCO. Measured: an experiment of this course.}
+\end{frame}
+
+\begin{frame}{A larger model, or a larger image?}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=2.25cm, y=11cm,
+          >={Stealth[length=4pt]}]
+        \draw[->, coolgray] (-0.2,0.2) -- (2.05,0.2);
+        \draw[->, coolgray] (-0.2,0.2) -- (-0.2,0.6);
+        \node[coolgray, anchor=west] at (-0.18,0.59) {mAP50-95};
+        \node[coolgray] at (0.9,0.155) {GFLOP};
+        \foreach \x/\l in {0/1, 1/10, 2/100} {
+          \draw[coolgray] (\x,0.2) -- (\x,0.193) node[below] {\l};
+        }
+        \foreach \y in {0.3,0.4,0.5} {
+          \draw[coolgray] (-0.2,\y) -- (-0.22,\y) node[left] {\y};
+          \draw[coolgray!30, dotted] (-0.2,\y) -- (2.0,\y);
+        }
+        \draw[darkcyan, thick] (-0.100,0.244) -- (0.211,0.319) --
+          (0.564,0.391) -- (0.816,0.417);
+        \foreach \x/\y in {-0.100/0.244, 0.211/0.319, 0.564/0.391,
+                           0.816/0.417} {
+          \fill[darkcyan] (\x,\y) circle (1.8pt);
+        }
+        \draw[cardinalred, thick] (0.730,0.407) -- (1.334,0.503);
+        \fill[cardinalred] (0.730,0.407) circle (1.8pt);
+        \fill[cardinalred] (1.334,0.503) circle (1.8pt);
+        \fill[darkorange] (1.833,0.551) circle (1.8pt);
+        \node[darkcyan!60!black, anchor=north west] at (-0.08,0.243)
+          {n, 224};
+        \node[darkcyan!60!black, anchor=south east] at (0.82,0.42)
+          {n, 640};
+        \node[cardinalred, anchor=north west] at (0.74,0.405) {s, 320};
+        \node[cardinalred, anchor=south east] at (1.33,0.505) {s, 640};
+        \node[darkorange, anchor=north] at (1.833,0.545) {m, 640};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \small
+      \begin{itemize}
+        \item The horizontal axis has a logarithmic scale.
+        \item YOLO11n at 640 pixels: 6.5 GFLOP and 0.417.
+        \item YOLO11s at 320 pixels: 5.4 GFLOP and 0.407.
+        \item The two choices cost almost the same, and they give almost
+              the same mAP.
+        \item The small image of YOLO11s loses the small objects. Its file
+              is 3.4 times as large.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \keypoint{The mAP does not decide here. The size of your objects and the
+    memory of the device decide.}
+  \source{500 images of COCO, an experiment of this course.}
+\end{frame}
+
+% ---------------------------------------------------------------- size rule
+\begin{frame}{The image size rule: train, export, run}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.4cm, minimum height=0.95cm, align=center}]
+    \node[b, draw=darkcyan] (a) at (0,0)   {Train\\\texttt{imgsz=320}};
+    \node[b, draw=darkcyan] (b) at (3.6,0) {Export\\\texttt{imgsz=320}};
+    \node[b, draw=darkcyan] (c) at (7.2,0) {Run\\\texttt{imgsz=320}};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The PyTorch file accepts each image size. An exported file has a
+          static input shape (Day 7): the size is a part of the file.
+    \item The export uses 640 pixels when you give no size.
+    \item Published case: a model that was trained at 320 pixels and
+          exported with no size gave 113 boxes and 164 wheels for an image
+          with one box. The program gave no error and no warning.
+    \item A model that was trained at 320 pixels saw objects of a certain
+          size in pixels. At a different size, the objects look different
+          to it.
+  \end{itemize}
+  \keypoint{Use one image size for the training, the export, and the
+    inference. Check the shape in the first output line.}
+  \source{\emph{Edge AI Engineering}, ``Computer Vision Applications with
+    YOLO''.}
+\end{frame}
+
+% ---------------------------------------------------------------- letterbox
+\begin{frame}{Pre-processing: the letterbox}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      x=0.0019cm, y=0.0019cm]
+    \fill[darkcyan!25] (0,0) rectangle (1920,1080);
+    \draw[darkcyan] (0,0) rectangle (1920,1080);
+    \node at (960,540) {camera frame: $1920 \times 1080$};
+    \draw[->, thick, coolgray] (2020,540) -- (2420,540);
+    \begin{scope}[xshift=4.9cm, x=0.0039cm, y=0.0039cm, yshift=-0.22cm]
+      \fill[coolgray!35] (0,0) rectangle (640,640);
+      \fill[darkcyan!25] (0,140) rectangle (640,500);
+      \draw[darkcyan] (0,0) rectangle (640,640);
+      \node at (320,320) {$640 \times 360$};
+      \node at (320,570) {border};
+      \node at (320,70) {border};
+    \end{scope}
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The program makes the frame smaller with one factor for the two
+          sides, and grey borders fill the square. After the inference, it
+          moves each box back to the frame.
+    \item For a frame of 16:9, the borders are 44 percent of the square.
+          The network does this work for nothing.
+    \item An export with \code{imgsz=384,640} gives 5040 candidates, not
+          8400. Measured in ONNX Runtime: 29.9 ms, not 49.6 ms.
+  \end{itemize}
+  \keypoint{The pre-processing of the device must be the pre-processing of
+    the training. A different resize changes the accuracy.}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% ------------------------------------------------------------------ formats
+\begin{frame}{Export formats}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.29\textwidth}rrL{0.20\textwidth}@{}}
+    \toprule
+    \textbf{Format} & \textbf{Files} & \textbf{Size} & \textbf{Export}
+    & \textbf{Runtime} \\
+    \midrule
+    PyTorch & \code{yolo11n.pt}                & 5.35 MB  & none
+            & PyTorch \\
+    ONNX    & \code{yolo11n.onnx}              & 10.24 MB & 5 s
+            & ONNX Runtime \\
+    NCNN    & \code{.param} and \code{.bin}    & 10.10 MB & 8 s
+            & NCNN \\
+    LiteRT  & \code{yolo11n.tflite}            & 10.27 MB & 19 s
+            & LiteRT \\
+    LiteRT, \code{int8} & \code{yolo11n\_int8.tflite} & 2.94 MB & 136 s
+            & LiteRT \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The PyTorch file stores the weights in \code{float16}. The three
+          exports store \code{float32}: the files are two times as large.
+    \item The \code{int8} export needs calibration images. It ran the model
+          on 200 images.
+    \item The three runtimes are the runtimes of Day 7. The export fuses
+          each batch normalization into its convolution.
+  \end{itemize}
+  \source{YOLO11n at 640 pixels, an experiment of this course. 1 MB is
+    1024 KB.}
+\end{frame}
+
+\begin{frame}[fragile]{Export and run with one tool}
+\begin{lstlisting}[style=shell]
+# On the laptop: export the trained model for the two runtimes
+yolo export model=best.pt format=ncnn imgsz=320
+yolo export model=best.pt format=litert imgsz=320 quantize=8 data=data.yaml
+
+# On the Raspberry Pi: run, then measure
+yolo predict model=best_ncnn_model imgsz=320 source=test.jpg
+yolo val model=best_int8.tflite imgsz=320 data=data.yaml
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{best.pt} is the file of your training. The export writes
+          the folder \code{best\_ncnn\_model} and the file
+          \code{best\_int8.tflite}.
+    \item \code{quantize=8} makes a model with \code{int8} weights and
+          \code{int8} activations. \code{data} names the dataset: the
+          export takes the calibration images from its validation set.
+    \item The export to LiteRT runs on a laptop with Linux or macOS. It
+          does not run on the Raspberry Pi.
+    \item \code{predict} and \code{val} accept an exported file. The
+          package selects the runtime from the name.
+  \end{itemize}
+  \source{The Ultralytics package, version 8.4.171. The export commands
+    ran on the work computer with \texttt{yolo11n.pt} at 640 pixels.}
+\end{frame}
+
+\begin{frame}{Measured: one model in four files}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.30\textwidth}rrr@{}}
+    \toprule
+    \textbf{File and runtime} & \textbf{mAP50} & \textbf{mAP50-95}
+    & \textbf{Network, 4 threads} \\
+    \midrule
+    PyTorch                    & 0.579 & 0.424 & 69.1 ms \\
+    ONNX in ONNX Runtime       & 0.579 & 0.424 & 49.6 ms \\
+    NCNN                       & 0.579 & 0.424 & 60.9 ms \\
+    LiteRT, \code{float32}     & 0.579 & 0.424 & 34.8 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The four files give the same mAP. An export in \code{float32}
+          does not change the accuracy.
+    \item The times are from an x86 processor. NCNN is made for Arm: on a
+          Raspberry Pi, the order can change.
+    \item This test puts each image into a square of 640 pixels. With the
+          rectangle of Part 2, the same model has 0.417. The
+          pre-processing is a part of the result.
+  \end{itemize}
+  \keypoint{After each export, run the validation again with the exported
+    file. Equal values are the proof.}
+  \source{YOLO11n on 500 images of COCO, an experiment of this course on
+    an x86 processor. The times say nothing about a board.}
+\end{frame}
+
+% --------------------------------------------------------------------- int8
+\begin{frame}{int8 for a detector: boxes and scores}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]}]
+    \draw[coolgray, thick] (0,0.9) -- (8.5,0.9);
+    \foreach \x in {0,8.5} { \draw[coolgray, thick] (\x,0.8) -- (\x,1.0); }
+    \node[left] at (0,0.9) {0};
+    \node[right] at (8.5,0.9) {640};
+    \node[darkcyan!60!black] at (4.25,1.2)
+      {a box value in pixels: one step of 8 bits is 2.5 pixels};
+    \fill[cardinalred] (0,0.82) rectangle (0.035,0.98);
+    \draw[->, cardinalred] (0.6,0.35) -- (0.06,0.8);
+    \node[cardinalred, anchor=west] at (0.65,0.3)
+      {all scores are between 0 and 1: they fall into one step};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The output tensor of YOLO holds box values from 0 to 640 and
+          scores from 0 to 1. A tensor in \code{int8} has one scale
+          (Day 4).
+    \item One scale for 640 gives steps of 2.5. Each score becomes 0: the
+          model finds nothing.
+    \item The export of the package divides the box values by the image
+          size. All values are then between 0 and 1.
+    \item In the \code{int8} file of the experiment, the scale of the
+          output is 0.0039. One step of a box value is 2.5 pixels at 640
+          pixels.
+    \item The input and the output of the file stay in \code{float32}. The
+          file converts at its two ends.
+  \end{itemize}
+  \keypoint{Look at the range of each output before you quantize a
+    detector. Two ranges in one tensor need a change of the model.}
+  \source{The export code of the Ultralytics package, and the exported
+    file read with LiteRT. An experiment of this course.}
+\end{frame}
+
+\begin{frame}{Measured: int8 and the calibration}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.39\textwidth}rrrr@{}}
+    \toprule
+    \textbf{LiteRT file} & \textbf{Size} & \textbf{mAP50}
+    & \textbf{mAP50-95} & \textbf{Network} \\
+    \midrule
+    \code{float32}                           & 10.27 MB & 0.579 & 0.424
+        & 34.8 ms \\
+    \code{int8} weights only                 & 2.90 MB  & 0.580 & 0.419
+        & 53.7 ms \\
+    \code{int8}, calibration: 200 photos     & 2.94 MB  & 0.517 & 0.331
+        & 55.5 ms \\
+    \code{int8}, calibration: noise          & 2.94 MB  & 0.493 & 0.299
+        & not measured \\
+    \code{int8} weights, \code{int16} activations & 3.00 MB & 0.573
+        & 0.415 & 2329 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \code{int8} weights alone cost 0.005 of mAP50-95. Full
+          \code{int8} costs 0.062 of mAP50 and 0.093 of mAP50-95: the
+          boxes lose more than the classes.
+    \item Calibration with noise costs 0.032 more of mAP50-95. Use photos
+          of your application, as on Day 4.
+    \item With \code{int16} activations, the loss is 0.009 of mAP50-95.
+          But LiteRT has no fast kernels for them on this processor: the
+          network needs 67 times the time of \code{float32}.
+    \item On this x86 processor, \code{int8} is slower than
+          \code{float32}. For a classifier on the Raspberry Pi 5, a
+          published test gave \code{int8} a factor of 2.9 (Day 7).
+  \end{itemize}
+  \source{An experiment of this course on an x86 processor.}
+\end{frame}
+
+% ---------------------------------------------------------------- published
+\begin{frame}{Published: times on Raspberry Pi boards}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.34\textwidth}L{0.22\textwidth}rr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Board} & \textbf{PyTorch} & \textbf{NCNN} \\
+    \midrule
+    YOLO11n for box and wheel, 320 pixels & Raspberry Pi 5
+        & about 400 ms & about 80 ms \\
+    YOLO11n for COCO, 640 pixels          & Raspberry Pi Zero 2 W
+        & 4672 ms & 2748 ms \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The times are for the network alone.
+    \item On the Raspberry Pi 5, the export to NCNN gives a factor of 5.
+          It costs no accuracy.
+    \item The SSD MobileNet V1 file of Part 1 needs about 100 ms on a
+          Raspberry Pi 5 in LiteRT.
+    \item The sources give no time for a YOLO model in LiteRT with
+          \code{int8} on the Raspberry Pi 5. You measure it in the lab.
+  \end{itemize}
+  \keypoint{First export to a runtime for the board. Then measure.}
+  \source{\emph{Edge AI Engineering}, chapters on detection and YOLO.}
+\end{frame}
+
+% ----------------------------------------------------------------- pipeline
+\begin{frame}{The pipeline of one frame}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=0.95cm, align=center}]
+    \node[b, draw=darkcyan]    (a) at (0,0)   {\textbf{Capture}};
+    \node[b, draw=darkorange]  (b) at (2.2,0) {\textbf{Pre-process}};
+    \node[b, draw=cardinalred] (c) at (4.4,0) {\textbf{Infer}};
+    \node[b, draw=treegreen]   (d) at (6.6,0) {\textbf{Post-process}};
+    \node[b] (e) at (8.8,0) {Use the\\result};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.43\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Who does it} \\
+    \midrule
+    Capture      & Wait for the next frame of the camera. Copy it to the
+                   program.
+                 & The camera and its driver \\
+    Pre-process  & Letterbox, colour order, \code{float32}, values from 0
+                   to 1
+                 & OpenCV and numpy on the CPU \\
+    Infer        & The network & The runtime, with its threads \\
+    Post-process & Score threshold, suppression, boxes back to the frame
+                 & Python code on one core \\
+    Use the result & Draw, count, send a message (Week 3)
+                 & Your program \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \keypoint{The frame rate is one divided by the sum of all steps, not by
+    the time of the network.}
+\end{frame}
+
+\begin{frame}{The time of each step: two devices}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.064cm, y=0.62cm]
+    \foreach \k/\a/\b/\c/\l in {
+        0/3.8/93.4/2.8/{x86 computer, 640 pixels},
+        1/18.8/41.1/40.1/{Raspberry Pi Zero 2 W, 320 pixels}} {
+      \fill[darkorange!60]  (0,-\k) rectangle (\a,-\k+0.7);
+      \fill[cardinalred!60] (\a,-\k) rectangle (\a+\b,-\k+0.7);
+      \fill[treegreen!60]   (\a+\b,-\k) rectangle (100,-\k+0.7);
+      \node[anchor=east] at (-1,-\k+0.35) {\l};
+    }
+    \node at (50,0.35) {network: 93 percent};
+    \node at (9.4,-0.65) {19};
+    \node at (39.3,-0.65) {network: 41 percent};
+    \node at (80,-0.65) {post-process: 40};
+    \node[darkorange!70!black, anchor=west] at (0,1.1) {pre-process};
+    \node[treegreen!60!black, anchor=east] at (100,1.1) {post-process};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}L{0.33\textwidth}rrrr@{}}
+    \toprule
+    & \textbf{Pre-process} & \textbf{Network} & \textbf{Post-process}
+    & \textbf{Frame rate} \\
+    \midrule
+    x86 computer, measured           & 2.0 ms   & 49.3 ms  & 1.5 ms
+        & 19.0 \\
+    Raspberry Pi Zero 2 W, published & 237.6 ms & 519.3 ms & 506.7 ms
+        & 0.8 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The frame rate is in frames each second. On the small board, the
+          network alone would give 1.9.
+    \item The pre-processing and the post-processing are Python code. They
+          get no gain from a faster runtime or from \code{int8}.
+    \item Published for the same board: 2545 ms for the network in the
+          first run, and 519 ms in the second run. Do not count the first
+          run.
+  \end{itemize}
+  \source{x86: an experiment of this course, YOLO11n in ONNX Runtime.
+    Raspberry Pi: \emph{Edge AI Engineering}, chapter on YOLO.}
+\end{frame}
+
+\begin{frame}{What limits the frame rate}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
+    \toprule
+    \textbf{Limit} & \textbf{What happens} \\
+    \midrule
+    The camera     & A camera with 30 frames each second gives one frame
+                     each 33 ms. A faster pipeline waits. \\
+    The sum of the steps & A pipeline of 100 ms gives 10 results each
+                     second. \\
+    Old frames     & The driver keeps frames in a queue. A slow program
+                     reads frames that are old. \\
+    The cores      & Four threads for the network leave no core for the
+                     capture and for Python (Day 7). \\
+    The heat       & At full load, the processor can reduce its clock
+                     after some minutes (Day 9). \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item Read the camera in a separate thread, and keep only the newest
+          frame.
+    \item The frame rate says how many results you get. The latency says
+          how old a result is.
+  \end{itemize}
+  \keypoint{Measure the frame rate over one minute of the real pipeline.}
+\end{frame}
+
+% ------------------------------------------------------------------ actions
+\begin{frame}{How to reach a target frame rate}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}rL{0.34\textwidth}L{0.52\textwidth}@{}}
+    \toprule
+    & \textbf{Action} & \textbf{Cost} \\
+    \midrule
+    1 & Export to a runtime for the board
+      & None. The mAP stays the same. \\
+    2 & Use a rectangle for a frame of 16:9
+      & None. The model does not see the borders. \\
+    3 & Use a smaller image
+      & The small objects. Measure the mAP again. \\
+    4 & Use \code{int8}
+      & Some mAP, mostly at the strict thresholds. It needs calibration
+        photos. \\
+    5 & Use a smaller scale
+      & Accuracy, and the time for a new training \\
+    6 & Run the network on each second frame
+      & A moving object is found later. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item After each action, measure the frame rate of the pipeline on the
+          board and the mAP of the file. Stop when the target is reached.
+  \end{itemize}
+  \keypoint{Take the actions in this order: the first actions cost
+    nothing. Write each step in the Decision Log.}
+\end{frame}
+
+\begin{frame}{In the lab}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lL{0.24\textwidth}L{0.56\textwidth}@{}}
+    \toprule
+    \textbf{Part} & \textbf{Topic} & \textbf{Work} \\
+    \midrule
+    A & Pre-trained models
+      & Run the SSD model and a YOLO model on test images on the
+        Raspberry Pi. \\
+    B & Custom model
+      & Train a YOLO model on a small dataset with two classes, on the
+        laptop or on Colab. \\
+    C & Export and deploy
+      & Export to NCNN and to LiteRT in \code{int8}. Run the live
+        detection with the camera. \\
+    D & Measure
+      & The frame rate for two image sizes and two precisions. The
+        accuracy loss of the \code{int8} model. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The check: the model detects the two classes in the live image,
+          and the table has four measured rows.
+  \end{itemize}
+  \keypoint{Write your prediction for each row before Part D. Nobody
+    measured these four rows on a Raspberry Pi 5 for this course.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{the frame rate from 640 to 320}{%
+  \small
+  A Raspberry Pi 5 runs a detector on the frames of its camera. The table
+  gives example values for an image size of 640 pixels.
+  \vskip 0.2em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.50\textwidth}r@{}}
+    \toprule
+    Capture and pre-processing & 15 ms \\
+    Network                    & 300 ms \\
+    Post-processing            & 10 ms \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item Calculate the frame rate at 640 pixels.
+    \item You export the model for 320 pixels. Predict the time of each
+          step and the new frame rate.
+    \item By which factor does the frame rate change? Why is the factor
+          not 4?
+    \item An object has $40 \times 40$ pixels in the image of 640 pixels.
+          Which size does it have at 320 pixels? What do you expect for
+          its recall?
+    \item The target is 15 frames each second. Name the next action.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{the frame rate from 640 to 320}{%
+  \small
+  \begin{enumerate}
+    \item $15 + 300 + 10 = 325$ ms. The frame rate is $1000 / 325 = 3.1$
+          frames each second.
+    \item The network has one quarter of the pixels: $300 / 4 = 75$ ms.
+          The capture and the post-processing change little: 15 ms and
+          10 ms. The sum is 100 ms: 10 frames each second.
+    \item The factor is $325 / 100 = 3.25$. The 25 ms outside the network
+          do not change. This is the law of Amdahl of Day 7.
+    \item $20 \times 20$ pixels. The object changes from ``medium'' to
+          ``small''. In the experiment, the recall of small objects is
+          far below the recall of medium objects: expect a large loss.
+    \item 15 frames each second need 67 ms. The network must go from 75 ms
+          to about 42 ms. Try \code{int8}, and measure the mAP. A
+          rectangle for a frame of 16:9 costs no accuracy: try it first.
+  \end{enumerate}
+  \vskip 0.2em
+  Measured on the x86 computer: the network went from 49.3 ms to 13.6 ms
+  (a factor of 3.6), and the pipeline from 52.8 ms to 15.7 ms (a factor of
+  3.4).
+}

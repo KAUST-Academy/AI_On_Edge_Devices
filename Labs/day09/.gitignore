@@ -1,0 +1,7 @@
+# Files that the scripts of the lab write
+results_kit.csv
+results_pi.csv
+sustain.csv
+report_tables.md
+raw/
+__pycache__/

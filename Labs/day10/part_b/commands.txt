@@ -1,0 +1,13 @@
+# Commands for structured.py (Part B). One command on each line:
+# command | device | action | room
+# The last three fields are the correct answer.
+Turn on the lamp in the kitchen. | lamp | on | kitchen
+Switch off the fan in the bedroom. | fan | off | bedroom
+Open the garage door. | door | open | garage
+It is too dark in the bedroom. | lamp | on | bedroom
+The office is cold. | heater | on | office
+Please shut the kitchen door. | door | close | kitchen
+I am leaving the garage, turn the lamp off. | lamp | off | garage
+Water the plants in the garage with the pump. | pump | on | garage
+Can you turn the bedroom fan on? | fan | on | bedroom
+The pump in the kitchen still runs. Turn it off. | pump | off | kitchen

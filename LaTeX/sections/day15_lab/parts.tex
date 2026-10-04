@@ -1,0 +1,174 @@
+% The three parts of the Day 15 lab. The steps follow Labs/day15/README.md.
+% The rubric and the requirements are the text of Docs/capstone.md and of
+% Section 7 of the syllabus.
+
+% ------------------------------------------------------------------ Part A
+\begin{frame}{Part A: build and measure (80 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Complete the system (40 min).} Connect the parts. Test
+          each requirement of your proposal once.
+    \item \textbf{Measure (30 min).} Fill the benchmark table of
+          \code{report.md}. Measure the size and the accuracy of the model
+          before and after the optimization on the same test set.
+    \item \textbf{Rehearse (10 min).} Run the demonstration once with the
+          clock: the live system, the cut of the network link, the
+          dashboard. Prepare plan B: a recorded input or a short video.
+  \end{enumerate}
+  \vskip 0.4em
+  \begin{block}{Before Part A}
+    The lecture time (100 minutes) is build time. Build the parts that the
+    demonstration needs first. Follow the plan of your Day 14 report.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Part A: the benchmark table}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}L{1.5cm}L{1.3cm}L{0.9cm}L{1.3cm}L{1.0cm}L{1.6cm}L{1.6cm}@{}}
+    \toprule
+    \textbf{Model} & \textbf{Board} & \textbf{Format} & \textbf{Median}
+      & \textbf{p95} & \textbf{Memory} & \textbf{Energy} \\
+    \midrule
+    \ldots & XIAO & \code{int8} & \ldots\ ms & \ldots\ ms & arena
+      \ldots\ bytes & \ldots\ mJ \\
+    \ldots & Pi 5 & \ldots & \ldots\ ms & \ldots\ ms & RSS \ldots\ MB &
+      \ldots\ mJ \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \textbf{The method of Day 9}, in the report under the table:
+  \begin{itemize}
+    \item warm-up runs and the number of timed runs,
+    \item the window: the model only, or end to end,
+    \item the statistic: the median and a high percentile,
+    \item the energy: a USB power meter, or the power values of Day 9
+          (say ``estimate'').
+  \end{itemize}
+  \source{The form of the table in \texttt{Labs/day15/report.md}. The
+    values come from your boards.}
+\end{frame}
+
+\begin{frame}{Part A: the five requirements, a last check}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lL{0.42\textwidth}L{0.44\textwidth}@{}}
+    \toprule
+    \textbf{No.} & \textbf{Requirement} & \textbf{Show it in the
+      demonstration} \\
+    \midrule
+    1 & XIAOML Kit and Raspberry Pi & Each board with its own task \\
+    2 & One optimized model, size and accuracy before and after & The
+      table of Section 4 of the report \\
+    3 & One local decision, no internet & Cut the link to the instructor
+      broker; the decision continues \\
+    4 & Telemetry with MQTT to a dashboard & The live dashboard \\
+    5 & Benchmark table: latency, memory, energy & The table of the
+      previous frame \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  A requirement that does not work: show what works, use plan B, and write
+  the limit in the report.
+\end{frame}
+
+% ------------------------------------------------------------------ Part B
+\begin{frame}{Part B: the demonstration (10 min)}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lL{3.9cm}@{}}
+        \toprule
+        \textbf{Time} & \textbf{Content} \\
+        \midrule
+        1 min & The problem and the requirements \\
+        4 min & The system works: live, also with the network link cut \\
+        3 min & The benchmark table, two decisions with their numbers \\
+        2 min & Questions \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{itemize}
+        \item Start on time: the next team waits.
+        \item Show, then explain. The live system comes before the slides.
+        \item Answer with numbers.
+        \item Watch the other teams. Write one question for each team.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  Part B has 70 minutes: 7 teams with 10 minutes each. With more teams, the
+  instructor uses the schedule of Day 14.
+\end{frame}
+
+\begin{frame}{Part B: the rubric}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.30\textwidth}cL{0.52\textwidth}@{}}
+    \toprule
+    \textbf{Criterion} & \textbf{Weight} & \textbf{Excellent} \\
+    \midrule
+    The system works in the demonstration & 30\,\% & All five
+      requirements work live, also with the link cut \\
+    Integration of the two boards, messages, and monitoring & 25\,\% & Each
+      board has a clear task; topics and sequence numbers; a live
+      dashboard \\
+    Measured results and analysis of trade-offs & 25\,\% & A complete
+      table with the method; each main decision with two measured numbers
+      and what you gave up \\
+    Report and presentation & 20\,\% & Short, clear, the template; answers
+      with numbers \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \code{Docs/capstone.md}, Section 3, gives the levels ``adequate'' and
+  ``insufficient''.
+  \source{Weights: Section 7 of the syllabus. Levels of the third
+    criterion: Decision Log rubric of the textbook instructor guide.}
+\end{frame}
+
+% ------------------------------------------------------------------ Part C
+\begin{frame}{Part C: report and feedback (30 min)}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{block}{The report: at most four pages}
+        \small
+        \begin{enumerate}
+          \item Problem and requirements
+          \item The system
+          \item The five requirements
+          \item The optimized model
+          \item The benchmark table
+          \item Robustness
+          \item Decision Log (two or three)
+          \item Limits and next steps
+        \end{enumerate}
+      \end{block}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \small
+      \begin{itemize}
+        \item \textbf{Report (20 min):} complete \code{report.md}, and
+              submit it as the instructor says.
+        \item \textbf{Feedback (10 min):} fill \code{feedback.md} with no
+              name: eight ratings, the level of each week, four open
+              questions.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  The example report of the machine monitor is in
+  \code{solutions/report\_example.md}.
+\end{frame}

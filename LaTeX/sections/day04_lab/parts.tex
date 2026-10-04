@@ -1,0 +1,369 @@
+% The four parts of the Day 4 lab. The steps follow Labs/day04/README.md.
+%
+% Hardware status: not tested on hardware. A value that only a board can
+% give is written as "..." and the students measure it. The deck does not
+% show a result that the students must predict.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}{Part A: quantize by hand (30 min)}
+  \small
+  Run sections 0 and 1 of the notebook. Then write three functions in
+  section 2.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.36\textwidth}L{0.45\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
+    \midrule
+    1 & \code{scale\_zero\_point}: the scale and the zero point of a range
+      & The range $[-1.00, 1.55]$ gives $S = 0.01$ and $Z = -28$ \\
+    2 & \code{quantize} and \code{dequantize}: one line for each function
+      & The five numbers of the lecture exercise give $-28$, 22, $-61$,
+        95, and 127 \\
+    3 & Your prediction: the range with the smallest error
+      & Not checked. You compare it with the result. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  {\footnotesize
+  \[
+    S = \frac{r_{\max} - r_{\min}}{255} \quad\;
+    Z = \text{round}\!\left(-128 - \frac{r_{\min}}{S}\right) \quad\;
+    q = \text{clamp}\!\left(\text{round}\!\left(\frac{r}{S}\right) + Z\right)
+  \]}
+  \begin{itemize}
+    \item Use \code{np.round} and \code{np.clip}. The clamp limits the
+          result to the range from $-128$ to 127. The way back is
+          $\hat{r} = S\,(q - Z)$.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part A: the rounding error and the clipping error}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Section 3: the rounding error}
+        \begin{itemize}
+          \item The code quantizes all acceleration values of your
+                training windows.
+          \item \textbf{You see:} the largest error and the typical error.
+          \item Check the two rules of the lecture: $S/2$ and
+                $S/\sqrt{12}$.
+          \item Then the same range with 7, 6, 4, and 2 bits.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Section 4: the clipping error}
+        \begin{itemize}
+          \item Four ranges for the same tensor: the minimum and the
+                maximum, and the ranges that hold 99.9, 99, and 90 percent
+                of the values.
+          \item \textbf{You see:} the scale, the clipped values, and the
+                RMS error, with 8 bits and with 4 bits.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \begin{itemize}
+    \item \textbf{You record:} the scale, the zero point, the two errors,
+          and the answers to the two questions of section 4.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction (task 3).} Which of the four ranges gives the
+    smallest RMS error with 8 bits? Which range with 4 bits? Write the
+    prediction before you run the experiment.
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}{Part B: post-training quantization (50 min)}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Float\\CNN};
+    \node[b] (b) at (2.15,0) {Calibration\\set};
+    \node[b, draw=cardinalred] (c) at (4.3,0)  {Convert};
+    \node[b, draw=cardinalred] (d) at (6.45,0) {Test};
+    \node[b] (e) at (8.6,0)  {Look\\inside};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {section 5\\852 parameters};
+    \node[lab] at (2.15,-0.95) {50 windows of\\each class};
+    \node[lab] at (4.3,-0.95)  {section 6\\task 4};
+    \node[lab] at (6.45,-0.95) {section 7\\task 5};
+    \node[lab] at (8.6,-0.95)  {section 8};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.40\textwidth}L{0.41\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
+    \midrule
+    4 & \code{convert\_int8}: the generator of the calibration inputs, and
+        the five settings of the converter
+      & The input tensor of the model has the type \code{int8} \\
+    5 & \code{quantize\_input}: the \code{int8} input of the model, and the
+        number of clipped values
+      & The numbers of the lecture exercise, with two clipped values \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The generator gives one input for each \code{yield}: a list with
+          one array of the shape \code{(1, 100, 3)}.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: test the model, and look inside}
+  \small
+  Section 7 prints one row for each model. The accuracy and the clipped
+  input values are in percent:
+\begin{lstlisting}
+model                   bytes  accuracy    idle terrest    lift maritim  clipped
+float32                   ...       ...     ...     ...     ...     ...     0.00
+int8, all classes         ...       ...     ...     ...     ...     ...      ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You record:} the two rows, the largest difference between
+          the two outputs, and the next step by the rule of the lecture.
+    \item The file does not become four times smaller. Find the reason in
+          the output of section 6.
+  \end{itemize}
+  \vskip 0.2em
+  Section 8 prints each tensor of the \code{int8} model that has a scale.
+  Answer three questions in the report:
+  \begin{enumerate}
+    \item Which scale and which zero point has the input tensor? Compare
+          them with the result of your function for the range of the
+          calibration set.
+    \item How many scales has the weight tensor of each convolution, and
+          which zero point?
+    \item Which type have the biases?
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Part B: change the calibration set}
+  \small
+  The conversion gives no error when the calibration set is wrong. Section
+  9 makes this error on purpose.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Experiment} & \textbf{Calibration set} & \textbf{You record} \\
+    \midrule
+    1 & 50 windows of one class only. One conversion for each class.
+      & The accuracy, the accuracy of each class, and the clipped input
+        values \\
+    2 & All classes, with 200, 20, and 4 windows
+      & The accuracy and the clipped input values \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The table of section 1 gives the smallest value and the largest
+          value of each class. Use it for your prediction.
+    \item The column \code{clipped} needs no labels. It shows the problem
+          also for inputs with no known class.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction (task 6).} Which calibration class gives the lowest
+    accuracy? Is there a class that gives no loss? Which is the smallest
+    set of all classes with no loss: 4, 20, or 200 windows?
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}{Part C: quantization-aware training (40 min)}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      o/.style={b, draw=darkcyan, minimum width=1.3cm},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[o] (a) at (0,0)     {Observer};
+    \node[b, draw=cardinalred] (b) at (1.95,0) {QuantConv1D};
+    \node[o] (c) at (3.9,0)   {Observer};
+    \node[lab] (d) at (5.2,0) {\dots};
+    \node[b, draw=cardinalred] (e) at (6.6,0) {QuantDense};
+    \node[o] (f) at (8.55,0)  {Observer};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e, e/f} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {the input\\8 bits};
+    \node[lab] at (1.95,-0.95) {weights with\\8, 4, 3, or 2 bits};
+    \node[lab] at (3.9,-0.95)  {an activation\\8 bits};
+    \node[lab] at (6.6,-0.95)  {weights with\\8, 4, 3, or 2 bits};
+    \node[lab] at (8.55,-0.95) {before the\\softmax};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The notebook builds the CNN again with layers that quantize and
+          dequantize in the forward pass. All layers use your function
+          \code{fake\_quant}.
+    \item \textbf{Task 7.} Replace the last line of \code{fake\_quant} with
+          the straight-through estimator. Use \code{ops.stop\_gradient}.
+    \item The notebook checks two facts: the forward value is the quantized
+          value, and the gradient is 1 for each value.
+    \item \textbf{You record:} the accuracy with simulated quantization
+          with 8 bits. It must be near the accuracy of the \code{int8}
+          LiteRT model of Part B.
+  \end{itemize}
+  \keypoint{With no straight-through estimator, the gradient is
+    \code{None}, and the training cannot start.}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: fewer bits, the layer, and the real model}
+  \small
+  Section 11 trains the model four times. The activations keep 8 bits:
+\begin{lstlisting}
+weight bits  values  no new training  quantization-aware training
+          8     255             ...%                         ...%
+          4      15             ...%                         ...%
+          3       7             ...%                         ...%
+          2       3             ...%                         ...%
+\end{lstlisting}
+  \begin{itemize}
+    \item ``No new training'' is post-training quantization. LiteRT has no
+          format below 8 bits: the rows for 4, 3, and 2 bits are a
+          simulation only.
+    \item \textbf{Section 12:} one layer has weights with 4 bits or with 2
+          bits. All other values stay in float. \textbf{You record:} the
+          loss of each layer, and the layer that you keep at 8 bits.
+    \item \textbf{Section 13:} the model that trained with 8 bits becomes a
+          real \code{int8} file. \textbf{You record:} the three rows of
+          the table.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction (task 8).} Which accuracy has the model with weights
+    of 2 bits and no new training? Does quantization-aware training repair
+    the loss?
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}{Part D: on the board (30 min)}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Run sections 14 and 15 of the notebook. They train the feature
+        model of Day 3 and convert it two times. & 5 min \\
+    2 & Write your prediction in the report. & 2 min \\
+    3 & Upload the sketch with the float model. Record the numbers.
+      & 6 min \\
+    4 & Complete tasks D1 and D2. Upload the sketch with the \code{int8}
+        model. Record the numbers. & 8 min \\
+    5 & Make the four motions. After the test set, the sketch classifies
+        the motion of the kit, as on Day 3. & 4 min \\
+    6 & Complete the comparison table. Write the Decision Log. & 5 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The notebook writes four files into
+          \code{sketches/motion\_quant/}: \code{model\_float.h},
+          \code{model\_int8.h}, \code{model\_settings.h}, and
+          \code{test\_set.h}.
+    \item \code{test\_set.h} holds 80 test windows, with the class that
+          each model gives on the laptop.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part D: tasks D1 and D2}
+  \small
+  Open the sketch \code{motion\_quant.ino}. Set
+  \code{Tools > PSRAM > Disabled}. The line \code{\#define MODEL\_INT8 0}
+  selects the float model. With the value 1, it selects the \code{int8}
+  model.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.84\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write, in the function \code{classify()}} \\
+    \midrule
+    D1 & Quantize the input with the scale and the zero point of
+         \code{input->params}. Calculate
+         \code{lroundf(x / scale) + zero\_point}. Limit the result to the
+         range from $-128$ to 127. Write it into
+         \code{input->data.int8[i]}. Count the clipped values. \\
+    D2 & Dequantize the output with the scale and the zero point of
+         \code{result->params}. Write
+         \code{scale * (result->data.int8[k] - zero\_point)} into
+         \code{output[k]}. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The float model needs no change. Upload it first.
+    \item When task D1 is complete, remove the line
+          \code{task\_d1\_complete = false;}. Do the same for task D2.
+    \item Before that, the sketch with the \code{int8} model prints that
+          the tasks are not complete, and it stops.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part D: the output of the sketch}
+  \small
+  The Serial Monitor at 115200 baud shows these lines for the \code{int8}
+  model:
+\begin{lstlisting}
+Model:                int8
+Model size (flash):   ... bytes
+Sketch size (flash):  ... bytes
+Arena size:           4096 bytes
+Arena used:           ... bytes
+Input tensor:  type INT8, 63 bytes, scale ..., zero point ...
+Output tensor: type INT8, 4 bytes, scale 0.003906, zero point -128
+Test set:             80 windows
+Test set, correct:    ... of 80 (... percent)
+Test set, same class as on the laptop: ... of 80
+Test set, clipped input values: ... of 5040 (laptop: ...)
+Test set, invoke_us:  median ..., largest ...
+\end{lstlisting}
+  \begin{itemize}
+    \item The sketch runs the 80 test windows on the board. The line
+          \code{same class as on the laptop} must show 80 of 80. If it
+          does not, check tasks D1 and D2.
+    \item The float model prints the same lines, with the type
+          \code{FLOAT32} and with no line for the clipped values.
+  \end{itemize}
+  \source{The output shows the form of the lines. Nobody measured the
+    values on the kit. The output scale is the scale of a softmax in
+    \texttt{int8}: 1/256.}
+\end{frame}
+
+\begin{frame}{Part D: the comparison table}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
+    \toprule
+    \textbf{Number} & \textbf{Where you read it, for each model} \\
+    \midrule
+    File size, test accuracy, peak of the activations
+                    & Section 14 of the notebook \\
+    Flash           & \code{Sketch uses ... bytes} of the build \\
+    Arena           & \code{Arena used} of the Serial Monitor \\
+    Accuracy on the board & \code{Test set, correct} \\
+    Agreement with the laptop & \code{Test set, same class as on the
+                      laptop} \\
+    Latency         & \code{Test set, invoke\_us}: the median and the
+                      largest value \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \vskip 0.3em
+  Write the two values and the change of each number. Then compare each
+  result with your prediction.
+  \begin{exerciseblock}
+    \textbf{Prediction.} How does the \code{int8} model change the flash
+    use, the arena, and the time of \code{Invoke()}? The ESP32-S3 has a
+    circuit for float arithmetic, and the library has no optimized kernels
+    for this chip.
+  \end{exerciseblock}
+\end{frame}

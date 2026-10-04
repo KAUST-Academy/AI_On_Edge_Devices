@@ -1,0 +1,46 @@
+% Check criterion, deliverable, and the Decision Log question of Day 7.
+% The criterion and the deliverable come from the Day 7 section of the
+% syllabus and from Labs/day07/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{python pi/classify\_image.py images/Cat03.jpg} prints
+          \code{Task B1: complete} and a cat class as the first class.
+    \item \cmark\ The notebook prints \code{Tasks complete: 1, 2, 3} in its
+          last cell.
+    \item \cmark\ \code{python pi/bench.py} prints \code{Task D1: complete}.
+    \item \cmark\ The latency table of the report has two runtimes or more,
+          two thread counts or more, and two precisions or more.
+    \item \cmark\ The report has the five answers of the Netron questions.
+    \item \cmark\ The report has a prediction and a result for each question
+          of Part D.
+    \item \cmark\ The Decision Log gives numbers and names one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    A product with a Raspberry Pi 5 and a camera must classify 10 images in
+    each second. The same program also reads the camera and sends each
+    result over the network.
+    \begin{itemize}
+      \item Which runtime, which precision, and how many threads do you
+            select for the model?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the latency of your selection and of one other setting from
+          your table,
+    \item compares the latency with the budget of 100 ms for each image,
+    \item names what you lose with your decision. Example: the \code{int8}
+          file is faster, and it loses about 2 points of accuracy.
+  \end{itemize}
+\end{frame}

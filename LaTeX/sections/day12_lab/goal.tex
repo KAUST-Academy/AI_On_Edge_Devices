@@ -1,0 +1,71 @@
+% Goal and plan of the Day 12 lab.
+% The parts and the times come from the Day 12 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} a system of two boards that decides locally and
+          sends its results to the cloud, also when the link to the cloud
+          fails.
+    \item \textbf{Boards:} the XIAOML Kit and the Raspberry Pi 5. The
+          instructor laptop is the ``cloud''.
+    \item \textbf{Deliverable:} a live demonstration with the link to the
+          cloud connected and cut, and the file \code{report.md} with the
+          topic tree, the measured values, and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the decision layer with a state machine, the MQTT
+    topics, the QoS levels, the last will, and store and forward. Its values
+    came from one computer with two brokers. Today the messages cross the
+    Wi-Fi, the keyword model of Day 5 makes the events, and you cut the link
+    yourself.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{The local action must work with no cloud, and no message may be
+    lost when the cloud comes back.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (30,0.8);
+    \fill[treegreen!60]   (30,0)  rectangle (75,0.8);
+    \fill[darkorange!55]  (75,0)  rectangle (115,0.8);
+    \fill[cardinalred!35] (115,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (30,0) -- (30,0.8) (75,0) -- (75,0.8)
+      (115,0) -- (115,0.8) (150,0) -- (150,0.8);
+    \node at (15,0.4)    {\textbf{A}: 30 min};
+    \node at (52.5,0.4)  {\textbf{B}: 45 min};
+    \node at (95,0.4)    {\textbf{C}: 40 min};
+    \node at (132.5,0.4) {\textbf{D}: 35 min};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,30,75,115,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.66\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Broker: Mosquitto on the Raspberry Pi, publish and subscribe from
+      the command line & 30 min \\
+    B & Telemetry: IMU readings with MicroPython, keyword events with the
+      Arduino sketch & 45 min \\
+    C & Local decision: a state machine on the Raspberry Pi, a command back
+      to the XIAO & 40 min \\
+    D & Offline operation: store and forward to the cloud, a cut of the link
+      & 35 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

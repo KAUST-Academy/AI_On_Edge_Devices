@@ -1,0 +1,144 @@
+% Test deck for the course preamble. This deck is not course material.
+% It uses every command and every listing style of preamble/course.tex.
+% Build it after you change the preamble or the credits frame:
+%   bash tools/build_deck.sh Preamble_Test.tex
+% Delete Lectures/Preamble_Test.pdf after the check.
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Preamble test]{Course preamble test}
+
+\begin{document}
+
+\input{sections/cover}
+
+% ---------------------------------------------------------- text commands ---
+\begin{frame}{Text commands}
+  \begin{itemize}
+    \item Inline code: the sketch calls \code{IMU.readAcceleration()}.
+    \item Check mark and cross mark in a table:
+  \end{itemize}
+  \vskip 0.5em
+  \centering
+  \begin{tabular}{lcc}
+    \toprule
+    Feature & XIAO ESP32S3 & Raspberry Pi 5 \\
+    \midrule
+    Runs Linux        & \xmark & \cmark \\
+    Battery operation & \cmark & \xmark \\
+    Camera            & \cmark & \cmark \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \raggedright
+  \keypoint{The board sets the limit of the model, not the model the limit of
+  the board.}
+  \source{Table written for this test deck.}
+\end{frame}
+
+% ------------------------------------------------------- figure and source ---
+\begin{frame}{Figure with a source line}
+  \begin{columns}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \includegraphics[width=0.9\textwidth]{style_files/kaust_logo.png}
+      \sourcehere{Logo of the KAUST template.}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \begin{tikzpicture}[node distance=6mm,
+          box/.style={draw=cardinalred,fill=boxgray,rounded corners=2pt,
+                       minimum height=7mm,minimum width=20mm,font=\scriptsize},
+          every path/.style={draw=coolgray,-{Stealth[length=2mm]}}]
+        \node[box] (sensor) {Sensor};
+        \node[box,below=of sensor] (model) {Model};
+        \node[box,below=of model] (action) {Action};
+        \path (sensor) -- (model);
+        \path (model) -- (action);
+      \end{tikzpicture}
+      \sourcehere{Diagram drawn with TikZ.}
+    \end{column}
+  \end{columns}
+  \source{Two source lines above, one source line at the bottom.}
+\end{frame}
+
+% ------------------------------------------------------------ code listings ---
+\begin{frame}[fragile]{Python listing}
+  \begin{lstlisting}[style=python]
+import numpy as np
+
+def window(samples, size=100):
+    """Cut the signal into windows of a fixed length."""
+    for start in range(0, len(samples) - size, size):
+        yield np.array(samples[start:start + size])
+  \end{lstlisting}
+  \source{Written for this test deck.}
+\end{frame}
+
+\begin{frame}[fragile]{C++ listing}
+  \begin{lstlisting}[style=cpp]
+// Arena for TensorFlow Lite Micro. Measure the size on the board.
+constexpr int kArenaSize = 24 * 1024;
+alignas(16) static uint8_t tensor_arena[kArenaSize];
+
+void setup() {
+  Serial.begin(115200);
+  while (!Serial) {}  // wait for the serial monitor
+}
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Shell listing}
+  \begin{lstlisting}[style=shell]
+# Compile the sketch for the XIAO ESP32S3.
+arduino-cli compile --fqbn esp32:esp32:XIAO_ESP32S3 sketches/imu_test
+python3 -m venv .venv && .venv/bin/pip install numpy
+  \end{lstlisting}
+  \source{Command adapted from the kit setup chapter.}
+\end{frame}
+
+% ------------------------------------------------------ exercise and answer ---
+\exerciseframe{model size}{%
+  A model uses 180 KB of flash and 90 KB of RAM.\\
+  The board has 8 MB of flash and 512 KB of SRAM.
+  \begin{enumerate}
+    \item Does the model fit?
+    \item Which number limits the deployment?
+  \end{enumerate}
+}
+
+\answerframe{model size}{%
+  \begin{enumerate}
+    \item Yes. Flash and RAM are both large enough.
+    \item RAM. The arena, the stack, and the buffers of the drivers share the
+          512 KB. Flash holds only the program and the model.
+  \end{enumerate}
+}
+
+\begin{frame}[fragile]{Exercise block with a listing}
+  \begin{exerciseblock}
+    Read the line below. Which change makes the buffer four times smaller?
+    \begin{lstlisting}[style=cpp]
+int16_t buffer[200];
+    \end{lstlisting}
+  \end{exerciseblock}
+  \vskip 0.4em
+  \begin{answerblock}
+    Store the samples as \code{int8\_t} and halve the window length.
+  \end{answerblock}
+\end{frame}
+
+% ----------------------------------------------------------------- credits ---
+% The test deck names every source, so that each credit command is tested.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditraspi
+  \creditxiao
+  \creditbigpower
+  \credittinymlx
+  \credittflm
+}
+\input{sections/credits}
+
+\end{document}

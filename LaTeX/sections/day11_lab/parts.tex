@@ -1,0 +1,249 @@
+% The four parts of the Day 11 lab. The steps follow Labs/day11/README.md.
+%
+% Hardware status: not tested on hardware. A value that only the lab
+% hardware can give is written as "..." and the students measure it.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}[fragile]{Part A: network tools (20 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & The addresses of the laptop, the Raspberry Pi, and the router
+      & 5 min \\
+    2 & Find the devices, check the Raspberry Pi & 5 min \\
+    3 & Throughput, jitter, and loss & 10 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+ip -br addr && ip route                      # laptop and Raspberry Pi
+python3 ../hardware/HW-09/net_check.py --scan 192.168.8.0/24
+python3 ../hardware/HW-09/net_check.py pi-NN.local --need 22
+iperf3 -s                                    # on the Raspberry Pi
+iperf3 -c pi-NN.local -t 10                  # laptop to Raspberry Pi
+iperf3 -c pi-NN.local -t 10 -R               # Raspberry Pi to laptop
+iperf3 -c pi-NN.local -t 10 -u -b 20M        # UDP: jitter and loss
+ping -c 100 -i 0.2 pi-NN.local
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You see:} one line for each device of the scan, and
+          \code{RESULT: PASS} for the check.
+    \item \textbf{You record:} the \code{receiver} bit rates in the two
+          directions, the UDP jitter and lost datagrams, the last two lines
+          of \code{ping}.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: start the RTSP server}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Start MediaMTX on the Raspberry Pi & 10 min \\
+    2 & Check the port and the CPU load & 5 min \\
+    3 & Open the stream with \code{ffplay} or VLC & 10 min \\
+    4 & Task C1 in \code{stream\_detect.py} & 5 min \\
+    5 & Read the stream in Python & 10 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+cd ~/mediamtx                                # on the Raspberry Pi
+cp mediamtx_cam.yml mediamtx_cam.yml.orig
+./mediamtx mediamtx_cam.yml
+ss -tln | grep 8554                          # in a second SSH terminal
+top -b -n 1 | grep mediamtx
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You see:} \code{[RTSP] started with listeners on :8554}
+          and \code{[path cam] stream is available and online}.
+    \item \code{ss} must show \code{*:8554} or \code{0.0.0.0:8554}, not
+          \code{127.0.0.1:8554}: the fault of the exercise of Part 1.
+    \item \textbf{You record:} the line of \code{ss} and the CPU load of
+          \code{mediamtx}. The Raspberry Pi 5 encodes H.264 in software.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: open the stream, Task C1}
+\begin{lstlisting}[style=shell]
+ffplay -fflags nobuffer -flags low_delay -rtsp_transport tcp \
+    rtsp://pi-NN.local:8554/cam
+PY=~/day08_env/bin/python                    # for the rest of the lab
+URL=rtsp://pi-NN.local:8554/cam
+$PY stream_detect.py $URL --seconds 20
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \textbf{Task C1:} the method \code{\_store} of
+          \code{NewestFrameReader} keeps only the newest frame. No list, no
+          queue: a slow model always gets a new frame.
+    \item The script opens the stream with one decoder thread. Each decoder
+          thread holds one frame (Part 3 of the lecture).
+  \end{itemize}
+  \textbf{You see:} \code{Task C1: complete}, one line each 2 seconds, and
+  one \code{RESULT} line at the end:
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+1280x720  stream ... frames/s  processed ... frames/s  skipped ...
+RESULT label=run url=rtsp://pi-NN.local:8554/cam reader=newest ...
+\end{lstlisting}
+  \small
+  \textbf{You record:} the seconds until the first image in \code{ffplay},
+  and \code{stream\_fps} and \code{processed\_fps}. With no model, the two
+  rates are almost the same.
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: the detector on the stream (45 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & The detector: \code{yolo11n.pt} and your Day 8 model & 10 min \\
+    2 & Latency of setting 1, with no model and with the detector & 15 min \\
+    3 & Setting 2: 640 $\times$ 480 at 0.5 Mbit/s & 15 min \\
+    4 & The reader in order & 5 min \\
+    \bottomrule
+  \end{tabular}
+\begin{lstlisting}[style=shell]
+$PY stream_detect.py $URL --seconds 30 --show \
+    --model ../day08/models/yolo11n.pt --imgsz 320
+$PY stream_detect.py $URL --seconds 30 --show \
+    --model ../day08/models/cupbottle_320_ncnn_model
+\end{lstlisting}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\tiny]
+1280x720  stream ... frames/s  processed ... frames/s  skipped ...  model ... ms  objects ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You see:} a window with the boxes of the detector.
+    \item \code{processed} is the rate of the model. \code{skipped} is the
+          frames that the model did not see: the reader dropped them on
+          purpose.
+    \item \textbf{You record:} the processed rate, the skipped frames each
+          second, and the model time, for the two models.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: measure the latency with a clock}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \draw[coolgray, fill=black] (0,0) rectangle (3.2,1.6);
+    \node[white, font=\small\ttfamily] at (1.6,0.8) {HH:MM:SS.mmm};
+    \node[coolgray, anchor=south] at (1.6,1.65) {clock now ($t_1$)};
+    \draw[coolgray, fill=boxgray] (3.3,0) rectangle (6.5,1.6);
+    \draw[coolgray, fill=black] (3.9,0.35) rectangle (5.9,1.25);
+    \node[white, font=\scriptsize\ttfamily] at (4.9,0.8) {HH:MM:SS.mmm};
+    \node[coolgray, anchor=south] at (4.9,1.65) {the stream, with boxes
+      ($t_2$)};
+    \node[draw=coolgray, rounded corners=2pt, fill=cardinalred!12,
+          align=center] (cam) at (9.0,0.8) {camera\\ of the board};
+    \draw[->, cardinalred] (cam.west) -- (3.25,0.8);
+    \node[cardinalred, above] at (7.2,0.8) {looks at};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+\begin{lstlisting}[style=shell]
+$PY stream_detect.py $URL --clock --label hd_nomodel
+$PY stream_detect.py $URL --clock --label hd_yolo \
+    --model ../day08/models/yolo11n.pt --imgsz 320
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Point the camera at the clock on the left. Press \code{s} 10
+          times, about one second apart, then \code{q}.
+    \item In each image \code{latency\_<label>\_NN.png}: latency =
+          $t_1 - t_2$. It includes the camera, the encoder, the Wi-Fi, the
+          decoder, the model, and the screen.
+    \item One reading has an error of about 50 ms (a screen of 60 Hz, a
+          camera of 30 frames/s). \textbf{You record:} the 10 values, the
+          median, the minimum, and the maximum.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part C: setting 2, and the reader in order}
+  \small
+  Step 3: stop MediaMTX (\code{Ctrl-C}), change three lines of
+  \code{\textasciitilde/mediamtx/mediamtx\_cam.yml}, start it again:
+\begin{lstlisting}[style=shell]
+rpiCameraWidth: 640
+rpiCameraHeight: 480
+rpiCameraBitrate: 500000
+\end{lstlisting}
+  \small
+  Repeat step 2 with the detector and \code{--label sd\_yolo}.
+  \vskip 0.3em
+  Step 4: read each frame in order, with a slow model:
+\begin{lstlisting}[style=shell]
+$PY stream_detect.py $URL --seconds 30 --in-order \
+    --model ../day08/models/yolo11n.pt --imgsz 640
+cp mediamtx_cam.yml.orig mediamtx_cam.yml    # then start MediaMTX again
+\end{lstlisting}
+  \begin{itemize}
+    \item \textbf{You see:} each line ends with \code{behind ... s}, the
+          time that the reader is behind the live stream.
+    \item \textbf{You record:} the value after 30 s. Compare it with
+          $1 - F/30$ seconds for each second, where $F$ is the processed
+          rate (Part 3 of the lecture).
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}[fragile]{Part D: the XIAO camera (25 min)}
+  \small
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
+    \toprule
+    \textbf{Step} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    1 & Upload \code{sketches/xiao\_mjpeg\_stream} & 8 min \\
+    2 & See the stream in a browser & 2 min \\
+    3 & Task D1 in \code{mjpeg\_rate.py}, then the bit rate & 7 min \\
+    4 & The detector and the latency on the XIAO stream & 8 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item Write the Wi-Fi password of the lab in \code{WIFI\_PASSWORD}.
+          Select \code{XIAO\_ESP32S3} and \code{Tools > PSRAM > OPI PSRAM}.
+    \item The sketch sends the camera at VGA with \code{JPEG\_QUALITY} 12.
+          The camera module makes each JPEG image.
+    \item The sketch serves one reader at a time. Close the browser tab
+          before you run a script.
+  \end{itemize}
+  \textbf{You see} in the Serial Monitor (115200 baud):
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+Camera Stream Ready! Go to: http://192.168.8.163/
+sent ... frames in 5 s: ... frames/s, mean JPEG ... bytes, RSSI ... dBm
+\end{lstlisting}
+  \source{The address is an example. The sketch is a changed copy of
+    \texttt{Streeming\_Video.ino} of XIAO-ESP32S3-Sense.}
+\end{frame}
+
+\begin{frame}[fragile]{Part D: bit rate and latency of the XIAO stream}
+\begin{lstlisting}[style=shell]
+python3 mjpeg_rate.py http://192.168.8.163/ --seconds 10 --save xiao.jpg
+$PY stream_detect.py http://192.168.8.163/ --clock --label xiao_yolo \
+    --model ../day08/models/yolo11n.pt --imgsz 320
+\end{lstlisting}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\tiny]
+Task D1: complete
+RESULT url=http://192.168.8.163/ seconds=... frames=... fps=... mean_kb=... mbit_s=...
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \textbf{Task D1:} the function \code{stream\_stats} returns the
+          frames each second, the mean JPEG size in KB, and the bit rate:
+          all bytes $\times$ 8 / seconds.
+    \item Check the result: frames/s $\times$ mean KB $\times$ 1024
+          $\times$ 8 must give \code{mbit\_s} (the exercise of Part 2).
+    \item \textbf{You record:} the three values, the status line of the
+          sketch, the processed rate of the detector, and 10 latency
+          values.
+    \item Compare the two streams: the bits for each frame, the frame
+          rate, the latency, and the work of each processor.
+  \end{itemize}
+\end{frame}

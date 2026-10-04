@@ -1,0 +1,282 @@
+% The four parts of the Day 3 lab. The steps follow Labs/day03/README.md.
+%
+% Hardware status: not tested on hardware. A value that only a board can
+% give is written as "..." and the students measure it. The deck does not
+% show a result that the students must predict.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}{Part A: train (45 min)}
+  \small
+  Start the notebook: \code{../../.venv/bin/jupyter lab
+  motion\_classifier.ipynb}. It uses your recordings in
+  \code{Labs/day02/data/}.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.36\textwidth}L{0.45\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
+    \midrule
+    1 & The function that removes the mean and gives the RMS
+      & A sine wave with the amplitude 1 gives an RMS of 0.707 \\
+    2 & The two hidden layers of the model
+      & The model has 1534 parameters \\
+    3 & Your prediction: features against the raw window
+      & Not checked. You compare it with the result. \\
+    4 & The two lines of the converter (Part B)
+      & The file starts correctly, and its output is equal to the output
+        of Keras \\
+    5 & Your estimate of the arena size (Part B)
+      & Not checked. You measure it in Part C. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+\end{frame}
+
+\begin{frame}{Part A: features, model, and test}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Windows};
+    \node[b, draw=cardinalred] (b) at (2.15,0) {Features};
+    \node[b] (c) at (4.3,0)  {Normalize};
+    \node[b] (d) at (6.45,0) {Model};
+    \node[b] (e) at (8.6,0)  {Test};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {100 samples,\\3 axes};
+    \node[lab] at (2.15,-0.95) {63 values};
+    \node[lab] at (4.3,-0.95)  {mean and std of\\the training set};
+    \node[lab] at (6.45,-0.95) {63, 20, 10, 4};
+    \node[lab] at (8.6,-0.95)  {the test session\\of Day 2};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item \textbf{You see:} the plot of the spectral power for one window of
+          each class. Find the axis and the frequency that separate your
+          classes.
+    \item \textbf{You record:} the training accuracy, the test accuracy, and
+          the confusion matrix.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction (task 3).} The notebook trains a second model with
+    the raw window: 300 inputs. How many parameters does it have? Which
+    input gives the higher test accuracy? Write the prediction before you
+    run section 6.
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}[fragile]{Part B: convert, and write the files (50 min)}
+  \small
+  \textbf{Task 4.} Write the two lines of the converter in section 7 of the
+  notebook. The notebook then prints lines of this form:
+\begin{lstlisting}
+Task 4: complete
+LiteRT file:            ... bytes
+operator types:         [...]
+largest difference between Keras and LiteRT: ...
+\end{lstlisting}
+  \begin{itemize}
+    \item The difference must be smaller than 0.00001.
+    \item \textbf{You record:} the file size and the operator types. Task B1
+          needs the operator types.
+  \end{itemize}
+  Section 8 writes three files into \code{sketches/motion\_classifier/}:
+  \vskip 0.2em
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.66\textwidth}@{}}
+    \toprule
+    \code{model.h} & The LiteRT file as a C array \\
+    \code{model\_settings.h} & The class names, and the mean and the
+        standard deviation of each feature \\
+    \code{test\_window.h} & One test window, its 63 features, and the
+        output of the model for it \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \textbf{Task 5.} Estimate the arena size from the table of the last cell.
+  Write the estimate in the report before Part C.
+\end{frame}
+
+\begin{frame}{Part B: tasks B1 to B4, the inference code}
+  \small
+  Install the library Chirale\_TensorFlowLite 2.0.0. Open
+  \code{sketches/motion\_classifier/motion\_classifier.ino}. Set
+  \code{Tools > PSRAM > Disabled}.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.24\textwidth}L{0.57\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{Place} & \textbf{You write} \\
+    \midrule
+    B1 & \code{setupModel()} & The operator resolver: one \code{Add...()}
+         call for each operator type of your model \\
+    B2 & \code{setupModel()} & The interpreter, and the call of
+         \code{AllocateTensors()} \\
+    B3 & \code{classify()} & Normalize the features, write the input
+         tensor, call \code{Invoke()}, read the output tensor \\
+    B4 & \code{bestClass()} & The position of the largest probability \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The sketch compiles before you start. It then prints
+          \code{Tasks B1 and B2 are not complete.}
+    \item \textbf{You record:} the line \code{Sketch uses ... bytes} of this
+          first build. It is the flash use with no runtime in the program.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part B: the self-test and the demonstration}
+  \small
+  Upload the complete sketch. The Serial Monitor at 115200 baud shows:
+\begin{lstlisting}
+Arena location:       internal RAM
+Model size (flash):   ... bytes
+Sketch size (flash):  ... bytes
+Arena size:           4096 bytes
+Arena used:           ... bytes
+Self-test, features:  largest difference ...
+Self-test, model:     largest difference ...
+Self-test, class:     ... (expected: ...)
+Self-test:            PASS
+\end{lstlisting}
+  \begin{itemize}
+    \item The self-test calculates the features of the window of
+          \code{test\_window.h} on the board, runs the model, and compares
+          the results with the results of the notebook.
+    \item \code{FAIL}: check task B3, and run section 8 of the notebook
+          again.
+    \item Then make each of the four motions. The display shows the class
+          and its probability.
+    \item \textbf{You record:} for each motion, the class that the board
+          shows most of the time.
+  \end{itemize}
+  \source{The output shows the form of the lines. Nobody measured the
+    values on the kit.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: measure three numbers (30 min)}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.13\textwidth}L{0.40\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    \textbf{Number} & \textbf{Where you read it} & \textbf{You record} \\
+    \midrule
+    Flash   & \code{Sketch uses ... bytes} of the build, and
+              \code{Model size} of the Serial Monitor
+            & The two values, and the difference to the first build of
+              Part B \\
+    Arena   & \code{Arena used} of the Serial Monitor
+            & The value, and your estimate of task 5 \\
+    Latency & The columns \code{features\_us} and \code{invoke\_us}
+            & The median and the maximum of 20 lines \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  One line of the Serial Monitor for each inference:
+\begin{lstlisting}
+class,probability,features_us,invoke_us,late_samples
+...,...,...,...,...
+\end{lstlisting}
+  \begin{itemize}
+    \item The sum of the two times must be below 20\,000 microseconds: one
+          sample period.
+    \item \code{late\_samples} counts the samples that the loop read too
+          late. Write the value after 20 lines.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part C: the arena, and the PSRAM}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{The arena size}
+        \begin{enumerate}
+          \item Set \code{kTensorArenaSize} to 1024. Upload. Write the
+                message of the Serial Monitor in the report.
+          \item Set it to the value \code{Arena used} plus 256 bytes.
+                Upload. The self-test must pass.
+          \item Compare the measured value with your estimate. Explain the
+                difference in one sentence.
+        \end{enumerate}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{The second configuration}
+        \begin{enumerate}
+          \item Set \code{Tools > PSRAM > OPI PSRAM}.
+          \item Change the line of the sketch to
+                \code{\#define ARENA\_IN\_PSRAM 1}.
+          \item Upload. The Serial Monitor prints \code{Arena location:
+                PSRAM}.
+          \item Write the same three numbers in the second column of the
+                report.
+        \end{enumerate}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \begin{exerciseblock}
+    \textbf{Prediction.} Is the inference faster, slower, or equal when the
+    arena is in the PSRAM? Write your answer and the reason before you
+    measure.
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part D
+\begin{frame}{Part D: Edge Impulse Studio (25 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Impulse.} Open your project of Day 2. In \code{Create
+          impulse}: window size 2000 ms, window increase 200 ms, the block
+          \code{Spectral Analysis}, and the block \code{Classification}.
+    \item \textbf{Features.} In \code{Spectral features}: FFT length 32.
+          Generate the features.
+    \item \textbf{Training.} In \code{Classifier}: two dense layers with 20
+          and 10 neurons, 30 training cycles. Then run \code{Model testing}.
+    \item \textbf{Library.} In \code{Deployment}: \code{Arduino library}.
+          Add the ZIP file with \code{Sketch > Include Library > Add .ZIP
+          Library}.
+    \item \textbf{Sketch.} Open \code{sketches/ei\_motion\_inference/}.
+          Change the first \code{\#include} line to the header of your
+          library. Upload.
+  \end{enumerate}
+  \begin{itemize}
+    \item \textbf{You record:} the test accuracy, and the estimates of the
+          Studio for the inferencing time, the peak RAM, and the flash use.
+    \item \textbf{You record:} the two times of the line \code{Predictions
+          (DSP: ... ms, Classification: ... ms, ...)} and the line
+          \code{Sketch uses ... bytes}.
+    \item If the build of the library is not complete in time, use the
+          estimates of the Studio.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part D: the comparison table}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Number} & \textbf{Your sketch with TensorFlow Lite Micro}
+    & \textbf{Library of Edge Impulse} \\
+    \midrule
+    Test accuracy & Section 5 of the notebook & \code{Model testing} \\
+    Flash         & \code{Sketch uses ... bytes} & \code{Sketch uses ...
+                    bytes}, or the estimate \\
+    RAM           & \code{Arena used} & The peak RAM of the Studio \\
+    Time for the features & \code{features\_us} & DSP time \\
+    Time for the inference & \code{invoke\_us} & Classification time \\
+    Kernels       & Reference kernels & Optimized kernels (ESP-NN) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \begin{itemize}
+    \item Write ``measured'' or ``estimate'' next to each number of the
+          second column.
+    \item The two paths use different units: microseconds and
+          milliseconds. Write the unit.
+  \end{itemize}
+\end{frame}

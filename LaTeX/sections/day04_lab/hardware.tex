@@ -1,0 +1,64 @@
+% Hardware, software, and the models of the Day 4 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item XIAOML Kit with the Arduino firmware. You need it in Part D
+              only.
+        \item USB-C data cable.
+        \item Laptop with your Day 2 dataset in \code{Labs/day02/data/}.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \textbf{Software}
+      \begin{itemize}
+        \item Arduino IDE 2 with the esp32 core 3.3.12.
+        \item The library Chirale\_TensorFlowLite 2.0.0 of Day 3.
+        \item The Python packages of Day 3: \code{tensorflow-cpu} and
+              \code{ai-edge-litert}.
+        \item No new package and no new library.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.80\textwidth}@{}}
+    Lab files & \code{Labs/day04/}. Run the commands from this folder. \\
+    Notebook  & \code{../../.venv/bin/jupyter lab quantization.ipynb} \\
+    Sketch    & \code{sketches/motion\_quant/motion\_quant.ino} \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Three objects, one method}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.5cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {One tensor};
+    \node[b] (b) at (3.6,0)  {A small CNN\\for the raw window};
+    \node[b, draw=cardinalred] (c) at (7.2,0) {The feature model\\of Day 3};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c);
+    \node[lab] at (0,-0.95)   {Part A\\NumPy};
+    \node[lab] at (3.6,-0.95) {Parts B and C\\Keras and LiteRT};
+    \node[lab] at (7.2,-0.95) {Part D\\the board};
+    \node[lab] at (0,0.85)   {393\,600 values};
+    \node[lab] at (3.6,0.85) {852 parameters};
+    \node[lab] at (7.2,0.85) {1534 parameters};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item \textbf{Part A:} you write the mapping for one tensor: the
+          acceleration values of your training windows.
+    \item \textbf{Parts B and C:} the converter and the training apply the
+          same mapping to each tensor of a CNN. The CNN takes the raw
+          window in $g$, so the range of its input depends on the motion.
+    \item \textbf{Part D:} the model of Day 3 goes to the board two times:
+          in \code{float32} and in \code{int8}.
+  \end{itemize}
+  \source{The number of values is the number for the fallback dataset.
+    Your dataset gives a different number.}
+\end{frame}

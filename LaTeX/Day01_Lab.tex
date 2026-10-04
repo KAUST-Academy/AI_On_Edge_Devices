@@ -1,0 +1,30 @@
+% Lab deck of Day 1. Skeleton: see LaTeX/templates/README.md.
+% Build: bash build.sh --file Day01_Lab.tex
+%
+% Hardware status: not tested on hardware (prepared on 2026-10-01). The lab
+% files are in Labs/day01/. Labs/day01/TEST_NOTES.md gives the test steps.
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Day 1 lab]{Day 1 lab: toolchain, sensor tests, and model budgets}
+
+% Name only the sources that this deck uses.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditxiao
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/day01_lab/goal}
+\input{sections/day01_lab/hardware}
+\input{sections/day01_lab/parts}
+\input{sections/day01_lab/check}
+\input{sections/day01_lab/problems}
+\input{sections/credits}
+
+\end{document}

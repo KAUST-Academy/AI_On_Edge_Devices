@@ -1,0 +1,25 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 6 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item Quantization makes each value smaller. It does not change the number
+          of values or the number of operations.
+    \item Pruning removes weights. Distillation trains a smaller model. An
+          efficient design starts with fewer operations.
+    \item A method that looks good on paper can give no gain on your device.
+          The gain depends on the hardware and on the runtime.
+    \item In the lab you prune a CNN, distill a teacher into a student,
+          quantize the best models, and select one model for each board of
+          this course.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Apply unstructured and structured magnitude pruning.
+    \item Explain why sparsity does not always reduce latency.
+    \item Train a small student model with knowledge distillation.
+    \item Select an optimization technique from a hardware constraint.
+  \end{itemize}
+\end{frame}

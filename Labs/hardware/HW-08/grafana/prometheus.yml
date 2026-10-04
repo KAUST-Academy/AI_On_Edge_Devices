@@ -1,0 +1,31 @@
+# prometheus.yml - settings of Prometheus for the Day 13 lab
+#
+# Install on the Raspberry Pi:
+#   sudo cp prometheus.yml /etc/prometheus/prometheus.yml
+#   sudo cp alert_rules.yml /etc/prometheus/alert_rules.yml
+#   sudo systemctl restart prometheus
+#
+# Check the file:  promtool check config prometheus.yml
+
+global:
+  scrape_interval: 2s        # read each target each 2 seconds
+  evaluation_interval: 2s    # check the alert rules each 2 seconds
+
+rule_files:
+  - alert_rules.yml
+
+scrape_configs:
+  # The model metrics and the system metrics from MQTT (mqtt_exporter.py).
+  - job_name: edgeai
+    static_configs:
+      - targets: ["localhost:9200"]
+
+  # Prometheus itself.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # System metrics of the Raspberry Pi (package prometheus-node-exporter).
+  - job_name: node
+    static_configs:
+      - targets: ["localhost:9100"]

@@ -1,0 +1,63 @@
+% Goal and plan of the Day 10 lab.
+% The parts and the times come from the Day 10 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} a measured comparison of two small language models
+          on the Raspberry Pi 5, and one working application.
+    \item \textbf{Board:} the Raspberry Pi 5 (8 GB) with the active cooler.
+    \item \textbf{Deliverable:} the file \code{report.md} with the benchmark
+          table, the results of the application, and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave the RAM budget, the two rates, the options of Ollama,
+    and the methods that connect a model to a program. Its rates came from
+    the sources and from an x86 computer. Today you measure the board, and
+    you check the output of each model with a schema and with your code.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{A rate needs its method. An output needs a check: valid is not
+    the same as correct.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (45,0.8);
+    \fill[treegreen!60]   (45,0)  rectangle (90,0.8);
+    \fill[darkorange!55]  (90,0)  rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (45,0) -- (45,0.8) (90,0) -- (90,0.8)
+      (150,0) -- (150,0.8);
+    \node at (22.5,0.4)  {\textbf{A}: 45 min};
+    \node at (67.5,0.4)  {\textbf{B}: 45 min};
+    \node at (120,0.4)   {\textbf{C}: 60 min};
+    \node at (165,0.4)   {check};
+    \foreach \t in {0,45,90,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Run and measure: two models, tokens per second, RAM, and
+        temperature & 45 min \\
+    B & Python integration: structured output with a schema, and a
+        function call & 45 min \\
+    C & Application: retrieval-augmented generation or image description
+      & 60 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

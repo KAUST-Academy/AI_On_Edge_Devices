@@ -1,0 +1,610 @@
+% Part 1 of Day 4: Number formats and the affine mapping.
+%
+% Topics of the syllabus: FP32, FP16, INT8; memory and energy per operation;
+% scale, zero point, rounding error. Exercise: quantize five numbers by hand
+% and calculate the error.
+%
+% Notation of this day: r is a real value, q is its integer, S is the scale,
+% and Z is the zero point. The mapping is r = S (q - Z).
+
+\theorypart{Number formats and the affine mapping}%
+  {quantize five numbers by hand and calculate the error}
+
+% ------------------------------------------------------------------- the cost
+\begin{frame}{Each value of a model has a width}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Format} & \textbf{Bits} & \textbf{Bytes}
+    & \textbf{Model of Day 3} & \textbf{MobileNetV2} \\
+    \midrule
+    FP32 & 32 & 4 & 25\,096 bytes & 13.4 MB \\
+    FP16 & 16 & 2 & 12\,548 bytes & 6.7 MB \\
+    INT8 & 8  & 1 & 6274 bytes    & 3.3 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item The table gives the bytes of the weights: the number of
+          parameters times the bytes for each value.
+    \item The model of Day 3 with the raw window has 6274 parameters.
+          MobileNetV2 has 3\,504\,872 parameters.
+    \item The same factor applies to the activations in RAM. The arena
+          becomes smaller with the weights.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Quantization changes the format of the values. It does not
+    change the architecture: the layers and the number of parameters stay
+    the same.}
+\end{frame}
+
+\begin{frame}{FP32: the format of the training}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.31cm, y=0.8cm]
+    \fill[cardinalred!40] (0,0) rectangle (1,1);
+    \fill[darkcyan!35]    (1,0) rectangle (9,1);
+    \fill[treegreen!35]   (9,0) rectangle (32,1);
+    \draw[coolgray] (0,0) rectangle (32,1);
+    \draw[coolgray] (1,0) -- (1,1) (9,0) -- (9,1);
+    \node at (5,0.5) {exponent: 8 bits};
+    \node at (20.5,0.5) {fraction: 23 bits};
+    \node[anchor=north, font=\scriptsize] at (0.5,-0.05) {sign};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \[
+    r = (-1)^{\text{sign}} \times 1.\text{fraction} \times
+        2^{\,\text{exponent} - 127}
+  \]
+  \begin{itemize}
+    \item The exponent moves the binary point. So the format holds very
+          small and very large numbers: from about $10^{-38}$ to $10^{38}$.
+    \item The precision is about 7 decimal digits, for a small number and
+          for a large number.
+    \item A training needs this range: gradients can be very small.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{An inference needs much less. The weights and the activations
+    of one layer are in a small range that you know after the training.}
+\end{frame}
+
+\begin{frame}{FP16: half the bits, the same idea}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.31cm, y=0.8cm]
+    \fill[cardinalred!40] (0,0) rectangle (1,1);
+    \fill[darkcyan!35]    (1,0) rectangle (6,1);
+    \fill[treegreen!35]   (6,0) rectangle (16,1);
+    \draw[coolgray] (0,0) rectangle (16,1);
+    \draw[coolgray] (1,0) -- (1,1) (6,0) -- (6,1);
+    \node at (3.5,0.5) {5 bits};
+    \node at (11,0.5) {fraction: 10 bits};
+    \node[anchor=north, font=\scriptsize] at (0.5,-0.05) {sign};
+    \node[anchor=north, font=\scriptsize] at (3.5,-0.05) {exponent};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item The largest number is 65\,504. The precision is about 3 decimal
+          digits.
+    \item The weights need half the bytes. The loss of accuracy is very
+          small for almost all models.
+    \item A microcontroller has no arithmetic for FP16. The runtime
+          changes the weights to FP32 before it calculates.
+    \item So FP16 saves flash. It saves no RAM and no time on a
+          microcontroller.
+  \end{itemize}
+  \begin{block}{Example}
+    The LiteRT file of the Day 3 lecture has 27\,020 bytes with FP32
+    weights and 15\,248 bytes with FP16 weights.
+  \end{block}
+  \source{File sizes: results of the converter \texttt{onnx2tf} 1.29.24 on
+    the work computer of the course.}
+\end{frame}
+
+\begin{frame}{INT8: 256 values and no exponent}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+    % floating point: dense near zero, sparse far from zero
+    \node[anchor=west, font=\footnotesize] at (-5.2,1.35)
+      {\textbf{Floating point:} the step grows with the number};
+    \draw[coolgray] (-5,0.8) -- (5,0.8);
+    \foreach \x in {0.08,0.16,0.24,0.32,0.4,0.56,0.72,0.88,1.04,1.36,1.68,
+        2.0,2.32,2.96,3.6,4.24,4.88} {
+      \draw[darkcyan] (\x,0.68) -- (\x,0.92);
+      \draw[darkcyan] (-\x,0.68) -- (-\x,0.92);
+    }
+    \draw[darkcyan] (0,0.62) -- (0,0.98);
+    % integer: uniform
+    \node[anchor=west, font=\footnotesize] at (-5.2,0.0)
+      {\textbf{Integer:} the same step for all numbers};
+    \draw[coolgray] (-5,-0.55) -- (5,-0.55);
+    \foreach \k in {-16,...,16} {
+      \draw[cardinalred] (\k*0.305,-0.67) -- (\k*0.305,-0.43);
+    }
+    \node[below] at (-4.88,-0.7) {$-128$};
+    \node[below] at (0,-0.7) {0};
+    \node[below] at (4.88,-0.7) {127};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item An \code{int8} value is an integer from $-128$ to 127: 256
+          values.
+    \item The format has no exponent. The distance between two values is
+          always 1.
+    \item An integer alone cannot hold the weight 0.0173. You need a rule
+          that connects the integers with real numbers.
+  \end{itemize}
+  \keypoint{The rule is the subject of this part: one scale and one zero
+    point for each tensor.}
+\end{frame}
+
+% ---------------------------------------------------------------- why integer
+\begin{frame}{Why integers: memory}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.42\textwidth}rrr@{}}
+    \toprule
+    \textbf{Model of Day 3 with the raw window} & \textbf{FP32}
+    & \textbf{INT8} & \textbf{Factor} \\
+    \midrule
+    Weights in the flash, in bytes & 25\,096 & 6274 & 4 \\
+    Input tensor, 300 values, in bytes & 1200 & 300 & 4 \\
+    Peak of the activations, in bytes & 1280 & 320 & 4 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item The flash holds the weights. The arena holds the activations. The
+          two become four times smaller.
+    \item The complete file and the complete arena decrease by a smaller
+          factor: the description of the graph and the data of the
+          interpreter do not change.
+    \item On Day 1, MobileNetV2 in \code{float32} did not fit the flash of
+          the XIAO. In \code{int8} the weights need 3.3 MB.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{For a microcontroller, the memory is the first reason for
+    quantization. The speed is the second reason.}
+\end{frame}
+
+\begin{frame}{Why integers: energy and time}
+  \begin{columns}[T]
+    \begin{column}{0.44\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.3}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}llr@{}}
+        \toprule
+        \textbf{Operation} & \textbf{Width} & \textbf{Energy} \\
+        \midrule
+        Integer addition & 8 bits  & 1 \\
+        Float addition   & 32 bits & 30 \\
+        Read from memory & 64 bits & 40\,000 \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.5em
+      The unit is the energy of one integer addition with 8 bits.
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item An integer operation needs a smaller circuit than a float
+              operation.
+        \item To move data costs much more than to calculate. With
+              \code{int8}, each read moves a quarter of the bytes.
+        \item Many small microcontrollers have no circuit for float
+              arithmetic. A float operation is then a software function.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{The gain in time depends on the device and on the kernels. You
+    measure it on the board in Part D of the lab.}
+  \source{Energy ratios: \emph{Machine Learning Systems}, Volume I,
+    chapter 10.}
+\end{frame}
+
+% ------------------------------------------------------------ affine mapping
+\begin{frame}{The idea: a ruler with 256 marks}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.92cm, y=1cm,
+      >={Stealth[length=4pt]}]
+    \draw[->, coolgray] (-0.3,1.5) -- (10.5,1.5) node[right] {$r$};
+    \draw[->, coolgray] (-0.3,0) -- (10.5,0) node[right] {$q$};
+    \foreach \x/\r/\q in {0/$-1.0$/$-128$, 2.5/0.0/$-64$, 10/3.0/127} {
+      \draw[darkcyan, line width=0.9pt] (\x,1.38) -- (\x,1.62);
+      \node[above] at (\x,1.62) {\r};
+      \draw[cardinalred, line width=0.9pt] (\x,-0.12) -- (\x,0.12);
+      \node[below] at (\x,-0.12) {\q};
+      \draw[coolgray, dashed] (\x,1.38) -- (\x,0.12);
+    }
+    \foreach \k in {1,...,39} {
+      \draw[cardinalred!60] (\k*0.25,-0.07) -- (\k*0.25,0.07);
+    }
+    \node[darkcyan] at (6.2,2.0) {real values: $r_{\min} = -1.0$, \;
+      $r_{\max} = 3.0$};
+    \node[cardinalred] at (6.2,-0.6) {integers: $-128$ to 127};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item You know the range of a tensor: its smallest value $r_{\min}$ and
+          its largest value $r_{\max}$.
+    \item You put the 256 integers on this range, with the same distance
+          between them.
+    \item Each real value goes to the nearest mark.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Two numbers describe the ruler: the distance between two marks,
+    and the integer that is at the real value 0.}
+\end{frame}
+
+\begin{frame}{The affine mapping}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{block}{From the integer to the real value}
+        \[ r = S\,(q - Z) \]
+      \end{block}
+      \begin{block}{From the real value to the integer}
+        \[ q = \text{clamp}\!\left(\text{round}\!\left(\frac{r}{S}\right)
+               + Z,\ -128,\ 127\right) \]
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{description}\itemsep 0.2em
+        \item[$r$] The real value.
+        \item[$q$] The integer that the device stores.
+        \item[$S$] The scale: a positive real number. It is the real
+          distance between two integers.
+        \item[$Z$] The zero point: the integer that represents the real
+          value 0.
+        \item[clamp] Limits the result to the range of \code{int8}.
+      \end{description}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  ``Affine'' means a multiplication and a shift. One tensor has one $S$ and
+  one $Z$. The model file stores them with the tensor.
+  \source{Mapping of Jacob et al., ``Quantization and Training of Neural
+    Networks for Efficient Integer-Arithmetic-Only Inference'', 2018.}
+\end{frame}
+
+\begin{frame}{Derive the scale and the zero point}
+  The range $[r_{\min}, r_{\max}]$ must go to the range $[-128, 127]$.
+  \vskip 0.3em
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Scale}
+        255 steps cover the range:
+        \[ S = \frac{r_{\max} - r_{\min}}{255} \]
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Zero point}
+        $r_{\min}$ must give $q = -128$:
+        \[ Z = \text{round}\!\left(-128 - \frac{r_{\min}}{S}\right) \]
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \textbf{Example:} $r_{\min} = -1.0$ and $r_{\max} = 3.0$.
+  $S = 4.0 / 255 = 0.015686$, \; $r_{\min} / S = -63.75$, \;
+  $Z = \text{round}(-128 + 63.75) = \text{round}(-64.25) = -64$.
+  \begin{itemize}
+    \item The zero point is an integer. So the real value 0 has an exact
+          integer, with no rounding error.
+    \item This is necessary: a padding with zeros and the output of a ReLU
+          must be exactly 0.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Quantize one value, and go back}
+  With $S = 0.015686$ and $Z = -64$:
+  \vskip 0.4em
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.3cm, minimum height=0.9cm, align=center}]
+    \node[b] (a) at (0,0)   {$r = 0.7$};
+    \node[b, draw=cardinalred] (b) at (4.1,0) {$q = -19$};
+    \node[b] (c) at (8.2,0) {$\hat{r} = 0.70588$};
+    \draw[->] (a) -- node[above, font=\scriptsize] {quantize} (b);
+    \draw[->] (b) -- node[above, font=\scriptsize] {dequantize} (c);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Quantize}
+        $0.7 / 0.015686 = 44.63$\\
+        round: 45\\
+        $q = 45 + (-64) = -19$
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Dequantize}
+        $\hat{r} = 0.015686 \times (-19 + 64)$\\
+        $\hat{r} = 0.015686 \times 45 = 0.70588$
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The error is $\hat{r} - r = 0.00588$. The step is 0.015686.
+    \item The device stores $-19$ in one byte. It does not store 0.7.
+  \end{itemize}
+  \keypoint{The mapping loses information. You cannot get 0.7 back from
+    $-19$.}
+\end{frame}
+
+% --------------------------------------------------------------------- errors
+\begin{frame}{The rounding error}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.62cm, y=0.62cm]
+        \draw[->, coolgray] (0,0) -- (6.6,0) node[right] {$r$};
+        \draw[->, coolgray] (0,0) -- (0,6.6) node[above] {$\hat{r}$};
+        \draw[coolgray, dashed] (0,0) -- (6.2,6.2);
+        \foreach \k in {0,...,5} {
+          \draw[cardinalred, line width=1pt] (\k,\k+0.5) -- (\k+1,\k+0.5);
+        }
+        \foreach \k in {1,...,5} {
+          \draw[cardinalred, line width=1pt] (\k,\k-0.5) -- (\k,\k+0.5);
+        }
+        \draw[<->] (3.5,3.5) -- node[right] {$S/2$} (3.5,4.0);
+        \draw[<->] (2,1.9) -- node[below] {$S$} (3,1.9);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item Inside the range, each value goes to the nearest mark.
+        \item The error is between $-S/2$ and $+S/2$.
+        \item The typical error is $S / \sqrt{12}$, about $0.29\,S$.
+        \item One more bit makes $S$ half as large. The error becomes half
+              as large also.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \begin{block}{Example}
+    Range $[-1.0, 3.0]$ with 8 bits: $S = 0.0157$, largest error 0.0078.
+    The same range with 4 bits: $S = 4 / 15 = 0.267$, largest error 0.133.
+  \end{block}
+  \keypoint{A small scale gives a small rounding error. The scale is small
+    when the range is small.}
+\end{frame}
+
+\begin{frame}{The clipping error}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1.0cm, y=1.6cm]
+    \draw[->, coolgray] (-0.2,0) -- (10.2,0) node[right] {$r$};
+    \draw[darkcyan, fill=darkcyan!25]
+      plot[domain=0:6, samples=60, smooth] (\x,{1.2*exp(-(\x-2.5)*(\x-2.5)/1.5)})
+      -- (6,0) -- (0,0) -- cycle;
+    \fill[cardinalred] (9.2,0.06) circle (2pt);
+    \node[cardinalred, above] at (9.2,0.1) {one large value};
+    \node[darkcyan] at (2.5,1.4) {almost all values};
+    \draw[treegreen, line width=1pt] (0,-0.25) -- (5.2,-0.25);
+    \node[treegreen, anchor=west] at (5.3,-0.25) {range A: small step,
+      the large value is cut};
+    \draw[cardinalred, line width=1pt] (0,-0.55) -- (9.2,-0.55);
+    \node[cardinalred, anchor=north west] at (0,-0.6) {range B: no value is
+      cut, the step is larger};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item A value outside the range goes to $-128$ or to 127. This is
+          clipping. Its error has no limit.
+    \item Range A cuts the large value, and all other values have a small
+          rounding error.
+    \item Range B keeps the large value, and all other values have a larger
+          rounding error.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The selection of the range is a trade-off between the two
+    errors. Part 2 shows how a calibration set finds the range.}
+\end{frame}
+
+\begin{frame}{Symmetric and asymmetric ranges}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.36\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    & \textbf{Symmetric} & \textbf{Asymmetric} \\
+    \midrule
+    Real range   & $[-a, +a]$ & $[r_{\min}, r_{\max}]$ \\
+    Zero point   & $Z = 0$ & Any integer from $-128$ to 127 \\
+    Integers     & $-127$ to 127 & $-128$ to 127 \\
+    Used for     & Weights & Activations \\
+    Reason       & The weights are around 0. With $Z = 0$, the
+                   multiplication is more simple.
+                 & After a ReLU, all values are positive. A symmetric
+                   range uses only half of the integers. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \textbf{Example:} an activation after a ReLU with the range $[0, 6]$.
+  \begin{itemize}
+    \item Asymmetric: $S = 6 / 255 = 0.0235$ and $Z = -128$. All 256
+          integers are in use.
+    \item Symmetric: $S = 6 / 127 = 0.0472$. The integers below 0 are
+          never in use, and the step is two times as large.
+  \end{itemize}
+  \source{Rules of the \texttt{int8} quantization specification of
+    LiteRT.}
+\end{frame}
+
+% ---------------------------------------------------------- integer arithmetic
+\begin{frame}{One layer with integers only}
+  A fully connected layer calculates $y = \sum_i w_i\,x_i + b$. Each real
+  value has its mapping: $w = S_w\,q_w$, \; $x = S_x (q_x - Z_x)$, \;
+  $y = S_y (q_y - Z_y)$.
+  \vskip 0.3em
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.25cm, minimum height=1.0cm, align=center}]
+    \node[b] (a) at (0,0)    {Multiply and\\add in \code{int32}};
+    \node[b] (b) at (2.75,0) {Add the bias\\\code{int32}};
+    \node[b, draw=cardinalred] (c) at (5.5,0) {Multiply by\\$M$, and shift};
+    \node[b] (d) at (8.25,0) {Add $Z_y$,\\clamp to \code{int8}};
+    \foreach \a/\b in {a/b, b/c, c/d} { \draw[->] (\a) -- (\b); }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \[
+    q_y = Z_y + M \left( \sum_i q_{w,i}\,(q_{x,i} - Z_x) + q_b \right)
+    \qquad M = \frac{S_w\,S_x}{S_y}
+  \]
+  \small
+  \begin{itemize}
+    \item The sum of many products of \code{int8} values needs more than 8
+          bits. The kernel uses a sum with 32 bits.
+    \item $M$ is a real number below 1. The converter stores it as an
+          integer and a shift. The device then needs no float operation.
+    \item The result goes back to 8 bits. The next layer gets \code{int8}
+          values again.
+  \end{itemize}
+  \source{Jacob et al., 2018.}
+\end{frame}
+
+\begin{frame}{The bias has 32 bits}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item The bias adds to the sum of the products
+              $q_w\,(q_x - Z_x)$.
+        \item One unit of this sum is the real value $S_w \times S_x$.
+        \item So the bias uses this scale, with the zero point 0:
+              \[ S_b = S_w \times S_x \qquad q_b =
+                 \text{round}\!\left(\frac{b}{S_b}\right) \]
+        \item $S_b$ is very small. The integer $q_b$ is then large: it
+              needs 32 bits.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{The model of the Day 3 exercise}
+        The first layer of \code{hello\_world.tflite}, as Netron shows it:
+        \vskip 0.3em
+        {\small
+        \renewcommand{\arraystretch}{1.2}
+        \begin{tabular}{@{}lr@{}}
+          Input scale   & 0.024574 \\
+          Weight scale  & 0.004224 \\
+          Bias scale    & 0.00010381 \\
+        \end{tabular}}
+        \vskip 0.3em
+        $0.024574 \times 0.004224 = 0.00010381$
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{This answers the question of Day 3: the weights have 8 bits,
+    and the biases have 32 bits. A model has few biases, so they cost
+    little flash.}
+  \source{Scale values: the file \texttt{hello\_world.tflite} of
+    \texttt{Labs/hardware/HW-02/}.}
+\end{frame}
+
+\begin{frame}[fragile]{What changes in the sketch}
+\begin{lstlisting}[style=cpp]
+TfLiteTensor* input = interpreter->input(0);
+TfLiteTensor* output = interpreter->output(0);
+
+// The model has int8 input. Quantize the real value x.
+const float S_in = input->params.scale;
+const int Z_in = input->params.zero_point;
+input->data.int8[0] = (int8_t)(roundf(x / S_in) + Z_in);
+
+interpreter->Invoke();
+
+// The model has int8 output. Dequantize the result.
+const float S_out = output->params.scale;
+const int Z_out = output->params.zero_point;
+const float y = S_out * (output->data.int8[0] - Z_out);
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The tensor holds its scale and its zero point. The sketch reads
+          them from the model file.
+    \item The sketch does the first step and the last step of the mapping.
+          All steps between them are integer steps of the kernels.
+    \item For a classifier, the largest output is the class. You can
+          compare the \code{int8} outputs directly, with no dequantization.
+  \end{itemize}
+  \source{The code follows the sketch \texttt{tflm\_hello} of
+    \texttt{Labs/hardware/HW-02/}.}
+\end{frame}
+
+\begin{frame}{The three formats in comparison}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.22\textwidth}L{0.22\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    & \textbf{FP32} & \textbf{FP16} & \textbf{INT8} \\
+    \midrule
+    Bytes for a value  & 4 & 2 & 1 \\
+    Values             & About 4 billion & 65\,536 & 256 \\
+    Step               & Grows with the number & Grows with the number
+                       & Constant: the scale \\
+    Flash              & Baseline & Half & A quarter \\
+    RAM on a microcontroller & Baseline & No change & A quarter \\
+    Arithmetic         & Float & Float, after a change to FP32 & Integer \\
+    Loss of accuracy   & None & Very small & Small. You must measure it. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \keypoint{The format \code{int8} is the standard for a microcontroller: it
+    decreases the flash, the RAM, and the time. FP16 decreases only the
+    flash.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{quantize five numbers by hand}{%
+  \small
+  A tensor has the range $r_{\min} = -1.00$ and $r_{\max} = 1.55$. The
+  target format is \code{int8}: from $-128$ to 127.
+  \begin{enumerate}
+    \item Calculate the scale $S$ and the zero point $Z$.
+    \item Quantize these five values. Then dequantize them, and calculate
+          the error $\hat{r} - r$.
+          \[ 0.000 \qquad 0.500 \qquad -0.333 \qquad 1.234 \qquad 2.000 \]
+    \item Which value has the largest error? Why?
+    \item What is the largest rounding error for a value inside the range?
+  \end{enumerate}
+  \vskip 0.3em
+  \[
+    S = \frac{r_{\max} - r_{\min}}{255} \qquad
+    Z = \text{round}\!\left(-128 - \frac{r_{\min}}{S}\right)
+  \]
+  \[
+    q = \text{clamp}\!\left(\text{round}\!\left(\frac{r}{S}\right)
+        + Z\right) \qquad \hat{r} = S\,(q - Z)
+  \]
+  Work with your neighbour for 10 minutes.
+}
+
+\answerframe{quantize five numbers by hand}{%
+  \small
+  \textbf{1.} $S = 2.55 / 255 = 0.01$ and
+  $Z = \text{round}(-128 + 100) = -28$.
+  \vskip 0.3em
+  \textbf{2.} The table:\par
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}rrrrr@{}}
+    \toprule
+    $r$ & $\text{round}(r / S)$ & $q$ & $\hat{r}$ & \textbf{Error} \\
+    \midrule
+    0.000    & 0     & $-28$ & 0.00    & 0.000 \\
+    0.500    & 50    & 22    & 0.50    & 0.000 \\
+    $-0.333$ & $-33$ & $-61$ & $-0.33$ & 0.003 \\
+    1.234    & 123   & 95    & 1.23    & $-0.004$ \\
+    2.000    & 200   & 127 (clamp) & 1.55 & $-0.450$ \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \textbf{3.} The value 2.000. It is outside the range. The sum
+  $200 - 28 = 172$ is above 127, so the clamp gives 127. This is the
+  clipping error.
+  \vskip 0.3em
+  \textbf{4.} $S / 2 = 0.005$. The errors 0.003 and $-0.004$ are below this
+  limit. The values 0.000 and 0.500 are exactly on a mark.
+}

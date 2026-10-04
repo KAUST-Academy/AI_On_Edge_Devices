@@ -1,0 +1,741 @@
+% Part 1 of Day 13: Failures of deployed edge AI.
+%
+% Topics of the syllabus: silent accuracy loss, data drift, sensor faults,
+% heat, memory leaks; system metrics and model metrics. Exercise: for three
+% failures, name the metric that shows the failure first.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: tools/experiments/day13_failures.py,
+%    values in tools/data/day13/day13_failures.json. MobileNetV2 (PyTorch,
+%    float32) on the 500 Imagenette test images of Day 7, with changes of
+%    the stored images that act like a camera problem; a Python loop with a
+%    memory leak; the size of a labelled sample. All on an x86 processor.
+%    The figures come from tools/figures/day13_failures.py.
+% 2. The Raspberry Pi documentation (limits of the temperature, the bits of
+%    get_throttled, the speeds of the cooler), as on Day 9.
+% 3. The textbook (layered monitoring, kinds of drift) and the paper of
+%    Hendrycks and Gimpel (the confidence as a signal of errors).
+
+\theorypart{Failures of deployed edge AI}%
+  {for three failures, name the metric that shows the failure first}
+
+% ------------------------------------------------------------------ iceberg
+\begin{frame}{A deployed model fails with no error}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \fill[darkcyan!12] (0,-2.15) rectangle (10.2,0);
+    \draw[darkcyan, line width=0.8pt] (0,0) -- (10.2,0);
+    \node[anchor=south east, darkcyan] at (10.2,0) {what a log of errors
+      sees};
+    \node[anchor=south east, darkcyan] at (10.2,-2.15) {what the user
+      sees};
+    \fill[boxgray, draw=coolgray] (2.2,0) -- (3.4,1.05) -- (5.6,1.05)
+      -- (6.8,0) -- cycle;
+    \node[align=center] at (4.5,0.5) {process runs, 10 frames/s,\\ no
+      exception, no error line};
+    \fill[white, draw=coolgray] (0.7,0) -- (8.3,0) -- (7.4,-1.95)
+      -- (1.6,-1.95) -- cycle;
+    \node[align=center] at (4.5,-0.95) {the light changed: accuracy fell
+      from 77 to 38 percent\\ a covered lens: each image is a
+      ``matchstick''\\ the board is hot: 2 frames/s at 3 a.m.};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A program crashes when the code is wrong. A model gives a wrong
+          answer and the program continues.
+    \item The service is ``up'' and the answers are wrong. Nobody gets an
+          alert, because no check fails.
+    \item On a device, nobody watches the screen. The failure stays until a
+          user complains, or until somebody looks at the data.
+  \end{itemize}
+  \keypoint{Available is not correct. Monitoring must measure the answers,
+    not only the process.}
+  \source{Accuracy and class: experiment of this part.\\ The frame rates
+    are example values.}
+\end{frame}
+
+% ------------------------------------------------------------------ catalogue
+\begin{frame}{Failures of an edge AI device}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.36\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Failure} & \textbf{Cause on the device} & \textbf{What the user
+      sees} \\
+    \midrule
+    Silent accuracy loss & The input differs from the training data, or the
+      pre-processing differs & Wrong classes, missed objects \\
+    Data drift & Light, season, new objects, a new camera & Slow loss over
+      weeks \\
+    Sensor fault & Dirt, a loose cable, a broken or saturated sensor &
+      Strange values, a frozen image \\
+    Heat & Bad cooling, a warm room, a dusty fan & Slow answers, a low
+      frame rate \\
+    Memory leak & The program keeps data that it never frees & A crash or
+      a restart after hours or days \\
+    Storage, clock, network & Full disk, wrong time, lost link & Lost logs,
+      wrong time stamps, lost messages \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The first two change the answers of the model. The others change
+          the device that runs the model.
+    \item Most of them do not stop the program. They make it slower or
+          wrong.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ no error
+\begin{frame}[fragile]{Why a wrong answer gives no error}
+\begin{lstlisting}[style=python]
+probs = softmax(model(x))         # always 1000 values with a sum of 1
+label = names[probs.argmax()]     # always one class
+print(label, probs.max())         # black image: matchstick 0.026
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A classifier always gives a class. The softmax always gives
+          values with a sum of 1, also for an image of nothing.
+    \item An exception comes only from a wrong shape, a wrong type, or a
+          missing file. A wrong image has the correct shape.
+    \item In the experiment, a black image (a covered lens) gives the class
+          ``matchstick''. The program prints it and continues.
+    \item The confidence of 0.026 is a hint. Nobody sees it, unless the
+          program records it.
+  \end{itemize}
+  \keypoint{The model cannot tell you that its input is bad. Your code must
+    check the input and record the output.}
+  \source{Experiment of this part: MobileNetV2 (ImageNet weights), an image
+    of zeros.}
+\end{frame}
+
+% ------------------------------------------------------------------ skew
+\begin{frame}{Training-serving skew: other pre-processing}
+  \begin{columns}[T]
+    \begin{column}{0.53\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}L{2.5cm}rr@{}}
+        \toprule
+        \textbf{Pre-processing} & \textbf{Accuracy} & \textbf{Mean conf.} \\
+        \midrule
+        Correct & 77.4\,\% & 0.770 \\
+        B, G, R order & 67.4\,\% & 0.653 \\
+        No normalization & 46.0\,\% & 0.531 \\
+        Resize with no crop & 76.2\,\% & 0.755 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \small
+      \begin{itemize}
+        \item The same model file, the same 500 images. Only the code before
+              the model changes.
+        \item OpenCV reads images in the order B, G, R. A model of
+              torchvision needs R, G, B.
+        \item Each version runs with no error.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Training-serving skew: the device makes the input in a different
+          way from the training code. The model sees data that it never
+          saw.
+    \item Prevention: one pre-processing function for the two sides, and a
+          test with a stored input and its stored output (as the test
+          window of Day 3).
+  \end{itemize}
+  \source{Experiment of this part: MobileNetV2, 500 Imagenette images,
+    PyTorch on an x86 processor.}
+\end{frame}
+
+% ------------------------------------------------------------------ drift
+\begin{frame}{Data drift: what can change}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \foreach \x/\t/\s in {0/{Input changes}/{$P(x)$},
+                          3.7/{Class mix changes}/{$P(y)$},
+                          7.4/{Meaning changes}/{$P(y \mid x)$}} {
+      \node[font=\small\bfseries] at (\x+1.5,1.75) {\t};
+      \node at (\x+1.5,1.35) {\s};
+      \draw[->, coolgray] (\x,0) -- (\x+3.0,0);
+    }
+    % input changes: two curves, the new one moves
+    \draw[darkcyan, thick] plot[domain=0:3.0, samples=40]
+      (\x, {1.0*exp(-((\x-1.0)^2)/0.18)});
+    \draw[cardinalred, thick, dashed] plot[domain=0:3.0, samples=40]
+      (\x, {1.0*exp(-((\x-2.0)^2)/0.18)});
+    \node[below] at (1.5,0) {brightness};
+    % class mix: two bars each
+    \fill[darkcyan] (4.2,0) rectangle (4.6,1.0);
+    \fill[darkcyan] (5.4,0) rectangle (5.8,0.5);
+    \fill[cardinalred] (4.65,0) rectangle (5.05,0.4);
+    \fill[cardinalred] (5.85,0) rectangle (6.25,1.1);
+    \node[below] at (4.6,0) {cup};
+    \node[below] at (5.8,0) {bottle};
+    % meaning: boundary moves
+    \foreach \p in {(7.7,0.3),(8.0,0.8),(8.3,0.45),(9.6,0.5),(9.9,0.9),
+                    (10.2,0.35),(8.9,0.6),(9.1,0.3)}
+      \fill[coolgray] \p circle (1.6pt);
+    \draw[darkcyan, thick] (8.55,0.05) -- (8.55,1.15);
+    \draw[cardinalred, thick, dashed] (9.35,0.05) -- (9.35,1.15);
+    \node[below] at (8.9,0) {the same images};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begingroup\centering\scriptsize
+  \textcolor{darkcyan}{\rule[2pt]{12pt}{1.2pt}} training \quad
+  \textcolor{cardinalred}{\rule[2pt]{12pt}{1.2pt}} after deployment\par
+  \endgroup
+  \vskip 0.4em
+  \footnotesize
+  \begin{itemize}
+    \item \textbf{Input drift} ($P(x)$): the images change, the classes keep
+          their meaning. Light, season, a new camera, dust.
+    \item \textbf{Prior drift} ($P(y)$): the classes come in a new mix. More
+          bottles than cups after a change of the menu.
+    \item \textbf{Concept drift} ($P(y \mid x)$): the correct label of the
+          same input changes. A new rule says that a cup with a lid is a
+          ``bottle''. Only new labels show it.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ time
+\begin{frame}{Drift in time}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.85cm, y=0.8cm]
+    \foreach \x/\t in {0/Sudden, 3.15/Gradual, 6.3/Recurring,
+                       9.45/{Short event}} {
+      \draw[->, coolgray] (\x,0) -- (\x+2.6,0) node[below left] {time};
+      \draw[->, coolgray] (\x,0) -- (\x,1.6);
+      \node[font=\small\bfseries] at (\x+1.3,1.95) {\t};
+    }
+    \draw[cardinalred, thick] (0,1.2) -- (1.1,1.2) -- (1.1,0.45)
+      -- (2.5,0.45);
+    \draw[cardinalred, thick] (3.15,1.2) -- (3.85,1.2) -- (5.65,0.45);
+    \draw[cardinalred, thick] plot[domain=0:2.5, samples=50]
+      ({6.3+\x}, {0.85+0.35*cos(\x*360/1.25)});
+    \draw[cardinalred, thick] (9.45,1.2) -- (10.35,1.2) -- (10.4,0.4)
+      -- (10.8,0.4) -- (10.85,1.2) -- (11.95,1.2);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \begingroup\centering\scriptsize Accuracy (or confidence) over
+  time\par\endgroup
+  \vskip 0.5em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.40\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Form} & \textbf{Example for a camera} & \textbf{Response} \\
+    \midrule
+    Sudden & Somebody moves the camera & Alert at once, check the device \\
+    Gradual & Dust on the lens over weeks & Trend over days, clean or
+      retrain \\
+    Recurring & Day and night, seasons & Compare with the same hour of an
+      earlier day \\
+    Short event & A person stands in front of the lens & Ignore it, unless
+      it repeats \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  The form tells you the time window of the check: minutes for a sudden
+  change, days for a gradual one.
+\end{frame}
+
+% ------------------------------------------------------------------ measured
+\begin{frame}{Measured: light, noise, and blur}
+  \begingroup\centering
+  \includegraphics[width=0.94\textwidth]{images/day13/silent_loss.pdf}\par
+  \endgroup
+  \vskip 0.1em
+  \small
+  \begin{itemize}
+    \item Light: each pixel value times a factor (x 0.1: a dark room).
+          Noise: a standard deviation of 25 or 50 (of 255). Blur: a lens
+          out of focus.
+    \item Each change lowers the accuracy. No change gives an error.
+    \item The mean confidence falls with the accuracy. With a blur of 4
+          pixels it falls less: 33 percent correct, a mean confidence of
+          43 percent.
+  \end{itemize}
+  \source{Experiment of this part: MobileNetV2, 500 Imagenette images.}
+\end{frame}
+
+% ------------------------------------------------------------------ inputs
+\begin{frame}{The input shows which change happened}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Condition} & \textbf{Accuracy} & \textbf{Mean confidence} &
+      \textbf{Brightness} & \textbf{Sharpness} \\
+    \midrule
+    Reference & 77.4\,\% & 0.770 & 113.5 & 1013 \\
+    Light x 0.25 & 67.0\,\% & 0.619 & 28.4 & 65 \\
+    Light x 0.1 & 38.4\,\% & 0.365 & 11.4 & 12 \\
+    Light x 2 & 66.8\,\% & 0.680 & 177.6 & 1821 \\
+    Noise 50 & 40.2\,\% & 0.446 & 114.6 & 3850 \\
+    Blur 4 pixels & 33.4\,\% & 0.432 & 113.5 & 3 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Brightness: the mean pixel value (0 to 255). Sharpness: the
+          variance of the Laplacian of the grey image. Each needs a few lines
+          of \code{numpy}.
+    \item The confidence says that something is wrong. The input statistics
+          say what: dark, too bright, noisy, or not sharp.
+    \item Darkness also lowers the sharpness, and noise raises it. Read the
+          two statistics together.
+  \end{itemize}
+  \source{Experiment of this part: means of the 500 images after the
+    centre crop of 224 x 224 pixels.}
+\end{frame}
+
+% ------------------------------------------------------------------ proxy
+\begin{frame}{The confidence is a signal, not an accuracy}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{Group} & \textbf{Images} & \textbf{Correct} \\
+        \midrule
+        Confidence $\geq$ 0.5 & 387 & 88.6\,\% \\
+        Confidence $<$ 0.5 & 113 & 38.9\,\% \\
+        \midrule
+        All & 500 & 77.4\,\% \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \small
+      \begin{itemize}
+        \item An image with a low confidence is wrong more often.
+        \item So a rise of the part with a low confidence is a good sign of
+              trouble.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.7em
+  \small
+  \begin{itemize}
+    \item The largest softmax probability is a simple baseline to find
+          wrong and unknown inputs. Better methods exist, but this one needs
+          no change of the model.
+    \item A model can be sure and wrong: a new kind of object can get a high
+          confidence. A confidence of 0.9 is not ``90 percent correct''.
+    \item Use the confidence as a trend against a reference period. Do not
+          read it as the accuracy.
+  \end{itemize}
+  \source{Experiment of this part (table). The baseline: Hendrycks and
+    Gimpel, 2017 (see the further reading).}
+\end{frame}
+
+% ------------------------------------------------------------------ sensors
+\begin{frame}{Sensor faults}
+  \begingroup\centering
+  \includegraphics[width=0.9\textwidth]{images/day13/sensor_faults.pdf}\par
+  \endgroup
+  \vskip 0.1em
+  \small
+  \begin{itemize}
+    \item Dashed line: the correct signal. Red line: what the sensor gives.
+    \item A sensor fault changes the input like drift. A repair or a new
+          calibration fixes it, not a new training.
+    \item Causes: a loose cable (stuck, missing), electrical noise (spike,
+          noise), temperature and age (offset), a wrong range (saturation).
+  \end{itemize}
+  \source{Synthetic signals: no sensor made them.}
+\end{frame}
+
+% ------------------------------------------------------------------ checks
+\begin{frame}{Checks for sensor faults}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.42\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Fault} & \textbf{Check on the device} & \textbf{Example} \\
+    \midrule
+    Stuck value & The same value for N samples & IMU: variance 0 for 1 s \\
+    Spike & Change between two samples above a limit & More than the
+      physics permits \\
+    Offset & Mean at rest against the calibration & Accelerometer at rest:
+      1~g \\
+    More noise & Standard deviation at rest above a limit & Twice the value
+      at installation \\
+    Saturation & Count of values at the end of the range & 16~g of the
+      Day 2 setting \\
+    Missing samples & Gaps of the sequence number or of the time & The
+      \code{seq} of Day 12 \\
+    Camera & Black, frozen, or not sharp & Brightness below 5; the same
+      frame twice; low sharpness \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each check is a few lines of code and runs before the model.
+    \item Count the failed checks and send the counts as metrics. Do not
+          send each bad sample.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ heat
+\begin{frame}{Heat: from temperature to latency}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.75cm, minimum height=1.0cm}]
+    \node[st] (a) at (0,0) {Long load,\\ warm room,\\ dusty fan};
+    \node[st, fill=cardinalred!12] (b) at (2.45,0) {Temperature\\ rises};
+    \node[st, fill=cardinalred!20] (c) at (4.9,0) {80 to 85\,$^\circ$C:\\
+      clock of the cores falls};
+    \node[st, fill=cardinalred!30] (d) at (7.35,0) {Latency rises,\\
+      frame rate falls};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \node[darkcyan, align=center] at (2.45,-0.95) {first signal};
+    \node[darkcyan, align=center] at (4.9,-0.95) {\texttt{get\_throttled}
+      bit};
+    \node[darkcyan, align=center] at (7.35,-0.95) {what the user sees};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Raspberry Pi: between 80 and 85\,$^\circ$C the firmware lowers
+          the clock of the Arm cores in steps. At 85\,$^\circ$C it also
+          lowers the GPU clock.
+    \item The cooler of the Raspberry Pi 5 starts at 50\,$^\circ$C and
+          runs at full speed from 75\,$^\circ$C. A stopped cooler shows
+          as a higher temperature at the same load.
+    \item Day 9: a short run gives a latency that a long run does not
+          keep. A device that runs for days meets the heat.
+  \end{itemize}
+  \keypoint{The temperature rises minutes before the latency. Record the
+    temperature.}
+  \source{Raspberry Pi documentation, ``Frequency management and thermal
+    control'' and ``Cooling''.}
+\end{frame}
+
+% ------------------------------------------------------------------ throttled
+\begin{frame}[fragile]{Read the heat state of a Raspberry Pi}
+\begin{lstlisting}[style=shell]
+cat /sys/class/thermal/thermal_zone0/temp   # millidegrees, no root needed
+vcgencmd measure_temp                        # temp=...'C
+vcgencmd measure_clock arm                   # frequency(0)=... (Hz)
+vcgencmd get_throttled                       # throttled=0x0 when all is well
+\end{lstlisting}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    \textbf{Bit} & \textbf{Now} & \textbf{Since the start} \\
+    \midrule
+    Undervoltage & \code{0x1} & \code{0x10000} \\
+    Arm frequency capped & \code{0x2} & \code{0x20000} \\
+    Throttled & \code{0x4} & \code{0x40000} \\
+    Soft temperature limit & \code{0x8} & \code{0x80000} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The ``since the start'' bits stay set. One read each minute
+          catches a short event.
+    \item Undervoltage (a weak power supply) also makes a board slow or
+          unstable. The same command shows it.
+  \end{itemize}
+  \source{Raspberry Pi documentation, ``vcgencmd''. The temperature function
+    of the Day 8 lab reads the first file.}
+\end{frame}
+
+% ------------------------------------------------------------------ leak plot
+\begin{frame}{Memory leak: slow growth}
+  \begingroup\centering
+  \includegraphics[width=0.84\textwidth]{images/day13/leak.pdf}\par
+  \endgroup
+  \vskip 0.1em
+  \small
+  \begin{itemize}
+    \item One result for each frame: a time, a frame number, 3 detections.
+          One version appends each result to a list. The other keeps the
+          last 1000 results.
+    \item The list grows by 1910 bytes for each frame. The bounded version
+          stays at 11.4 MB.
+    \item Other causes: a cache with no limit, objects that a callback
+          keeps, a native library that does not free its memory.
+  \end{itemize}
+  \source{Experiment of this part: resident memory of a Python process, each
+    20\,000 frames.}
+\end{frame}
+
+% ------------------------------------------------------------------ leak calc
+\begin{frame}{A leak in numbers}
+  \small
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    Growth for each frame (measured) & 1910 bytes \\
+    At 10 frames each second, each hour & 65.6 MB \\
+    In a test of 10 minutes & 10.9 MB \\
+    Time to fill 4 GB (half of the RAM of the board) & 62.5 hours \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.7em
+  \begin{itemize}
+    \item A test of 10 minutes shows 10.9 MB. Nobody sees it as a problem.
+    \item After 2.6 days the system swaps or the kernel stops the process.
+          The application restarts and the leak starts again.
+    \item Signals: the slope of the resident memory over hours, the number
+          of restarts, and the messages ``Out of memory'' of the kernel log
+          (\code{journalctl -k}).
+  \end{itemize}
+  \keypoint{A leak shows only over a long time. Record the memory of the
+    process each minute and look at the slope.}
+  \source{Experiment of this part (growth for each frame). The other values
+    are calculations; 1 MB = 1024 KB.}
+\end{frame}
+
+% ------------------------------------------------------------------ others
+\begin{frame}{More failures of the device}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.38\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Failure} & \textbf{Effect} & \textbf{Signal} \\
+    \midrule
+    Disk full & Logs and the message queue stop; the program can fail &
+      Free space of the disk (Part 2) \\
+    Wrong clock & Wrong time stamps, wrong order of events & Offset to an
+      NTP server (Day 12) \\
+    Lost link & Messages wait in the queue & Queue length, age of the
+      oldest message (Day 12) \\
+    Weak power supply & Slow board, resets & \code{get\_throttled} bit
+      \code{0x1} \\
+    Camera lost & No frames, a frame rate of 0 & Count of failed reads \\
+    microSD card wear & Read errors, a damaged file system & Errors in the
+      kernel log \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Many of these come from the device, not from the model. A model
+          metric does not show them.
+    \item A restart hides most of them for a while. Count the restarts.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ system
+\begin{frame}{System metrics}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.36\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Where to read it} & \textbf{It shows} \\
+    \midrule
+    Latency (p50, p95) & Time of each step in the program & A slow model,
+      heat, a busy CPU \\
+    Frame rate, dropped frames & Counters of the program & A slow pipeline,
+      a lost camera \\
+    CPU use & \code{psutil.cpu\_percent()} & Other programs, a busy loop \\
+    Temperature, throttled & \code{/sys/class/thermal}, \code{vcgencmd} &
+      Heat, a bad power supply \\
+    Memory of the process & Resident memory (RSS) from \code{psutil} & A
+      leak \\
+    Free disk & \code{shutil.disk\_usage("/")} & Logs with no limit \\
+    Uptime, restarts & Start time of the program & Crashes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item System metrics answer: does the device work, and is it fast
+          enough?
+    \item They are cheap: one read each second or each minute.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ model
+\begin{frame}{Model metrics with no labels}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Metric} & \textbf{How} & \textbf{It shows} \\
+    \midrule
+    Confidence & Mean, and the part below a threshold, each minute & Drift,
+      a bad input \\
+    Class counts & Detections of each class each minute & Prior drift, a
+      missed class \\
+    Detections in each frame & Mean and the part with none & A covered or
+      moved camera \\
+    Input statistics & Brightness, sharpness, value range & Light, blur,
+      sensor faults \\
+    Rejected inputs & Count of failed input checks & Sensor faults \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Model metrics answer: does the model see what it saw in training,
+          and does it answer as before?
+    \item Each one needs a reference: the values of a good period after the
+          installation. Part 3 compares with it.
+    \item The accuracy is the metric that you want, and it needs labels.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ labels
+\begin{frame}{Labels arrive late or never}
+  \begin{columns}[T]
+    \begin{column}{0.44\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        \textbf{Drop to see} & \textbf{Images in each period} \\
+        \midrule
+        10 points & 313 \\
+        5 points & 1180 \\
+        2 points & 7075 \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.6em
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        \textbf{Labelled images} & \textbf{95\,\% interval} \\
+        \midrule
+        50 & $\pm$ 11.6 points \\
+        100 & $\pm$ 8.2 points \\
+        500 & $\pm$ 3.7 points \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item On a device, nobody labels the images. A person must look at
+              a sample of them.
+        \item To see a drop of 5 points from 77.4 percent, a person labels
+              1180 images before and 1180 images after.
+        \item So the labelled check is slow and expensive. It confirms a
+              problem; it does not find it.
+        \item The fast check uses the metrics with no labels.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{Calculation: test of two proportions (alpha 0.05, power 0.8) from
+    77.4\,\%; interval with the normal approximation.}
+\end{frame}
+
+% ------------------------------------------------------------------ first
+\begin{frame}{Which metric shows a failure first}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, align=center,
+                 text width=1.85cm, minimum height=1.0cm}]
+    \node[st, fill=cardinalred!12] (a) at (0,0) {Cause\\ (light, heat,\\
+      code)};
+    \node[st, fill=boxgray] (b) at (2.6,0) {Input or\\ system metric};
+    \node[st, fill=boxgray] (c) at (5.2,0) {Model metric\\ (confidence,
+      counts)};
+    \node[st, fill=boxgray] (d) at (7.8,0) {Accuracy\\ (labels), user\\
+      complaint};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \draw[->, darkcyan, line width=1pt] (-0.9,-0.9) -- node[below]
+      {time: seconds, then minutes, then days} (8.7,-0.9);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.8em
+  \small
+  \begin{itemize}
+    \item Measure as close to the cause as you can. The input statistics
+          change with the first dark frame. The confidence needs many frames
+          for a clear mean. Labels need days.
+    \item A metric close to the cause also says where to look: the camera,
+          the cooler, or the code.
+    \item The later metrics confirm the effect on the user. Keep them, but
+          do not wait for them.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ lab
+\begin{frame}{The metrics of the lab application}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.45cm, minimum height=0.8cm}]
+    \node[st] (c) at (0,0) {Camera};
+    \node[st] (p) at (2.05,0) {Pre-\\processing};
+    \node[st, fill=cardinalred!12] (m) at (4.1,0) {Detector\\ (Day 8)};
+    \node[st] (q) at (6.15,0) {Post-\\processing};
+    \node[st] (o) at (8.2,0) {Stream,\\ MQTT};
+    \draw[->] (c) -- (p); \draw[->] (p) -- (m); \draw[->] (m) -- (q);
+    \draw[->] (q) -- (o);
+    \node[darkcyan, align=center] at (0,-0.85) {frame rate\\ brightness};
+    \node[darkcyan, align=center] at (2.05,-0.85) {time};
+    \node[darkcyan, align=center] at (4.1,-0.85) {time};
+    \node[darkcyan, align=center] at (6.15,-0.85) {confidence\\ counts};
+    \node[darkcyan, align=center] at (8.2,-0.85) {queue\\ lost messages};
+    \node[draw=darkcyan, rounded corners=2pt, align=center, text width=8.6cm]
+      at (4.1,-1.9) {device: CPU temperature, throttled bits, RAM of the
+      process, free disk, restarts};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The Day 8 application already reports the frame rate and the time
+          of each step on its page \code{/stats}.
+    \item In the lab you add the temperature, the RAM, and the confidence,
+          write them to a log (Part 2), and show them on a dashboard
+          (Part 3).
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{Name the first metric}{%
+  An application counts cups with the Day 8 detector on a Raspberry Pi 5.
+  For each failure, name the metric that shows it first, and the metric
+  that the user sees later.
+  \begin{enumerate}
+    \item[A.] In the evening, the room light is dimmed to one tenth.
+    \item[B.] The cooler of the board stops in a warm room.
+    \item[C.] A new version of the program keeps every result in a list
+          for a ``history'' page.
+  \end{enumerate}
+  For each one, also say: which threshold or time window would you use for
+  the check?}
+
+\answerframe{Name the first metric}{%
+  \small
+  \begin{enumerate}
+    \item[A.] First: the mean brightness (11 in place of 113 in the
+          experiment). Then the mean confidence and the detections in each
+          frame fall. Later: missed cups, seen with labels. Check: brightness
+          below a limit for some minutes; compare with the same hour of an
+          earlier day.
+    \item[B.] First: the temperature rises above its normal value at the
+          same load. At 80\,$^\circ$C the throttled bit is set and the clock
+          falls. Later: a higher latency and a lower frame rate. Check:
+          temperature above about 75\,$^\circ$C for 5 minutes.
+    \item[C.] First: the resident memory grows in a straight line (about
+          66 MB each hour at 10 frames each second). Later: swap, a stopped
+          process, a restart. Check: the slope over some hours, and the
+          restarts.
+  \end{enumerate}
+  \keypoint{The first metric is close to the cause: the input, the device,
+    or the process. The accuracy comes last.}}

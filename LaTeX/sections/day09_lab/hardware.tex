@@ -1,0 +1,72 @@
+% Hardware, software, and the plan of measurements of the Day 9 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \small
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item XIAOML Kit and a USB-C data cable. The lab uses no sensor and
+              no display.
+        \item Raspberry Pi 5 (8 GB) with the active cooler, the card of your
+              group, and the 27 W power supply.
+        \item Laptop in the Wi-Fi \code{edgeai-lab}.
+        \item A USB power meter, if the classroom has it.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \small
+      \textbf{Software}
+      \begin{itemize}
+        \item Arduino IDE with the esp32 core 3.3.12 and the library
+              Chirale\_TensorFlowLite 2.0.0.
+        \item On the board: \code{\textasciitilde/tflite\_env} (LiteRT, ONNX
+              Runtime) and \code{\textasciitilde/yolo} (LiteRT, NCNN).
+        \item The model files of Days 7 and 8 on the board.
+        \item Python 3 on the laptop for \code{pi/make\_report.py}. It needs
+              no package.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
+    Lab files & \code{Labs/day09/} on the laptop,
+                \code{\textasciitilde/edgeai/day09/} on the board \\
+    The models & The four reference models of MLPerf Tiny (Part 1 of the
+                 lecture): keyword spotting and image classification \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{The same model file on two boards}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=2.0cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b, draw=darkcyan] (a) at (0,0) {Protocol\\(Part A)};
+    \node[b, draw=treegreen] (b) at (2.9,0.85) {XIAOML Kit\\(Part B)};
+    \node[b, draw=darkorange] (c) at (2.9,-0.85) {Raspberry Pi\\(Part C)};
+    \node[b, draw=cardinalred] (d) at (5.8,0) {Tables\\(Part D)};
+    \node[b] (e) at (8.6,0) {Report};
+    \draw[->] (a) -- (b); \draw[->] (a) -- (c);
+    \draw[->] (b) -- (d); \draw[->] (c) -- (d); \draw[->] (d) -- (e);
+    \node[lab, anchor=south] at (2.9,1.4) {4 models, \code{int8} and
+      \code{float32}};
+    \node[lab, anchor=north] at (2.9,-1.4) {the same 4 models, MobileNetV2,
+      your detector};
+    \node[lab, anchor=north] at (5.8,-0.55) {energy,\\battery};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The kit runs the four files with TensorFlow Lite Micro. The
+          Raspberry Pi runs the same four files with LiteRT. The two boards
+          get the same test input.
+    \item The Raspberry Pi also measures the models of Days 7 and 8: two
+          runtimes and two thread counts for each model.
+    \item The window is the model only on the two boards.
+  \end{itemize}
+  \keypoint{A comparison of two boards is valid only with the same model
+    file, the same input, and the same window.}
+\end{frame}

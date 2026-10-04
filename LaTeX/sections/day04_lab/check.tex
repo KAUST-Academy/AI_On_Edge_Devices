@@ -1,0 +1,52 @@
+% Check criterion, deliverable, and the Decision Log question of Day 4.
+% The criterion and the deliverable come from the Day 4 section of the
+% syllabus and from Labs/day04/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ The notebook prints \code{complete} for tasks 1, 2, 4, 5,
+          and 7.
+    \item \cmark\ The report has the four predictions: task 3, task 6,
+          task 8, and the prediction of Part D. You wrote them before the
+          measurement.
+    \item \cmark\ The report has the table of the calibration experiment,
+          with the accuracy of each class and the clipped input values.
+    \item \cmark\ The Serial Monitor shows \code{Test set, same class as on
+          the laptop: 80 of 80} for the \code{int8} model.
+    \item \cmark\ The comparison table has a \code{float32} column and an
+          \code{int8} column with measured numbers of the board: flash,
+          arena, latency, and accuracy.
+    \item \cmark\ The Decision Log gives numbers and explains the change of
+          the accuracy.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md}. Show the kit to the
+  instructor.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  Write about 100 words. State one design decision, give your measured
+  numbers, and name the trade-off.
+  \vskip 0.4em
+  \begin{exerciseblock}
+    The motion classifier of Day 3 goes into a product with the XIAO
+    ESP32S3. Which model do you put on the board?
+    \begin{itemize}
+      \item The \code{float32} model.
+      \item The \code{int8} model.
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log:
+  \begin{itemize}
+    \item gives the flash, the arena, the latency, and the accuracy of the
+          two models from your table,
+    \item explains the change of the accuracy, or explains why the accuracy
+          does not change. Use the clipped input values and your
+          calibration set.
+    \item names what you lose with your decision. Example: a smaller model
+          against the work for the calibration set and the quantization
+          code.
+  \end{itemize}
+\end{frame}

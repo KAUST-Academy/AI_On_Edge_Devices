@@ -1,0 +1,848 @@
+% Part 1 of Day 11: Networking for edge devices.
+%
+% Topics of the syllabus: the layer model; IP addresses, DHCP, ports, TCP and
+% UDP; Wi-Fi and Ethernet; bandwidth, latency, jitter; tools: ping, ip, ss,
+% iperf3. Exercise: read the output of three network commands and find the
+% fault.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. Standards (RFC documents, IEEE 802.11n rates) and the documentation of
+%    the boards (Raspberry Pi documentation, ESP32-S3 data sheet).
+% 2. An experiment of this course on the work computer:
+%    tools/experiments/day11_network.py, values in
+%    tools/data/day11/day11_network.json (ping and iperf3). The work computer
+%    has no Wi-Fi: no value is a value of the lab network.
+% 3. Example outputs of ip, ss, and ping. They use the address plan of
+%    Labs/hardware/HW-09 (network 192.168.8, pi-07 at 192.168.8.107). The
+%    format comes from iproute2 5.15 and iputils 20211215 on the work
+%    computer. Nobody measured the values.
+
+\theorypart{Networking for edge devices}%
+  {read the output of three network commands and find the fault}
+
+% ------------------------------------------------------------------ lab network
+\begin{frame}{The network of the lab}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      dev/.style={draw=coolgray, rounded corners=2pt, align=center,
+                  fill=boxgray, text width=2.3cm, minimum height=0.95cm}]
+    \node[dev, fill=darkcyan!15, text width=2.6cm] (r) at (0,0)
+      {\textbf{Router}\\ Wi-Fi \code{edgeai-lab}\\ 192.168.8.1};
+    \node[dev] (pi) at (-3.6,1.35)
+      {\textbf{pi-07}\\ camera, detector\\ 192.168.8.107};
+    \node[dev] (xi) at (-3.6,-1.35)
+      {\textbf{XIAO} of group 07\\ 192.168.8.150 to .250};
+    \node[dev] (lp) at (3.6,1.35)
+      {\textbf{Laptop} of group 07\\ 192.168.8.150 to .250};
+    \node[dev] (in) at (3.6,-1.35)
+      {\textbf{Instructor laptop}\\ 192.168.8.10};
+    \node[dev, fill=white, text width=1.6cm, minimum height=0.6cm] (up) at (0,-1.9)
+      {Campus network};
+    \draw[<->, darkcyan, dashed] (pi) -- (r);
+    \draw[<->, darkcyan, dashed] (xi) -- (r);
+    \draw[<->, darkcyan, dashed] (lp) -- (r);
+    \draw[<->, darkcyan, dashed] (in) -- (r);
+    \draw[<->, coolgray] (r) -- (up);
+    \node[darkcyan, anchor=west] at (-1.0,1.9) {dashed: Wi-Fi};
+    \node[coolgray, anchor=west] at (0.15,-1.05) {cable};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Days 11 to 13 send data from one device to another: images,
+          messages, measurements.
+    \item One router for the lab. A campus network can block the traffic
+          between two devices.
+    \item The Raspberry Pi of group \code{NN} has the fixed address
+          \code{X.(100+NN)}, here with \code{X} = \code{192.168.8}. The
+          other devices get an address from a pool.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ layers
+\begin{frame}{The layer model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize,
+      osi/.style={draw=coolgray, fill=boxgray, minimum width=2.4cm,
+                  minimum height=0.42cm},
+      ip/.style={draw=coolgray, align=center, minimum width=2.4cm},
+      ex/.style={anchor=west, text width=4.2cm, align=left}]
+    \node[font=\small\bfseries] at (0,3.25) {OSI model};
+    \node[font=\small\bfseries] at (2.7,3.25) {Internet model};
+    \node[font=\small\bfseries, anchor=west] at (4.0,3.25) {Examples in this course};
+    \foreach \n/\t in {7/Application, 6/Presentation, 5/Session,
+                       4/Transport, 3/Network, 2/Data link, 1/Physical} {
+      \node[osi] at (0,{(\n-1)*0.44}) {\n\ \t};
+    }
+    \node[ip, fill=cardinalred!12, minimum height=1.28cm] at (2.7,2.2)
+      {Application};
+    \node[ip, fill=darkcyan!25, minimum height=0.42cm] at (2.7,1.32)
+      {Transport};
+    \node[ip, fill=darkcyan!15, minimum height=0.42cm] at (2.7,0.88)
+      {Internet};
+    \node[ip, fill=boxgray, minimum height=0.86cm] at (2.7,0.22)
+      {Link};
+    \node[ex] at (4.0,2.2) {HTTP, RTSP, RTP, MQTT, SSH, DNS, DHCP};
+    \node[ex] at (4.0,1.32) {TCP, UDP};
+    \node[ex] at (4.0,0.88) {IP, ICMP (\code{ping})};
+    \node[ex] at (4.0,0.22) {Wi-Fi (IEEE 802.11), Ethernet (IEEE 802.3)};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each layer uses the service of the layer below it. It does not
+          know how that layer works.
+    \item The internet uses four layers. The OSI model has seven and gives
+          the names that you read in documentation: ``layer 2'', ``layer 7''.
+    \item A program selects only the application protocol and the transport.
+          The operating system does the rest.
+    \item Search for a fault from the bottom to the top: link, address,
+          reach, port, application.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ headers
+\begin{frame}{Each layer adds a header}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize,
+      h/.style={draw=coolgray, minimum height=0.55cm, minimum width=1.35cm,
+                align=center, anchor=west, inner sep=1pt},
+      d/.style={draw=coolgray, minimum height=0.55cm, minimum width=4.0cm,
+                align=center, anchor=west, fill=cardinalred!12}]
+    \node[left, font=\scriptsize\itshape] at (-2.85,1.5) {Application};
+    \node[left, font=\scriptsize\itshape] at (-2.85,0.75) {Transport};
+    \node[left, font=\scriptsize\itshape] at (-2.85,0) {Internet};
+    \node[left, font=\scriptsize\itshape] at (-2.85,-0.75) {Link};
+    \node[d] at (1.25,1.5) {Data of the application};
+    \node[h, fill=darkcyan!25] at (-0.1,0.75) {TCP 20 B};
+    \node[d] at (1.25,0.75) {Data};
+    \node[h, fill=darkcyan!15] at (-1.45,0) {IP 20 B};
+    \node[h, fill=darkcyan!25] at (-0.1,0) {TCP 20 B};
+    \node[d] at (1.25,0) {Data: up to 1460 B};
+    \node[h, fill=boxgray, font=\tiny] at (-2.8,-0.75) {Wi-Fi header};
+    \node[h, fill=darkcyan!15] at (-1.45,-0.75) {IP 20 B};
+    \node[h, fill=darkcyan!25] at (-0.1,-0.75) {TCP 20 B};
+    \node[d] at (1.25,-0.75) {Data};
+    \node[h, fill=boxgray, minimum width=0.7cm] at (5.25,-0.75) {CRC};
+    \draw[<->, coolgray] (-1.45,-1.25) -- node[below] {IP packet: at most
+      1500 B on Ethernet and Wi-Fi (the MTU)} (5.25,-1.25);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The headers have a fixed minimum size: IP 20 bytes, TCP 20 bytes,
+          UDP 8 bytes.
+    \item The MTU limits one IP packet to 1500 bytes. So one TCP segment
+          carries at most $1500 - 20 - 20 = 1460$ bytes of data.
+    \item A JPEG image of 30 KB (30\,720 bytes) needs
+          $\lceil 30\,720 / 1460 \rceil = 22$ packets. If one packet is
+          lost, the image is not complete.
+    \item The IP and TCP headers are $40 / 1500 = 2.7$ percent of a full
+          packet. The headers of many small messages cost much more.
+  \end{itemize}
+  \source{RFC 791, 9293, 768, and 894. The image is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ IPv4
+\begin{frame}{IPv4 addresses and the subnet}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize]
+        \node[draw=coolgray, fill=darkcyan!15, minimum width=2.6cm,
+              minimum height=0.6cm] (n) at (0,0) {\code{192.168.8}};
+        \node[draw=coolgray, fill=cardinalred!12, minimum width=1.0cm,
+              minimum height=0.6cm, anchor=west] (h) at (n.east) {\code{.107}};
+        \node[anchor=west] at (h.east) {\code{/24}};
+        \node[below=0.15cm of n, align=center] {network part\\ 24 bits};
+        \node[below=0.15cm of h, align=center] {host\\ 8 bits};
+      \end{tikzpicture}
+      \vskip 0.6em
+      \footnotesize
+      \renewcommand{\arraystretch}{1.12}
+      \begin{tabular}{@{}L{2.4cm}L{2.6cm}@{}}
+        \toprule
+        \textbf{Address} & \textbf{Meaning} \\
+        \midrule
+        \code{192.168.8.0}   & The network \\
+        \code{192.168.8.1}   & The router (gateway) \\
+        \code{.2} to \code{.254} & 253 devices \\
+        \code{192.168.8.255} & Broadcast: all devices \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item An IPv4 address has 32 bits. \code{/24} says that the first
+              24 bits name the network.
+        \item Two devices in the same network send to each other directly.
+              To another network they send through the router.
+        \item Private networks: \code{10.0.0.0/8},
+              \code{172.16.0.0/12}, \code{192.168.0.0/16}. The router
+              translates them to its one public address.
+        \item \code{127.0.0.1}: this computer (loopback).
+        \item \code{169.254.x.x}: the device got no answer from a DHCP
+              server.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{RFC 1918 (private addresses), RFC 3927 (169.254.0.0/16).}
+\end{frame}
+
+% ------------------------------------------------------------------ DHCP
+\begin{frame}{DHCP: a device gets its address}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth]
+        \node[font=\footnotesize\bfseries] at (0,0) {Device};
+        \node[font=\footnotesize\bfseries] at (3.6,0) {Router};
+        \draw[coolgray] (0,-0.25) -- (0,-3.6);
+        \draw[coolgray] (3.6,-0.25) -- (3.6,-3.6);
+        \draw[->, darkcyan] (0,-0.6) -- node[above] {DISCOVER (to all)}
+          (3.6,-0.9);
+        \draw[->, cardinalred] (3.6,-1.3) -- node[above]
+          {OFFER: \code{.163}} (0,-1.6);
+        \draw[->, darkcyan] (0,-2.0) -- node[above] {REQUEST \code{.163}}
+          (3.6,-2.3);
+        \draw[->, cardinalred] (3.6,-2.7) -- node[above] {ACK} (0,-3.0);
+        \node[align=center] at (1.8,-3.45) {UDP, ports 67 and 68};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \small
+      The ACK gives the device:
+      \begin{itemize}
+        \item its address and the mask (\code{/24}),
+        \item the gateway (the router),
+        \item the DNS server,
+        \item the lease time: the address is valid for this time.
+      \end{itemize}
+      \vskip 0.2em
+      \begin{itemize}
+        \item A device has no address before DHCP, so it sends the first
+              message to all devices.
+        \item A reservation in the router gives one device always the same
+              address. The router knows the device by its MAC address.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{The lab reserves \code{192.168.8.107} for pi-07. Your code can
+    then use this address for the full course.}
+  \source{RFC 2131 (DHCP). The address \texttt{.163} is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ names
+\begin{frame}{Names: DNS and \texttt{.local}}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      dev/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                  align=center, text width=2.0cm, minimum height=0.8cm}]
+    \node[dev] (l) at (0,0) {Laptop};
+    \node[dev, fill=darkcyan!15] (p) at (5.4,0.55) {pi-07\\ 192.168.8.107};
+    \node[dev] (x) at (5.4,-0.75) {Other devices};
+    \draw[->, darkcyan] (l.east) -- (p.west);
+    \draw[->, darkcyan] (l.east) -- node[below, sloped]
+      {Who is pi-07.local? (to all)} (x.west);
+    \draw[->, cardinalred] (p.north) to[bend right=18] node[above]
+      {I am pi-07.local: 192.168.8.107} (l.north);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A program needs an address. A person prefers a name.
+    \item \textbf{DNS}: a server answers ``which address has this name?''.
+          The router or the internet provider runs it (UDP port 53).
+    \item \textbf{Multicast DNS}: a name that ends with \code{.local}. The
+          laptop asks all devices of the network. The device with the name
+          answers. No server is necessary (UDP port 5353).
+    \item Raspberry Pi OS answers for its host name with the program
+          \code{avahi}. So \code{ssh edge@pi-07.local} works.
+    \item Some networks block multicast. Then use the address.
+  \end{itemize}
+  \source{RFC 1035 (DNS), RFC 6762 (multicast DNS).}
+\end{frame}
+
+% ------------------------------------------------------------------ ports
+\begin{frame}{Ports: one address, many services}
+  \small
+  One device runs many programs. The port number selects the program:
+  \code{192.168.8.107:8554} is the RTSP server on pi-07.
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}rlL{0.52\textwidth}@{}}
+    \toprule
+    \textbf{Port} & \textbf{Transport} & \textbf{Service in this course} \\
+    \midrule
+    22    & TCP & SSH to the Raspberry Pi \\
+    53, 5353 & UDP & DNS and multicast DNS \\
+    67, 68 & UDP & DHCP \\
+    80    & TCP & HTTP: the MJPEG stream of the XIAO (Day 11) \\
+    1883  & TCP & MQTT broker (Days 12 and 13) \\
+    5000  & TCP & Web page of the Day 8 detector \\
+    5201  & TCP, UDP & \code{iperf3} \\
+    8554  & TCP & RTSP server MediaMTX (Day 11) \\
+    11434 & TCP & Ollama (Day 10) \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A server \emph{listens} on a fixed port. A client uses a free
+          port that the system selects: on Linux from 32\,768 to 60\,999.
+    \item A port below 1024 needs administrator rights on Linux. So the
+          course servers use 1883, 5000, and 8554.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ TCP
+\begin{frame}{TCP: a reliable byte stream}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth, y=0.85cm]
+        \node[font=\footnotesize\bfseries] at (0,0) {Sender};
+        \node[font=\footnotesize\bfseries] at (3.0,0) {Receiver};
+        \draw[coolgray] (0,-0.25) -- (0,-4.6);
+        \draw[coolgray] (3.0,-0.25) -- (3.0,-4.6);
+        \draw[->] (0,-0.5) -- node[above] {SYN} (3.0,-0.75);
+        \draw[->] (3.0,-0.95) -- node[above] {SYN-ACK} (0,-1.2);
+        \draw[->] (0,-1.4) -- node[above] {ACK} (3.0,-1.65);
+        \draw[->, darkcyan] (0,-2.0) -- node[above] {segment 1} (3.0,-2.25);
+        \draw[->, cardinalred] (0,-2.55) -- node[above] {segment 2}
+          (1.4,-2.67) node[right] {\ding{55} lost};
+        \draw[->, darkcyan] (0,-3.2) -- node[above] {segment 3} (3.0,-3.45);
+        \draw[->, coolgray] (3.0,-3.7) -- node[above] {ACK: I need 2}
+          (0,-3.95);
+        \draw[->, darkcyan] (0,-4.2) -- node[above] {segment 2 again}
+          (3.0,-4.45);
+        \node[align=center, anchor=north] at (3.0,-4.65) {2 and 3 go to\\
+          the program};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \small
+      \begin{itemize}
+        \item A connection starts with three messages. The first data
+              leaves after one round trip.
+        \item The receiver confirms the data (ACK). The sender sends a
+              lost segment again.
+        \item The program receives all bytes, in the correct order.
+        \item TCP also adapts its rate to the network (congestion
+              control).
+      \end{itemize}
+      \vskip 0.3em
+      \textbf{The cost:} segment 3 waits for segment 2. One lost packet
+      delays all data after it.
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  When no ACK comes, Linux waits at least 200 ms before it sends the
+  segment again. At 30 frames each second, this is 6 frames.
+  \source{RFC 9293 (TCP). Linux kernel 5.15, \texttt{include/net/tcp.h}:\\
+    \texttt{TCP\_RTO\_MIN} is HZ/5, 200 ms.}
+\end{frame}
+
+% ------------------------------------------------------------------ UDP
+\begin{frame}{UDP: single datagrams with no resend}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth, y=0.85cm]
+        \node[font=\footnotesize\bfseries] at (0,0) {Sender};
+        \node[font=\footnotesize\bfseries] at (3.0,0) {Receiver};
+        \draw[coolgray] (0,-0.25) -- (0,-2.95);
+        \draw[coolgray] (3.0,-0.25) -- (3.0,-2.95);
+        \draw[->, darkcyan] (0,-0.5) -- node[above] {datagram 1} (3.0,-0.75);
+        \draw[->, cardinalred] (0,-1.1) -- node[above] {datagram 2}
+          (1.4,-1.22) node[right] {\ding{55} lost};
+        \draw[->, darkcyan] (0,-1.85) -- node[above] {datagram 3} (3.0,-2.1);
+        \draw[->, darkcyan] (0,-2.45) -- node[above] {datagram 4} (3.0,-2.7);
+        \node[align=center, anchor=north] at (3.0,-3.0) {1, 3, 4 go to the\\
+          program at once};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \small
+      \begin{itemize}
+        \item No connection: the first datagram leaves at once.
+        \item No ACK, no resend, no order. A header of 8 bytes.
+        \item Each datagram arrives complete, or it does not arrive.
+        \item The program decides what to do with a loss: skip it, hide
+              it, or ask again.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A video packet that arrives 200 ms late is too late for the
+          display. With UDP the stream continues; the image has an error
+          for a short time.
+    \item UDP has no rate control. A sender can fill the network and lose
+          its own packets.
+  \end{itemize}
+  \source{RFC 768 (UDP).}
+\end{frame}
+
+% ------------------------------------------------------------------ TCP or UDP
+\begin{frame}{TCP or UDP?}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.28\textwidth}lL{0.46\textwidth}@{}}
+    \toprule
+    \textbf{Protocol} & \textbf{Transport} & \textbf{Reason} \\
+    \midrule
+    SSH, HTTP, MQTT & TCP & A command or a message must arrive complete \\
+    MJPEG over HTTP & TCP & Simple; each image arrives complete or late \\
+    RTSP (the control) & TCP & Few messages, all necessary \\
+    RTP (the video)  & UDP, or TCP & An old image has no value \\
+    DNS, DHCP        & UDP & One short question, one short answer \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  Ask two questions:
+  \begin{enumerate}
+    \item Has the data a value when it arrives late? Video, audio, and a
+          live sensor value: no. A file, a command, an alarm: yes.
+    \item Can the program accept a gap? A stream of measurements: yes. A
+          model file or a configuration: no.
+  \end{enumerate}
+  \vskip 0.2em
+  \begin{itemize}
+    \item A firewall or a router can block UDP. Then a stream uses TCP:
+          RTSP can carry the RTP packets in its TCP connection.
+  \end{itemize}
+  \keypoint{Data that must arrive complete: TCP. Data that is useless when
+    late: UDP.}
+  \source{RFC 7826 (RTSP 2.0), RFC 3550 (RTP).}
+\end{frame}
+
+% ------------------------------------------------------------------ Ethernet Wi-Fi
+\begin{frame}{Ethernet and Wi-Fi}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    & \textbf{Ethernet (cable)} & \textbf{Wi-Fi (radio)} \\
+    \midrule
+    Medium & One cable for each device. Send and receive at the same time. &
+             One radio channel for all devices. One sender at a time. \\
+    Delay  & Low and stable & Changes with the distance, the walls, and the
+             other devices \\
+    Loss   & Very rare & Frequent. The radio sends a lost frame again, and
+             this adds delay. \\
+    Raspberry Pi 5 & Gigabit: 1 Gb/s & 802.11ac, 2.4 and 5 GHz:
+             300 Mb/s \\
+    XIAO ESP32S3 & None & 802.11 b/g/n, 2.4 GHz only: up to 150 Mbit/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The Wi-Fi values are link rates of the radio. A program gets
+          much less: measure the throughput with \code{iperf3}.
+    \item If the lab has a switch, connect the Raspberry Pi with a cable.
+          Its video stream then does not use the Wi-Fi channel twice.
+  \end{itemize}
+  \source{Raspberry Pi documentation (CC BY-SA 4.0).\\ ESP32-S3 data sheet,
+    version 2.2.}
+\end{frame}
+
+% ------------------------------------------------------------------ shared channel
+\begin{frame}{One Wi-Fi channel is shared}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.95cm]
+        \node[font=\footnotesize\bfseries] at (2.0,1.65) {Time of the channel};
+        \foreach \x/\w/\c/\t in {0/0.8/darkcyan!30/A, 0.8/0.8/darkcyan!30/B,
+                                 1.6/0.8/darkcyan!30/C,
+                                 2.4/1.6/cardinalred!30/D} {
+          \fill[\c] (\x,0.6) rectangle ++(\w,0.6);
+          \draw[coolgray] (\x,0.6) rectangle ++(\w,0.6);
+          \node at (\x+\w/2,0.9) {\t};
+        }
+        \node[align=center, text width=4cm] at (2.0,-0.1)
+          {A, B, C: near the router, fast.\\ D: far away, slow. The same
+          data needs more time.};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \small
+      \begin{itemize}
+        \item All devices on one channel share its time. When one device
+              sends, the others wait.
+        \item A device far from the router uses a slow rate. Its data needs
+              more time, and all devices get less.
+        \item The 2.4 GHz band has 3 channels that do not overlap: 1, 6,
+              and 11.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  Time for 1 MB on 802.11n, one stream, 20 MHz:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.42\textwidth}rr@{}}
+    \toprule
+    \textbf{Rate of the radio} & \textbf{Link rate} & \textbf{Time for 1 MB} \\
+    \midrule
+    Near the router (MCS 7, short guard interval) & 72.2 Mbit/s & 0.116 s \\
+    Far from the router (MCS 0)                    & 6.5 Mbit/s  & 1.291 s \\
+    \bottomrule
+  \end{tabular}
+  \source{Link rates of IEEE 802.11n. Slow device: Heusse et al., INFOCOM
+    2003.\\ The times ignore the headers and the waits.}
+\end{frame}
+
+% ------------------------------------------------------------------ metrics
+\begin{frame}{Bandwidth, latency, jitter, and loss}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.72cm]
+    \node[anchor=east] at (-0.2,1.0) {sent};
+    \node[anchor=east] at (-0.2,0) {received};
+    \draw[->, coolgray] (0,1.0) -- (11.5,1.0);
+    \draw[->, coolgray] (0,0) -- (11.5,0);
+    \foreach \s/\r in {0.5/2.0, 2.5/4.3, 4.5/5.9, 6.5/9.1, 8.5/10.0} {
+      \fill[darkcyan] (\s,1.0) circle (2pt);
+      \fill[cardinalred] (\r,0) circle (2pt);
+      \draw[->, coolgray!70] (\s,0.95) -- (\r,0.08);
+    }
+    \node[coolgray, anchor=west] at (11.6,1.0) {time};
+    \node[coolgray, anchor=west] at (11.6,0) {time};
+    \node[anchor=north] at (1.25,-0.15) {1.5};
+    \node[anchor=north] at (3.4,-0.15) {1.8};
+    \node[anchor=north] at (5.2,-0.15) {1.4};
+    \node[anchor=north] at (7.8,-0.15) {2.6};
+    \node[anchor=north] at (9.25,-0.15) {1.5};
+  \end{tikzpicture}
+  \vskip 0.1em
+  {\scriptsize Delay of five packets sent at a regular interval (example
+  values in units of time).\par}
+  \endgroup
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.19\textwidth}L{0.47\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    \textbf{Value} & \textbf{Meaning} & \textbf{Tool} \\
+    \midrule
+    Bandwidth  & The capacity of a link, in bits each second & Data sheet \\
+    Throughput & The rate that a program really gets & \code{iperf3} \\
+    Latency    & The time of one packet. \code{ping} gives the round
+                 trip (RTT). & \code{ping} \\
+    Jitter     & The change of the latency from packet to packet &
+                 \code{ping} (mdev), \code{iperf3 -u} \\
+    Loss       & The part of the packets that never arrive & \code{ping},
+                 \code{iperf3 -u} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  A network rate uses powers of 10: 1 Mbit/s is $10^6$ bits each second.
+  A file has bytes: multiply by 8.
+\end{frame}
+
+% ------------------------------------------------------------------ delay parts
+\begin{frame}{The four parts of the delay}
+  \small
+  One packet on one link has four delays:
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.30\textwidth}L{0.44\textwidth}@{}}
+    \toprule
+    \textbf{Delay} & \textbf{Formula} & \textbf{Example} \\
+    \midrule
+    Transmission & bits / link rate & A JPEG of 30 KB at 72.2 Mbit/s: 3.40
+                   ms. At 1 Gbit/s: 0.25 ms. \\
+    Propagation  & distance / speed of the signal & 20 m of radio in the
+                   room: 0.07 $\mu$s. 3600 km of fibre: 18 ms. \\
+    Queueing     & the wait behind other packets & 0 on an empty network.
+                   Large on a full one. \\
+    Processing   & the work of each device & Small for a router. Large
+                   for an encoder or a model. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item In a room, the propagation is almost zero. The transmission and
+          the queues set the delay.
+    \item Over a long distance, the propagation sets a floor: round trip
+          $\geq 2 \times$ distance $/$ 200\,000 km/s in fibre.
+          3600 km give 36 ms before any computation.
+    \item A full queue in the router adds delay to every packet. A stream
+          that sends more than the link carries fills it.
+  \end{itemize}
+  \source{Light barrier: \emph{Machine Learning Systems}, Volume I, chapter
+    ``ML Systems''.\\ The image size and the distance are examples.}
+\end{frame}
+
+% ------------------------------------------------------------------ measured
+\begin{frame}{Measured: near and far}
+  \small
+  \code{ping}, 100 requests, one each 0.2 s, from the work computer
+  (connected by cable):
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.37\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Target} & \textbf{min} & \textbf{avg} & \textbf{max} &
+    \textbf{mdev} \\
+    \midrule
+    \code{127.0.0.1}: this computer & 0.034 & 0.069 & 0.105 & 0.014 \\
+    \code{1.1.1.1}: a public DNS server & 69.353 & 69.658 & 69.927 & 0.129 \\
+    \code{8.8.8.8}: a second DNS server & 69.197 & 69.453 & 69.637 &
+      0.114 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Round-trip times in ms. 0 of 300 requests were lost.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The loopback has no network: 0.07 ms is the time of the software.
+    \item The two servers are 69 ms away. With the light barrier, the
+          fibre path is at most $34.6 \text{ ms} \times 200 \text{
+          km/ms} = 6920$ km long.
+    \item The cable path has a small jitter: mdev 0.11 to 0.13 ms. Wi-Fi
+          has more. You measure it in the lab.
+    \item A detector with a budget of 50 ms cannot wait for a server at
+          69 ms. The edge device must decide alone.
+  \end{itemize}
+  \source{Experiment of this course: \texttt{ping} of iputils 20211215 on
+    the x86 work computer.\\ The values say nothing about the lab network.}
+\end{frame}
+
+% ------------------------------------------------------------------ ip
+\begin{frame}[fragile]{Tool: \texttt{ip}}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+eth0             DOWN
+wlan0            UP             192.168.8.107/24 fe80::5a1c:2e9f:7d40:b3c1/64
+$ ip route
+default via 192.168.8.1 dev wlan0 proto dhcp src 192.168.8.107 metric 600
+192.168.8.0/24 dev wlan0 proto kernel scope link src 192.168.8.107 metric 600
+$ ip neigh
+192.168.8.1 dev wlan0 lladdr 02:11:22:33:44:01 REACHABLE
+192.168.8.163 dev wlan0 lladdr 02:11:22:33:44:a3 STALE
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{ip -br addr}: each interface, its state, and its address.
+          Here the Wi-Fi \code{wlan0} has \code{192.168.8.107/24}, and the
+          cable \code{eth0} is not connected.
+    \item \code{ip route}: \code{default via} names the router. The second
+          line says that the network \code{192.168.8.0/24} is directly on
+          \code{wlan0}.
+    \item \code{ip neigh}: the devices that this computer reached recently,
+          with their MAC addresses.
+  \end{itemize}
+  \source{Example output of pi-07 in the format of iproute2. Nobody
+    measured these values.}
+\end{frame}
+
+% ------------------------------------------------------------------ ss
+\begin{frame}[fragile]{Tool: \texttt{ss}}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+$ ss -tln
+State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*
+LISTEN 0      4096               *:8554             *:*
+LISTEN 0      5          127.0.0.1:5000       0.0.0.0:*
+$ ss -tn
+State  Recv-Q Send-Q   Local Address:Port    Peer Address:Port Process
+ESTAB  0      0        192.168.8.107:22     192.168.8.163:51022
+ESTAB  0      412360   192.168.8.107:8554   192.168.8.163:51388
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Options: \code{-t} TCP, \code{-u} UDP, \code{-l} listening only,
+          \code{-n} numbers, \code{-p} the program.
+    \item \code{0.0.0.0} or \code{*}: the server accepts connections on
+          all interfaces. \code{127.0.0.1}: only from this computer. Port
+          5000 here does not answer the laptop.
+    \item \code{Send-Q} of a connection: the bytes that the peer did not
+          confirm yet. A large value that grows means: the network or the
+          reader is too slow for the stream.
+  \end{itemize}
+  \source{Example output of pi-07 in the format of iproute2. Nobody
+    measured these values.}
+\end{frame}
+
+% ------------------------------------------------------------------ ping
+\begin{frame}[fragile]{Tool: \texttt{ping}}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+$ ping -c 4 pi-07.local
+PING pi-07.local (192.168.8.107) 56(84) bytes of data.
+64 bytes from pi-07.local (192.168.8.107): icmp_seq=1 ttl=64 time=3.84 ms
+64 bytes from pi-07.local (192.168.8.107): icmp_seq=2 ttl=64 time=2.91 ms
+64 bytes from pi-07.local (192.168.8.107): icmp_seq=4 ttl=64 time=41.2 ms
+
+--- pi-07.local ping statistics ---
+4 packets transmitted, 3 received, 25% packet loss, time 3005ms
+rtt min/avg/max/mdev = 2.910/15.983/41.200/17.835 ms
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The name resolves and the device answers. Request 3 was lost,
+          and request 4 needed 41.2 ms: a sign of a weak Wi-Fi signal or a
+          full channel.
+    \item Use 100 requests or more for a jitter value. Four are too few.
+  \end{itemize}
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.47\textwidth}L{0.45\textwidth}@{}}
+    \toprule
+    \textbf{Message} & \textbf{Meaning} \\
+    \midrule
+    \code{Name or service not known} & The name does not resolve: use the
+                                       address \\
+    \code{Destination Host Unreachable} & No device answers at this address
+                                          in your network \\
+    100\% loss, no message & The device is off, or it blocks \code{ping} \\
+    \bottomrule
+  \end{tabular}
+  \source{Example output in the format of iputils. Nobody measured these
+    values.}
+\end{frame}
+
+% ------------------------------------------------------------------ iperf3
+\begin{frame}[fragile]{Tool: \texttt{iperf3}}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+pi-07$  iperf3 -s                            # server, port 5201
+laptop$ iperf3 -c pi-07.local -t 10          # TCP, laptop to pi-07
+laptop$ iperf3 -c pi-07.local -t 10 -R       # TCP, pi-07 to laptop
+laptop$ iperf3 -c pi-07.local -u -b 20M      # UDP at 20 Mbit/s
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{-R} reverses the direction. The video goes from the
+          Raspberry Pi to the laptop: measure this direction.
+    \item With \code{-u} the client sends UDP at the rate \code{-b}. The
+          last lines give the jitter and the lost datagrams.
+  \end{itemize}
+  \vskip 0.2em
+  Measured on one computer, through the loopback:
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\tiny]
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-5.00   sec  ...          19.2 Gbits/sec    0             sender
+[ ID] Interval           Transfer     Bitrate         Jitter    Lost/Total Datagrams
+[  5]   0.00-5.04   sec  ...          20.0 Mbits/sec  0.011 ms  0/382 (0%)  receiver
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item 19.2 Gbit/s is the speed of the memory, not of a network. A test
+          needs two devices.
+  \end{itemize}
+  \source{Experiment of this course: iperf 3.9 on the x86 work computer, 5
+    s each.\\ The interval and the transfer columns are not shown.}
+\end{frame}
+
+% ------------------------------------------------------------------ method
+\begin{frame}{A method to find a network fault}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 text width=2.9cm, align=left, minimum height=0.62cm},
+      cmd/.style={anchor=west, text width=5.2cm, align=left}]
+    \foreach \i/\t/\c/\f in {
+        1/{Link: interface up?}/{\code{ip -br addr}}/darkcyan!10,
+        2/{Address in the subnet?}/{\code{ip -br addr}, \code{ip route}}/darkcyan!15,
+        3/{Name resolves?}/{\code{ping pi-07.local}, then the address}/darkcyan!20,
+        4/{Device answers?}/{\code{ping 192.168.8.107}}/darkcyan!25,
+        5/{Program listens?}/{\code{ss -tln} on the server: port and address}/cardinalred!12,
+        6/{Enough throughput?}/{\code{iperf3 -c ... -R}}/cardinalred!20} {
+      \node[st, fill=\f] (s\i) at (0,{-0.78*\i}) {\textbf{\i.} \t};
+      \node[cmd] at (1.65,{-0.78*\i}) {\c};
+    }
+    \foreach \i/\j in {1/2, 2/3, 3/4, 4/5, 5/6} {
+      \draw[->, coolgray] (s\i) -- (s\j);
+    }
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Go from the bottom layer to the top layer. Stop at the first
+          step that fails: the fault is there.
+    \item Test from the device that has the problem. A laptop that reaches
+          pi-07 says nothing about the XIAO.
+  \end{itemize}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\begin{frame}[fragile]{Exercise: find the fault}
+  \small
+  Group 07 cannot open \code{rtsp://pi-07.local:8554/cam} on the laptop.
+  The video player shows an error. The group runs three commands:
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+laptop$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128
+wlan0            UP             192.168.8.163/24 fe80::9c2d:41ff:fe6a:20d7/64
+laptop$ ping -c 3 pi-07.local
+64 bytes from pi-07.local (192.168.8.107): icmp_seq=1 ttl=64 time=4.12 ms
+64 bytes from pi-07.local (192.168.8.107): icmp_seq=2 ttl=64 time=2.87 ms
+64 bytes from pi-07.local (192.168.8.107): icmp_seq=3 ttl=64 time=3.30 ms
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+pi-07$ ss -tln
+State  Recv-Q Send-Q Local Address:Port  Peer Address:Port Process
+LISTEN 0      128          0.0.0.0:22         0.0.0.0:*
+LISTEN 0      4096       127.0.0.1:8554       0.0.0.0:*
+\end{lstlisting}
+  \begin{exerciseblock}
+    \small
+    For each output, say which step of the method passes. Then find the
+    fault and give the change that corrects it. Work with your neighbour
+    for 6 minutes.
+  \end{exerciseblock}
+  \source{Example outputs. Nobody measured these values.}
+\end{frame}
+
+\begin{frame}{Answer: find the fault}
+  \small
+  \begin{enumerate}
+    \item \code{ip -br addr}: the Wi-Fi is up, and the laptop has
+          \code{192.168.8.163/24} from DHCP. Steps 1 and 2 pass.
+    \item \code{ping}: the name resolves to \code{192.168.8.107}, and pi-07
+          answers with no loss. Steps 3 and 4 pass.
+    \item \code{ss -tln}: the RTSP server listens on
+          \code{127.0.0.1:8554}. Only programs on pi-07 can connect. Step 5
+          fails.
+  \end{enumerate}
+  \textbf{Correction:} set \code{rtspAddress: :8554} in the configuration
+  of MediaMTX and start the server again. \code{ss -tln} then shows
+  \code{*:8554}.
+  \vskip 0.4em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.50\textwidth}L{0.42\textwidth}@{}}
+    \toprule
+    \textbf{Other output} & \textbf{Fault} \\
+    \midrule
+    \code{169.254.x.x} in \code{ip -br addr} & No DHCP answer \\
+    \code{Destination Host Unreachable}     & pi-07 is off, or in another
+                                               network \\
+    No line with \code{:8554} in \code{ss}  & The server does not run \\
+    \bottomrule
+  \end{tabular}
+  \keypoint{A device that answers \code{ping} can still refuse a service.
+    Check the port and its address on the server.}
+\end{frame}

@@ -1,0 +1,681 @@
+% Part 2 of Day 11: Video streaming.
+%
+% Topics of the syllabus: resolution, frame rate, bit rate; H.264 and MJPEG;
+% keyframes; RTP, RTSP, and RTCP; HTTP streaming as an alternative.
+% Exercise: calculate the bit rate of an MJPEG stream and of an H.264 stream.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course on the work computer (x86, FFmpeg 4.4,
+%    MediaMTX v1.21.1): tools/experiments/day11_video.py, values in
+%    tools/data/day11/day11_video.json. The test video is the camera video
+%    images/xiao_esp32s3_led.MOV of the repository XIAO-ESP32S3-Sense
+%    (Apache-2.0), 300 frames at 30 frames each second. "Moving camera": the
+%    video held in the hand. "Fixed camera": its first frame for 10 s with
+%    the noise of a sensor. No value is a value of a board.
+% 2. Standards (RFC 3550, RFC 2326, RFC 6184) and the documentation of
+%    MediaMTX and of the Raspberry Pi camera software.
+% 3. The stream sketch of the XIAO (XIAO-ESP32S3-Sense, Streeming_Video).
+
+\theorypart{Video streaming}%
+  {calculate the bit rate of an MJPEG and an H.264 stream}
+
+% ------------------------------------------------------------------ pipeline
+\begin{frame}{From the camera to the model}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.35cm, minimum height=0.9cm}]
+    \node[st] (cam) at (0,0) {Camera\\ sensor};
+    \node[st, fill=cardinalred!12] (enc) at (1.8,0) {Encoder};
+    \node[st, fill=darkcyan!15] (pkt) at (3.6,0) {Packets\\ (RTP)};
+    \node[st, fill=darkcyan!25] (net) at (5.4,0) {Network};
+    \node[st, fill=darkcyan!15] (buf) at (7.2,0) {Buffer};
+    \node[st, fill=cardinalred!12] (dec) at (9.0,0) {Decoder};
+    \node[st] (mod) at (9.0,-1.5) {Model or\\ screen};
+    \draw[->] (cam) -- (enc);
+    \draw[->] (enc) -- (pkt);
+    \draw[->] (pkt) -- (net);
+    \draw[->] (net) -- (buf);
+    \draw[->] (buf) -- (dec);
+    \draw[->] (dec) -- (mod);
+    \draw[coolgray] (-0.7,0.75) -- (3.6,0.75)
+      node[midway, above] {camera node};
+    \draw[coolgray] (6.5,0.75) -- (9.7,0.75)
+      node[midway, above] {reader node};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A camera makes a frame each 33 ms at 30 frames each second. The
+          network cannot carry the raw frames.
+    \item The encoder makes the frames small. The protocol cuts them into
+          packets and gives each packet a time.
+    \item The reader collects the packets, waits for missing ones, and
+          decodes the frame for the model.
+    \item Each step adds delay. Part 3 measures the sum.
+  \end{itemize}
+  \keypoint{This part: how large a stream is, how an encoder makes it small,
+    and how RTSP, RTP, and RTCP carry it.}
+\end{frame}
+
+% ------------------------------------------------------------------ raw rates
+\begin{frame}{Resolution, frame rate, and bit rate}
+  \small
+  \begin{itemize}
+    \item \textbf{Resolution}: the pixels of one frame, width $\times$
+          height.
+    \item \textbf{Frame rate}: the frames each second (fps).
+    \item \textbf{Bit rate}: the bits each second of the stream, in Mbit/s.
+  \end{itemize}
+  \vskip 0.2em
+  Raw video at 30 frames each second:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Resolution} & \textbf{RGB frame} & \textbf{RGB stream} &
+    \textbf{YUV 4:2:0 frame} & \textbf{YUV 4:2:0 stream} \\
+    \midrule
+    640 $\times$ 360   & 675 KB  & 165.9 Mbit/s  & 338 KB  & 82.9 Mbit/s \\
+    1280 $\times$ 720  & 2700 KB & 663.6 Mbit/s  & 1350 KB & 331.8 Mbit/s \\
+    1920 $\times$ 1080 & 6075 KB & 1493.0 Mbit/s & 3038 KB & 746.5 Mbit/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Bit rate = bytes of one frame $\times$ 8 $\times$ frames each
+          second. 1280 $\times$ 720 $\times$ 3 $\times$ 8 $\times$ 30 =
+          663.6 Mbit/s.
+    \item The XIAO has a Wi-Fi link of at most 150 Mbit/s. One Wi-Fi
+          channel serves all groups.
+    \item A stream for the network must be 100 times smaller or more. The
+          encoder does this.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ YUV
+\begin{frame}{Colour: RGB and YUV 4:2:0}
+  \begin{columns}[c]
+    \begin{column}{0.44\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize]
+        \foreach \x in {0,1} { \foreach \y in {0,1} {
+          \draw[coolgray, fill=boxgray] (\x*0.8,\y*0.8) rectangle ++(0.75,0.75);
+          \node at (\x*0.8+0.375,\y*0.8+0.375) {Y};
+        } }
+        \node[below] at (0.775,-0.05) {4 brightness values};
+        \draw[coolgray, fill=darkcyan!25] (2.2,0.4) rectangle ++(0.75,0.75);
+        \node at (2.575,0.775) {U};
+        \draw[coolgray, fill=cardinalred!20] (3.1,0.4) rectangle ++(0.75,0.75);
+        \node at (3.475,0.775) {V};
+        \node[below, align=center] at (3.025,0.35) {2 colour values\\ for
+          the 4 pixels};
+      \end{tikzpicture}
+      \vskip 0.4em
+      {\footnotesize 4 pixels: 4 + 1 + 1 = 6 bytes, so 1.5 bytes for each
+      pixel. RGB needs 3.\par}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \small
+      \begin{itemize}
+        \item Y is the brightness. U and V are the colour.
+        \item The eye sees fine detail in the brightness, not in the
+              colour. So one U and one V serve a square of 4 pixels.
+        \item Video encoders work on YUV 4:2:0. This halves the raw size
+              before the compression starts.
+        \item A model needs RGB. The reader converts each decoded frame.
+              This costs time on the board.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------ MJPEG
+\begin{frame}{MJPEG: one JPEG image for each frame}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.8cm, minimum height=0.85cm}]
+    \node[st] (a) at (0,0) {Blocks of\\ 8 $\times$ 8 pixels};
+    \node[st] (b) at (2.5,0) {Frequencies\\ (DCT)};
+    \node[st, fill=cardinalred!12] (c) at (5.0,0) {Round the\\ fine detail};
+    \node[st] (d) at (7.5,0) {Short codes\\ for the values};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \node[cardinalred, below=0.05cm of c] {quality setting};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Motion JPEG compresses each frame alone, as a photo. The stream is
+          a series of JPEG files.
+    \item A lost frame damages only that frame. Each frame is a start
+          point, so a new reader shows an image at once.
+    \item The coding needs little computation. The camera module of the
+          XIAO makes the JPEG itself: the stream sketch reads
+          \code{PIXFORMAT\_JPEG} frames.
+    \item The quality setting selects how much detail the rounding removes.
+          On the XIAO camera, \code{jpeg\_quality} goes from 0 to 63, and a
+          lower value gives a better image and a larger file. The sketch
+          uses 12.
+    \item The cost: the stream sends the same background again in each
+          frame.
+  \end{itemize}
+  \source{Stream sketch \texttt{Streeming\_Video.ino} of the repository
+    XIAO-ESP32S3-Sense.}
+\end{frame}
+
+% ------------------------------------------------------------------ H.264
+\begin{frame}{H.264: send the changes}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.82cm]
+    \foreach \i/\t in {0/I,1/P,2/P,3/P,4/P,5/P,6/I,7/P,8/P} {
+      \ifnum\i=0 \def\c{cardinalred!30}\else\ifnum\i=6
+        \def\c{cardinalred!30}\else\def\c{darkcyan!20}\fi\fi
+      \draw[coolgray, fill=\c] (\i,0) rectangle ++(0.7,0.7);
+      \node at (\i+0.35,0.35) {\t};
+    }
+    \foreach \i in {1,...,5,7,8} {
+      \draw[->, coolgray] (\i-0.3,0.85) to[bend left=50] (\i+0.35,0.85);
+    }
+    \node[anchor=west] at (9.0,0.35) {\dots};
+    \draw[<->, coolgray] (0,-0.25) -- node[below] {group of pictures (GOP):
+      from one keyframe to the next} (6,-0.25);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \textbf{I-frame} (keyframe): coded alone, like a JPEG. A decoder
+          can start here.
+    \item \textbf{P-frame}: for each block, a motion vector to a similar
+          block of the frame before, and the small difference.
+    \item \textbf{B-frame}: also uses a later frame. The encoder must wait
+          for that frame, so B-frames add delay. A live stream uses none:
+          the option \code{zerolatency} of x264 and \code{--low-latency}
+          of \code{rpicam-vid}.
+    \item A lost packet damages its frame and all later frames that copy
+          from it, until the next keyframe.
+  \end{itemize}
+  \source{Raspberry Pi documentation, ``Camera software'', section
+    ``Streaming'' (CC BY-SA 4.0).}
+\end{frame}
+
+% ------------------------------------------------------------------ measured codecs
+\begin{frame}{Measured: MJPEG against H.264}
+  \small
+  One test video, 1280 $\times$ 720, 30 frames each second, 10 s:
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.26\textwidth}rrrr@{}}
+    \toprule
+    & \multicolumn{2}{c}{\textbf{Moving camera}} &
+      \multicolumn{2}{c}{\textbf{Fixed camera}} \\
+    \textbf{Format} & \textbf{Mbit/s} & \textbf{PSNR} & \textbf{Mbit/s} &
+      \textbf{PSNR} \\
+    \midrule
+    Raw YUV 4:2:0          & 331.8 & & 331.8 & \\
+    MJPEG, quality 5       & 11.09 & 42.0 dB & 10.23 & 41.3 dB \\
+    H.264, keyframe 1 s & 2.62 & 41.3 dB & 0.97 & 40.5 dB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize PSNR: the similarity to the original frames; a higher value
+  is better. Settings: \texttt{-q:v 5}; x264 veryfast,
+  zerolatency, CRF 23.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The two formats give almost the same image quality.
+    \item Moving camera: H.264 needs 4.2 times fewer bits than MJPEG. Fixed
+          camera: 10.5 times fewer. The fixed scene changes only by noise.
+    \item MJPEG has almost the same bit rate for the two scenes. It does not
+          use the frames before.
+    \item Compression against raw YUV: 30 to 32 times for MJPEG, 127 to 341
+          times for H.264.
+  \end{itemize}
+  \source{Experiment of this course: FFmpeg 4.4, x86 work computer.\\
+    Video of the repository XIAO-ESP32S3-Sense (Apache-2.0).}
+\end{frame}
+
+% ------------------------------------------------------------------ I and P
+\begin{frame}{Measured: keyframes and predicted frames}
+  \small
+  Mean size of a frame, 1280 $\times$ 720, keyframe each 30 frames:
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    \textbf{Scene} & \textbf{I-frame} & \textbf{P-frame} & \textbf{I / P} \\
+    \midrule
+    Moving camera & 38.4 KB & 9.7 KB & 4.0 \\
+    Fixed camera  & 78.8 KB & 1.4 KB & 56.9 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A fixed camera gives almost empty P-frames. Most of its bits are
+          in the keyframes.
+    \item The encoder gives a keyframe more bits when the next frames copy
+          from it. With only keyframes, a frame of the fixed scene has 19.8
+          KB.
+    \item A keyframe is a burst. At 2 Mbit/s, the keyframe of the fixed
+          scene (64.1 KB) needs 0.26 s on the link: almost 8 frame times.
+    \item The network sees a peak each second. A link with only the mean
+          bit rate delays each keyframe.
+  \end{itemize}
+  \source{Experiment of this course: FFmpeg 4.4, x86 work computer.\\
+    0.26 s = 65\,631 bytes $\times$ 8 / 2 Mbit/s.}
+\end{frame}
+
+% ------------------------------------------------------------------ GOP
+\begin{frame}{Measured: the keyframe interval}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.32\textwidth}rrr@{}}
+    \toprule
+    \textbf{Keyframe} & \textbf{Each frame} & \textbf{Each 1 s} &
+    \textbf{Each 10 s} \\
+    \midrule
+    Moving camera, Mbit/s & 5.27 & 2.62 & 2.46 \\
+    Fixed camera, Mbit/s  & 4.86 & 0.97 & 0.35 \\
+    Wait of a new reader for the first keyframe (median of 10) & 0 & 0.50 s
+      & 5.51 s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize 1280 $\times$ 720, x264 CRF 23. The wait: 10 readers of an
+  RTSP stream at 2 Mbit/s, each started at a random time.\par}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A short interval costs bits. A long one saves bits, mostly for a
+          fixed camera.
+    \item A new reader can decode only from a keyframe. With a keyframe
+          each 10 s, it waits up to 10 s for the first image (here at most
+          7.40 s).
+    \item After a lost packet, the image has errors until the next
+          keyframe.
+    \item The lab uses one keyframe each second
+          (\code{rpiCameraIDRPeriod: 30}).
+  \end{itemize}
+  \source{Experiment of this course: FFmpeg 4.4 and MediaMTX v1.21.1 on the
+    x86 work computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ rate control
+\begin{frame}{Constant quality or constant bit rate}
+  \small
+  \begin{itemize}
+    \item \textbf{Constant quality} (x264: CRF): each frame gets the bits
+          that it needs. The bit rate follows the scene.
+    \item \textbf{Bit rate limit}: the encoder keeps the stream at a set
+          value and changes the quality. A network can plan with it.
+  \end{itemize}
+  \vskip 0.2em
+  Measured, 1280 $\times$ 720, keyframe each 1 s:
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    & \multicolumn{2}{c}{\textbf{CRF 23}} &
+      \multicolumn{2}{c}{\textbf{Limit 2 Mbit/s}} \\
+    \textbf{Scene} & \textbf{Mbit/s} & \textbf{PSNR} & \textbf{Mbit/s} &
+      \textbf{PSNR} \\
+    \midrule
+    Moving camera & 2.62 & 41.3 dB & 2.01 & 40.7 dB \\
+    Fixed camera  & 0.97 & 40.5 dB & 2.08 & 40.6 dB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Moving camera: the limit removes 23 percent of the bits and
+          0.7 dB of quality.
+    \item Fixed camera: the limit sends 2.1 times the bits for the same
+          quality.
+    \item The lab starts with 2 Mbit/s (\code{rpiCameraBitrate}). Part C
+          of the lab changes it.
+  \end{itemize}
+  \source{Experiment of this course: FFmpeg 4.4 on the x86 work computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ boards
+\begin{frame}{The encoders of the two boards}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    & \textbf{XIAO ESP32S3 Sense} & \textbf{Raspberry Pi 5} \\
+    \midrule
+    Formats & JPEG from the camera module & H.264 and MJPEG in software \\
+    Encoder & In the camera module: no CPU time & On the four CPU cores \\
+    Stream in the lab & MJPEG over HTTP, port 80 & H.264 over RTSP, port 8554
+      (MediaMTX) \\
+    Effect & A large stream & Less CPU for the detector \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item ``Raspberry Pi 5 uses software video encoders.'' The Raspberry Pi
+          4 had a hardware H.264 encoder.
+    \item MediaMTX selects the software encoder on the Raspberry Pi 5
+          (\code{rpiCameraCodec: auto}).
+    \item MediaMTX can add a second stream of the same camera with its own
+          size and rate. Its default codec is MJPEG.
+  \end{itemize}
+  \keypoint{On the Raspberry Pi 5, the encoder and the detector share the
+    CPU. Measure the detector with the stream active.}
+  \source{Raspberry Pi documentation, ``rpicam-vid'' (CC BY-SA 4.0).\\
+    MediaMTX documentation, ``Raspberry Pi Cameras'' (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------------ RTP header
+\begin{frame}{RTP: packets with a time stamp}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.3cm, y=0.6cm]
+    \foreach \x/\w/\t/\c in {0/2/V/boxgray, 2/1/P/boxgray, 3/1/X/boxgray,
+        4/4/CC/boxgray, 8/1/M/cardinalred!20, 9/7/PT/darkcyan!20,
+        16/16/sequence number/darkcyan!30} {
+      \draw[coolgray, fill=\c] (\x,0) rectangle ++(\w,1);
+      \node at (\x+\w/2,0.5) {\t};
+    }
+    \draw[coolgray, fill=cardinalred!20] (0,-1) rectangle ++(32,1);
+    \node at (16,-0.5) {timestamp (32 bits)};
+    \draw[coolgray, fill=boxgray] (0,-2) rectangle ++(32,1);
+    \node at (16,-1.5) {SSRC: the source of the stream (32 bits)};
+    \draw[coolgray, fill=white] (0,-3) rectangle ++(32,1);
+    \node at (16,-2.5) {payload: a part of an H.264 frame};
+    \node[anchor=west] at (32.3,0.5) {4 bytes};
+    \node[anchor=west] at (32.3,-0.5) {4 bytes};
+    \node[anchor=west] at (32.3,-1.5) {4 bytes};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A header of 12 bytes. RTP runs on UDP, or inside a TCP
+          connection.
+    \item \textbf{Sequence number}: plus 1 for each packet. The reader
+          finds lost packets and puts packets in order.
+    \item \textbf{Timestamp}: the capture time of the frame. Video uses a
+          clock of 90\,000 steps each second: 3000 steps for each frame at
+          30 frames each second.
+    \item \textbf{M} (marker): the last packet of a frame. \textbf{PT}: the
+          payload type; the session description gives its codec.
+  \end{itemize}
+  \source{RFC 3550 (RTP), RFC 6184 (H.264 in RTP).}
+\end{frame}
+
+% ------------------------------------------------------------------ RTP measured
+\begin{frame}[fragile]{Measured: the RTP packets of one stream}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+seq    timestamp    M  bytes
+2582   2458257548   0  1452
+2583   2458257548   0  1452
+2584   2458257548   0  1452
+2585   2458257548   0  1452
+2586   2458257548   1   763     <- last packet of the frame
+2587   2458260548   0  1452     <- next frame: timestamp + 3000
+\end{lstlisting}
+  \small
+  2 s of the stream (1280 $\times$ 720, 2 Mbit/s, keyframe each 1 s):
+  \begin{itemize}
+    \item 461 packets for 61 frames: 7.6 packets for each frame, 29 for a
+          keyframe.
+    \item The largest packet has 1452 bytes. A frame that is larger
+          becomes several packets, so it fits the MTU of 1500 bytes.
+    \item One lost packet out of 7.6 makes the frame incomplete.
+    \item The timestamp step is 3000 for each frame: $90\,000 / 30$.
+  \end{itemize}
+  \source{Experiment of this course: MediaMTX v1.21.1, x86 work computer.\\
+    The table shows fields of the packets, not the output of a tool.}
+\end{frame}
+
+% ------------------------------------------------------------------ RTSP
+\begin{frame}{RTSP: the remote control of a stream}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth, y=0.7cm]
+        \node[font=\footnotesize\bfseries] at (0,0) {Reader};
+        \node[font=\footnotesize\bfseries] at (3.6,0) {Server};
+        \draw[coolgray] (0,-0.3) -- (0,-6.5);
+        \draw[coolgray] (3.6,-0.3) -- (3.6,-6.5);
+        \foreach \y/\t/\a in {0.7/OPTIONS/methods, 1.9/DESCRIBE/SDP: the codec,
+            3.1/SETUP/session and transport, 4.3/PLAY/200 OK} {
+          \draw[->, darkcyan] (0,-\y) -- node[above] {\t} (3.6,-\y-0.15);
+          \draw[->, coolgray] (3.6,-\y-0.55) -- node[above] {\a} (0,-\y-0.7);
+        }
+        \draw[->, cardinalred, line width=1.2pt] (3.6,-5.5) --
+          node[above] {RTP and RTCP} (0,-5.65);
+        \draw[->, darkcyan] (0,-6.15) -- node[above] {TEARDOWN} (3.6,-6.3);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item A text protocol like HTTP, on one TCP connection. Port 554
+              by default; MediaMTX uses 8554.
+        \item DESCRIBE returns the session description (SDP): the codec,
+              the clock, the tracks.
+        \item SETUP selects the transport: RTP on UDP, or inside this TCP
+              connection.
+        \item PLAY starts the stream. TEARDOWN ends it.
+        \item Cameras and MediaMTX use RTSP 1.0 (RFC 2326). RFC 7826 is
+              version 2.0.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{RFC 2326 (RTSP 1.0), RFC 7826 (RTSP 2.0), RFC 8866 (SDP).}
+\end{frame}
+
+% ------------------------------------------------------------------ RTSP measured
+\begin{frame}[fragile]{Measured: one RTSP session}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+DESCRIBE rtsp://127.0.0.1:18554/cam RTSP/1.0
+Accept: application/sdp
+
+RTSP/1.0 200 OK
+Content-Type: application/sdp
+...
+m=video 0 RTP/AVP 96
+a=control:trackID=0
+a=rtpmap:96 H264/90000
+a=fmtp:96 packetization-mode=1; profile-level-id=64001F; sprop-parameter-...
+
+SETUP rtsp://127.0.0.1:18554/cam/trackID=0 RTSP/1.0
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1
+
+RTSP/1.0 200 OK
+Session: 169fbdffad7546aa9b4aabd6696cab66;timeout=55
+Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=9E9DC1FB
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{rtpmap:96 H264/90000}: payload type 96 is H.264 with the
+          clock of 90\,000 steps each second.
+    \item \code{interleaved=0-1}: RTP on channel 0, RTCP on channel 1.
+  \end{itemize}
+  \source{Experiment of this course: MediaMTX v1.21.1. Lines removed
+    (\texttt{...}).}
+\end{frame}
+
+% ------------------------------------------------------------------ RTCP
+\begin{frame}{RTCP: reports about the stream}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      dev/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                  align=center, text width=1.8cm, minimum height=0.8cm}]
+    \node[dev] (s) at (0,0) {Sender};
+    \node[dev] (r) at (7.6,0) {Reader};
+    \draw[->, cardinalred] ([yshift=4pt]s.east) -- node[above]
+      {Sender report: clock time = RTP timestamp} ([yshift=4pt]r.west);
+    \draw[->, darkcyan] ([yshift=-4pt]r.west) -- node[below]
+      {Receiver report: lost packets, jitter} ([yshift=-4pt]s.east);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item RTCP runs next to RTP: on the next UDP port, or on the next
+          channel of the RTSP connection.
+    \item The \textbf{sender report} links the RTP timestamp to the clock
+          time of the sender. The reader can then find the capture time of
+          a frame and synchronize audio and video.
+    \item The \textbf{receiver report} gives the part of the packets that
+          were lost and the jitter. A sender can lower its bit rate.
+    \item RTCP uses at most 5 percent of the bandwidth of the session.
+    \item In the experiment, the first sender report came 0.08 s after
+          PLAY: 25 packets, 33\,204 bytes sent.
+  \end{itemize}
+  \source{RFC 3550, sections 6.2 and 6.4. Experiment of this course:
+    MediaMTX v1.21.1.}
+\end{frame}
+
+% ------------------------------------------------------------------ UDP or TCP
+\begin{frame}{RTP over UDP or over TCP}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.36\textwidth}L{0.38\textwidth}@{}}
+    \toprule
+    & \textbf{UDP} & \textbf{TCP (interleaved)} \\
+    \midrule
+    Ports   & Two more ports: 8000 (RTP) and 8001 (RTCP) on the server &
+              The RTSP connection only \\
+    Loss    & A lost packet stays lost: the image has errors until the next
+              keyframe & TCP sends the packet again: no image errors \\
+    Delay   & Low and stable & Grows on a bad link: later packets wait for
+              the resend \\
+    Network & A firewall or a router can block it & Passes where the RTSP
+              connection passes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The MediaMTX documentation: UDP is ``the most performant'', TCP
+          ``the most versatile''.
+    \item MediaMTX drops packets for a reader that is too slow. A larger
+          write queue keeps more packets and uses more RAM.
+    \item The lab uses TCP first. Part C of the lab tries UDP and compares
+          the delay.
+  \end{itemize}
+  \source{MediaMTX documentation (MIT): ``RTSP-specific features'',\\
+    ``Decrease packet loss''.}
+\end{frame}
+
+% ------------------------------------------------------------------ HTTP MJPEG
+\begin{frame}[fragile]{HTTP streaming: MJPEG in one answer}
+\begin{lstlisting}[style=shell, basicstyle=\ttfamily\scriptsize]
+HTTP/1.1 200 OK
+Content-Type: multipart/x-mixed-replace;boundary=123456789000000000000987654321
+
+--123456789000000000000987654321
+Content-Type: image/jpeg
+Content-Length: 23816
+
+<JPEG data of frame 1>
+--123456789000000000000987654321
+Content-Type: image/jpeg
+...
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The XIAO answers one HTTP request with a stream of JPEG parts that
+          never ends. A browser shows each new part in place of the last.
+    \item No RTP, no time stamp, no special reader: a browser, OpenCV, or
+          VLC opens \code{http://<address>/}.
+    \item One TCP connection for each viewer. Each viewer costs the full bit
+          rate on the Wi-Fi of the XIAO.
+  \end{itemize}
+  \source{Stream sketch \texttt{Streeming\_Video.ino} of XIAO-ESP32S3-Sense.\\
+    The value of \texttt{Content-Length} is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ compare
+\begin{frame}{Compare the ways to stream}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.20\textwidth}L{0.26\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    \textbf{Method} & \textbf{Transport} & \textbf{Good for} &
+    \textbf{Limit} \\
+    \midrule
+    MJPEG over HTTP & TCP & A microcontroller, a browser, a simple reader &
+      A large stream \\
+    RTSP with RTP   & TCP or UDP & Cameras, a program that reads the stream
+      & No direct view in a browser \\
+    HLS             & HTTP files & Many viewers, the internet & Delay of
+      a few segments of seconds \\
+    WebRTC          & UDP & A browser with a short delay & A complex
+      setup \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item MediaMTX reads and serves RTSP, HLS, WebRTC, and other protocols.
+          It converts a stream from one protocol to another.
+    \item HLS cuts the stream into files. A reader can show a file only when
+          the file is complete, so the delay is at least one file.
+    \item The lab: MJPEG over HTTP from the XIAO, and RTSP from the
+          Raspberry Pi to a Python reader.
+  \end{itemize}
+  \source{MediaMTX README and documentation, ``Read streams'' (MIT).}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{bit rate of two streams}{%
+  \small
+  Two streams of one group. The sizes are example values, near the values
+  of the experiment.
+  \begin{enumerate}
+    \item The XIAO sends MJPEG: 640 $\times$ 480, 10 frames each second, a
+          mean JPEG of 24 KB.
+    \item The Raspberry Pi sends H.264: 1280 $\times$ 720, 30 frames each
+          second, one keyframe each second. A keyframe has 40 KB, a P-frame
+          9 KB.
+  \end{enumerate}
+  Calculate:
+  \begin{enumerate}
+    \item[a.] the bit rate of each stream in Mbit/s (1 KB = 1024 bytes);
+    \item[b.] the compression factor of the H.264 stream against raw YUV
+          4:2:0 (331.8 Mbit/s);
+    \item[c.] the total of 12 groups. Does it fit a Wi-Fi channel that
+          carries 30 Mbit/s?
+    \item[d.] the time of one keyframe on a link of 2.4 Mbit/s.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{bit rate of two streams}{%
+  \small
+  \begin{enumerate}
+    \item[a.] MJPEG: $24 \times 1024 \times 8 \times 10 = 1.97$ Mbit/s.\\
+          H.264: $(40 + 29 \times 9) \times 1024 \times 8 = 301 \times 8192
+          = 2.47$ Mbit/s.
+    \item[b.] $331.8 / 2.47 = 135$. The MJPEG stream has a third of the
+          frames and a smaller image, and it still needs 80 percent of the
+          H.264 bit rate.
+    \item[c.] One group: $1.97 + 2.47 = 4.43$ Mbit/s. 12 groups: 53.2
+          Mbit/s. It does not fit. Options: fewer frames from the XIAO, a
+          lower bit rate, a cable for each Raspberry Pi, or the 5 GHz band
+          for the Raspberry Pi.
+    \item[d.] $40 \times 1024 \times 8 / 2\,400\,000 = 0.137$ s: about 4
+          frame times. Each keyframe adds this delay.
+  \end{enumerate}
+  \keypoint{Bit rate = bytes of a frame $\times$ 8 $\times$ frames each
+    second. For H.264, add the keyframes and the P-frames of one GOP.}
+}

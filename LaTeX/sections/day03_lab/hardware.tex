@@ -1,0 +1,63 @@
+% Hardware, software, and the two paths of the Day 3 lab.
+\begin{frame}{Hardware and software}
+  \begin{columns}[T]
+    \begin{column}{0.45\textwidth}
+      \textbf{Hardware for each group}
+      \begin{itemize}
+        \item XIAOML Kit with the Arduino firmware. If MicroPython is on
+              the board, do the last step of the Day 2 lab first.
+        \item USB-C data cable.
+        \item Laptop with your Day 2 dataset in \code{Labs/day02/data/}.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \textbf{Software}
+      \begin{itemize}
+        \item Arduino IDE 2 with the esp32 core 3.3.12.
+        \item New today: the library Chirale\_TensorFlowLite 2.0.0.
+        \item New today: the Python packages \code{tensorflow-cpu} and
+              \code{ai-edge-litert}.
+        \item Your Edge Impulse project of Day 2.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.80\textwidth}@{}}
+    Lab files & \code{Labs/day03/}. Run the commands from this folder. \\
+    Install   & In the environment of Day 1: \code{pip install
+                tensorflow-cpu ai-edge-litert} \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Two paths to the same classifier}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.95cm, minimum height=0.9cm, align=center}]
+    \node[b] (d) at (0,-0.8) {Dataset of\\Day 2};
+    \node[b] (a1) at (2.9,0)  {Notebook:\\features, Keras};
+    \node[b] (a2) at (5.6,0)  {LiteRT file,\\C array};
+    \node[b, draw=cardinalred] (a3) at (8.3,0) {Your sketch\\with TFLM};
+    \node[b] (b1) at (2.9,-1.6) {Edge Impulse\\Studio};
+    \node[b] (b2) at (5.6,-1.6) {Arduino\\library};
+    \node[b, draw=cardinalred] (b3) at (8.3,-1.6) {Sketch of\\the kit lab};
+    \draw[->] (d.east) -- (a1.west); \draw[->] (d.east) -- (b1.west);
+    \draw[->] (a1) -- (a2); \draw[->] (a2) -- (a3);
+    \draw[->] (b1) -- (b2); \draw[->] (b2) -- (b3);
+    \node[font=\scriptsize, text=coolgray] at (5.6,0.75) {Parts A, B, and C};
+    \node[font=\scriptsize, text=coolgray] at (5.6,-2.35) {Part D};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The two paths use the same recordings, the same window of 2 s, and
+          the same type of features: 63 values.
+    \item In the first path, you write the inference code, and you see each
+          step.
+    \item In the second path, a cloud tool makes the features, the model,
+          and the library.
+    \item At the end, one table compares the two results on the board.
+  \end{itemize}
+\end{frame}

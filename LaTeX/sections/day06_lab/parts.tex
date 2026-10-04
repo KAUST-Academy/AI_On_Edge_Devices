@@ -1,0 +1,181 @@
+% The three parts of the Day 6 lab. The steps follow Labs/day06/README.md.
+%
+% The lab needs no board. The deck does not show a result that the students
+% must predict. A value of an experiment is written as "..." in a listing.
+
+% ------------------------------------------------------------------- Part A
+\begin{frame}{Part A: pruning (45 min)}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.38\textwidth}L{0.43\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
+    \midrule
+    1 & \code{magnitude\_mask}: the threshold and the mask for a sparsity
+      & A matrix of 10 weights with a sparsity of 0.6: the 4 largest
+        magnitudes stay \\
+    2 & Your prediction for a sparsity of 80 percent
+      & Not checked. You compare it with the result. \\
+    3 & \code{filter\_scores}: the sum of the absolute weights of each
+        filter
+      & A kernel with four known filters \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \[
+    \hat{W} = M \odot W \qquad M_{ij} = 1 \ \text{if} \ |W_{ij}| > \delta
+  \]
+  \begin{itemize}
+    \item The threshold $\delta$ is the value that the given part of the
+          magnitudes is below. Use \code{np.quantile}.
+    \item A kernel has the shape (height, width, input channels, filters).
+          The last axis is the filter.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Part A: the two experiments}
+  \small
+  Section 2 prunes single weights. Section 3 removes complete filters. Each
+  model gets 2 epochs of fine-tuning.
+\begin{lstlisting}
+ sparsity  weights not 0   before   after     file    gzip  latency
+     none          23824             89.1    99320     ...      ...
+     0.50            ...      ...     ...      ...     ...      ...
+
+     filters  parameters   before   after     file  latency    peak
+    16-32-64       23946             89.1    99320      ...   62720
+    12-24-48         ...      ...     ...      ...      ...     ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \code{before} and \code{after}: the accuracy before and after the
+          fine-tuning.
+    \item \textbf{You record:} the two tables, and the answers to the three
+          questions of section 4.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction (task 2).} For a sparsity of 80 percent: which
+    accuracy before and after the fine-tuning? Is the LiteRT file smaller,
+    equal, or larger? Is the latency smaller, equal, or larger?
+  \end{exerciseblock}
+  \source{The rows of the baseline are the values of the model file of the
+    lab. The latency depends on your laptop.}
+\end{frame}
+
+% ------------------------------------------------------------------- Part B
+\begin{frame}{Part B: knowledge distillation (45 min)}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.09\textwidth}L{0.38\textwidth}L{0.43\textwidth}@{}}
+    \toprule
+    \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
+    \midrule
+    4 & \code{soft\_targets}: the softmax at a temperature $T$, in NumPy
+      & The logits 4, 2, 0, and $-2$ of the lecture exercise, at $T = 1$
+        and $T = 4$ \\
+    5 & The three lines of the soft part of \code{distillation\_loss}
+      & The soft part is 0 for a student that is equal to the teacher \\
+    6 & Your prediction for the four runs
+      & Not checked. You compare it with the result. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \vskip 0.3em
+  \[
+    L = \alpha \cdot L_{\text{hard}} + (1 - \alpha) \cdot T^2 \cdot
+        L_{\text{soft}}
+  \]
+  \[
+    L_{\text{soft}} = \sum_i p^{T}_{\text{teacher},i} \cdot
+      \left(\log p^{T}_{\text{teacher},i} - \log p^{T}_{\text{student},i}
+      \right)
+  \]
+  \begin{itemize}
+    \item Use \code{ops.softmax}, \code{ops.log\_softmax}, \code{ops.log},
+          and \code{ops.sum} with \code{axis=-1}.
+    \item The teacher has 93\,962 parameters. The student has 6218.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Part B: four runs of one student}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.08\textwidth}L{0.38\textwidth}L{0.44\textwidth}@{}}
+    \toprule
+    \textbf{Run} & \textbf{Training data} & \textbf{Target} \\
+    \midrule
+    1 & 1000 labelled images: 100 for each class & The labels \\
+    2 & The same 1000 images & The labels and the soft targets
+        ($T = 2$, $\alpha = 0.5$) \\
+    3 & All 60\,000 images, with no label & The soft targets only
+        ($T = 2$, $\alpha = 0$) \\
+    4 & All 60\,000 labelled images & The labels \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Runs 1 and 2: a team with few labels. Run 3: a team with a
+          teacher and much raw data. Run 4: the reference. The four runs
+          need about three minutes.
+    \item \textbf{You record:} the four accuracy values, the two gains
+          against run 1, and the answers to the three questions.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Prediction (task 6).} How many points do runs 2 and 3 gain
+    against run 1? Which run is better: run 3 or run 4?
+  \end{exerciseblock}
+\end{frame}
+
+% ------------------------------------------------------------------- Part C
+\begin{frame}[fragile]{Part C: quantize and plot (40 min)}
+  \small
+  Section 8 converts each candidate with the method of Day 4 and measures
+  each file:
+\begin{lstlisting}
+model                     format      bytes  accuracy  latency    peak
+baseline 16-32-64         float32     99320      89.1      ...   62720
+baseline 16-32-64         int8          ...       ...      ...     ...
+pruned 12-24-48           float32       ...       ...      ...     ...
+\end{lstlisting}
+  \begin{itemize}
+    \item \code{peak}: the largest sum of the input and the output of one
+          operator, in bytes.
+    \item Section 9 writes the plot \code{tradeoff.png}: the accuracy
+          against the file size, and the accuracy against the latency.
+    \item Find the files on the upper left border of each plot: no other
+          file is smaller and more accurate.
+    \item \textbf{You record:} the table, and the files on the border of
+          each plot.
+  \end{itemize}
+  \begin{exerciseblock}
+    \textbf{Look at your table.} Is \code{int8} faster or slower than
+    \code{float32} on your laptop? Compare with the group next to you.
+  \end{exerciseblock}
+\end{frame}
+
+\begin{frame}{Part C: select one model for each board}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.42\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Product} & \textbf{Budget} & \textbf{Rule} \\
+    \midrule
+    XIAO ESP32S3 & File of 16 KB or less. Peak of 8 KB or less. Format
+        \code{int8}. & The highest accuracy that meets the budget \\
+    Raspberry Pi 5 & Accuracy of 88.5 percent or more. Format
+        \code{float32} or \code{int8}. & The smallest latency that meets
+        the budget \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The budgets are example budgets: the model shares each board with
+          other functions.
+    \item \textbf{Task 7.} Write the model and the format for each product
+          in the cell of the task. Name the constraint that decides: the
+          budget that removes the next better model.
+    \item The check prints, for each product, if your file meets the
+          budget, and if a better file exists.
+  \end{itemize}
+  \keypoint{The two products get different models from the same plot. The
+    constraint decides, not the model.}
+\end{frame}

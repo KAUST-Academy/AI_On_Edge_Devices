@@ -1,0 +1,35 @@
+% Fallbacks and common problems of the Day 12 lab. The rows come from
+% Labs/day12/README.md. Nobody tested the fixes on the hardware.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.42\textwidth}L{0.53\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    \code{Connection refused} from the laptop
+      & Copy \code{lab.conf} (step A1) and restart Mosquitto \\
+    The XIAO prints \code{failed, rc=-2}
+      & Use the IP address of the Raspberry Pi in
+        \code{arduino\_secrets.h} \\
+    The Day 5 library is not on the laptop
+      & Upload the HW-07 sketch \code{mqtt\_imu}, or send events by hand
+        with \code{mosquitto\_pub} \\
+    \code{decide.py} changes nothing
+      & Task C1, or a score below 0.8. Check the first line. \\
+    Lost messages after a restart of \code{decide.py}
+      & The sequence starts again at 1: start \code{cloud\_check.py}
+        again \\
+    \code{link.sh} reports an error
+      & The instructor stops the cloud broker for 3 minutes \\
+    The cloud broker does not answer
+      & Use the Raspberry Pi of a second group: \code{--cloud pi-MM.local} \\
+    A task is not complete in time
+      & Use the file of \code{solutions/}, and write this in the report \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.2em
+  \small
+  The README of the lab has the complete list.
+\end{frame}

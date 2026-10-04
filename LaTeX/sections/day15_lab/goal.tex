@@ -1,0 +1,55 @@
+% Goal and plan of the Day 15 lab.
+% The parts and the times come from the Day 15 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} a working capstone system and a short report.
+    \item \textbf{Boards:} the XIAOML Kits and the Raspberry Pi 5 boards of
+          your team.
+    \item \textbf{Deliverable:} the demonstration of 10 minutes and the
+          report \code{report.md}.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{The last day}
+    After Part 1 of the lecture, the lecture time (Parts 2 and 3, 100
+    minutes) is build time. The instructor visits each team. Then the lab
+    has 80 minutes of build and measurement, the demonstrations, and the
+    close. \code{Docs/capstone.md} gives the requirements and the rubric.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{Finish the measurements before the polish. A working system
+    with numbers scores more than a nice system with no numbers.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[darkcyan!55]    (0,0)   rectangle (80,0.8);
+    \fill[treegreen!60]   (80,0)  rectangle (150,0.8);
+    \fill[darkorange!55]  (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (80,0) -- (80,0.8) (150,0) -- (150,0.8);
+    \node at (40,0.4)    {\textbf{A}: 80 min};
+    \node at (115,0.4)   {\textbf{B}: 70 min};
+    \node at (165,0.4)   {\textbf{C}: 30};
+    \foreach \t in {0,80,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.66\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    A & Build: complete the system and the measurements & 80 min \\
+    B & Demonstrations: 10 minutes for each team & 70 min \\
+    C & Close: submit the report, give course feedback & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.3em
+  The order of the demonstrations is the schedule of Day 14.
+\end{frame}

@@ -1,0 +1,792 @@
+% Part 2 of Day 12: MQTT.
+%
+% Topics of the syllabus: broker, publish and subscribe, topics and wildcards;
+% quality of service 0, 1, and 2; retained messages, last will, keep-alive;
+% telemetry and commands; payload formats. Exercise: design the topic tree for
+% ten devices in two rooms.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: tools/experiments/day12_mqtt.py, values in
+%    tools/data/day12/day12_mqtt.json. The Mosquitto broker 2.0.11 and the
+%    client paho-mqtt 2.1.0 (MQTT 3.1.1) ran on one computer. A small proxy
+%    counted the bytes of each packet, added a delay, or cut the link. The
+%    values say nothing about the Wi-Fi of the lab or about a board.
+% 2. The standards OASIS MQTT Version 3.1.1 (2014) and 5.0 (2019), the
+%    Mosquitto 2.0.11 manual (mosquitto.conf), and the code of the client
+%    libraries PubSubClient 2.8 and umqtt.simple (micropython-lib).
+% 3. The board code of Labs/hardware/HW-07 (topic tree, payload format,
+%    keep-alive of 15 s).
+
+\theorypart{MQTT}%
+  {design the topic tree for ten devices in two rooms}
+
+% ------------------------------------------------------------------ pub/sub
+\begin{frame}{Publish and subscribe through a broker}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      cl/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.9cm, minimum height=0.9cm}]
+    \node[cl, fill=cardinalred!12] (x) at (0,0) {XIAOML Kit\\ client};
+    \node[cl, fill=darkcyan!20, text width=2.2cm, minimum height=1.9cm] (b)
+      at (4.3,0) {\textbf{Broker}\\ Mosquitto on\\ the Raspberry Pi};
+    \node[cl] (d) at (8.5,0.45) {Decision program\\ client};
+    \node[cl] (s) at (8.5,-0.75) {Dashboard\\ client};
+    \draw[->] (x.east |- 0,0.15) -- node[above] {\texttt{result}}
+      (b.west |- 0,0.15);
+    \draw[->, darkcyan] (b.west |- 0,-0.15) -- node[below] {\texttt{cmd}}
+      (x.east |- 0,-0.15);
+    \draw[->] (b.east |- 0,0.6) -- node[above] {\texttt{result}}
+      (d.west |- 0,0.6);
+    \draw[->, darkcyan] (d.west |- 0,0.3) -- node[below] {\texttt{cmd}}
+      (b.east |- 0,0.3);
+    \draw[->] (b.east |- 0,-0.75) -- node[above] {\texttt{result}}
+      (s.west |- 0,-0.75);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Each program is a \textbf{client}. A client connects only to the
+          \textbf{broker}. It does not know the address of the other
+          clients.
+    \item A client \textbf{publishes} a message to a \textbf{topic}. The
+          broker sends the message to each client with a matching
+          \textbf{subscription}.
+    \item A new program needs no change of the others: a second dashboard
+          subscribes, and the XIAO code stays the same.
+    \item HTTP (Day 11): one client asks one server. MQTT: many senders and
+          many receivers, and one broker between them.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ session
+\begin{frame}{Measured: one session of the lab board}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.6cm}L{1.1cm}rL{5.0cm}@{}}
+    \toprule
+    \textbf{Packet} & \textbf{From} & \textbf{Bytes} & \textbf{Content} \\
+    \midrule
+    CONNECT & client & 54 & client ID \texttt{xiao-07}, keep-alive 15 s,
+      last will \texttt{offline} \\
+    CONNACK & broker & 4 & connection accepted \\
+    PUBLISH & client & 32 & \texttt{online} to \texttt{.../xiao/status},
+      retained \\
+    SUBSCRIBE & client & 26 & \texttt{edgeai/g07/xiao/cmd}, QoS 1 \\
+    SUBACK & broker & 5 & QoS 1 granted \\
+    PUBLISH & client & 107 & one IMU reading, QoS 0 \\
+    PUBLISH, PUBACK & both & 109 + 4 & the same reading, QoS 1 \\
+    PUBLISH + 3 & both & 109 + 12 & the same reading, QoS 2: PUBREC,
+      PUBREL, PUBCOMP \\
+    DISCONNECT & client & 2 & normal end: no last will \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item MQTT uses one TCP connection for each client: the bytes arrive in
+          order, with no loss.
+    \item To connect and subscribe costs 4 packets and 89 bytes, one time.
+          Then one IMU reading at QoS 0 is one packet of 107 bytes.
+    \item Each packet also needs the IP and TCP headers: 40 bytes (Day 11).
+  \end{itemize}
+  \source{Experiment of this course: Mosquitto 2.0.11, a client with the
+    settings of the lab board.}
+\end{frame}
+
+% ------------------------------------------------------------------ packet
+\begin{frame}{The PUBLISH packet}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      f/.style={draw=coolgray, minimum height=0.8cm, align=center,
+                inner sep=1pt}]
+    \node[f, fill=cardinalred!15, minimum width=1.1cm] (a) at (0.55,0)
+      {\texttt{0x30}\\ 1 B};
+    \node[f, fill=cardinalred!15, minimum width=1.1cm] (r) at (1.65,0)
+      {\texttt{105}\\ 1 B};
+    \node[f, fill=darkcyan!15, minimum width=1.2cm] (l) at (2.8,0)
+      {\texttt{19}\\ 2 B};
+    \node[f, fill=darkcyan!15, minimum width=2.8cm] (t) at (4.8,0)
+      {\texttt{edgeai/g07/xiao/imu}\\ 19 B};
+    \node[f, fill=boxgray, minimum width=1.2cm, dashed] (i) at (6.8,0)
+      {packet\\ ID, 2 B};
+    \node[f, fill=treegreen!15, minimum width=2.8cm] (p) at (8.8,0)
+      {JSON reading\\ 84 B};
+    \draw[coolgray] (0,0.55) -- (0,0.65) -- (2.2,0.65) -- (2.2,0.55);
+    \node[above] at (1.1,0.65) {fixed header};
+    \draw[coolgray] (2.2,0.55) -- (2.2,0.65) -- (7.4,0.65) -- (7.4,0.55);
+    \node[above] at (4.8,0.65) {variable header};
+    \draw[coolgray] (7.4,0.55) -- (7.4,0.65) -- (10.2,0.65) --
+      (10.2,0.55);
+    \node[above] at (8.8,0.65) {payload};
+    \node[below, align=center] at (0.55,-0.45) {type,\\ flags};
+    \node[below, align=center] at (1.65,-0.45) {remaining\\ length};
+    \node[below, align=center] at (2.85,-0.45) {topic\\ length};
+    \node[below, align=center] at (6.8,-0.45) {QoS 1 and 2\\ only};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The first byte holds the packet type (3 = PUBLISH) and three
+          flags: DUP (a second copy), QoS (2 bits), and RETAIN.
+    \item The remaining length uses 7 bits of each byte: 1 byte up to 127,
+          at most 4 bytes. The largest packet has 256 MB.
+    \item The broker does not read the payload. MQTT does not define its
+          format.
+    \item The topic is 19 of the 107 bytes (18 percent). A short topic saves
+          bytes in each message.
+  \end{itemize}
+  \source{OASIS, \emph{MQTT Version 3.1.1}, sections 2.2 and 3.3. Sizes from
+    the experiment of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------ topics
+\begin{frame}{Topics: a tree of levels}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, y=0.86cm,
+      n/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                inner sep=1.5pt, minimum height=0.36cm},
+      e/.style={coolgray}]
+    \node[n, fill=darkcyan!20] (r) at (0,0.2) {edgeai};
+    \node[n] (g7) at (2.2,0.75) {g07};
+    \node[n] (g8) at (2.2,-1.05) {g08};
+    \node[n, fill=cardinalred!12] (x) at (4.4,1.35) {xiao};
+    \node[n, fill=cardinalred!12] (p) at (4.4,-0.2) {pi};
+    \node[n] (x8) at (4.4,-1.05) {xiao};
+    \foreach \c/\y in {imu/2.0, result/1.55, status/1.1, cmd/0.65} {
+      \node[n, fill=white, anchor=west] (c\c) at (6.2,\y) {\c};
+      \draw[e] (x.east) -- (c\c.west);
+    }
+    \foreach \c/\y in {metrics/0.0, status/-0.45} {
+      \node[n, fill=white, anchor=west] (q\c) at (6.2,\y) {\c};
+      \draw[e] (p.east) -- (q\c.west);
+    }
+    \node[n, fill=white, anchor=west] (x8i) at (6.2,-1.05) {imu};
+    \draw[e] (x8.east) -- (x8i.west);
+    \draw[e] (r) -- (g7); \draw[e] (r) -- (g8);
+    \draw[e] (g7) -- (x); \draw[e] (g7) -- (p); \draw[e] (g8) -- (x8);
+    \foreach \x/\l in {0/1, 2.2/2, 4.4/3, 6.7/4} {
+      \node[coolgray] at (\x,-1.6) {level \l};
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A topic is a text with levels, separated by \code{/}:
+          \code{edgeai/g07/xiao/imu}. A new topic needs no setup.
+    \item Topics are case sensitive: \code{Edgeai} and \code{edgeai} are two
+          topics. A topic has 1 to 65\,535 bytes of UTF-8.
+    \item A leading \code{/} makes an empty first level:
+          \code{/edgeai/g07} is a different topic. Do not use it.
+    \item The broker owns the topics that start with \code{\$}:
+          \code{\$SYS/...} gives its statistics.
+  \end{itemize}
+  \source{OASIS, \emph{MQTT Version 3.1.1}, section 4.7.}
+\end{frame}
+
+% ------------------------------------------------------------------ wildcards
+\begin{frame}{Wildcards in a subscription}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.2cm}L{3.6cm}L{3.5cm}@{}}
+    \toprule
+    \textbf{Filter} & \textbf{Matches} & \textbf{Does not match} \\
+    \midrule
+    \texttt{edgeai/g07/xiao/imu} & only this topic &
+      \texttt{edgeai/g07/xiao/result} \\
+    \texttt{edgeai/g07/+/status} & \texttt{.../xiao/status},
+      \texttt{.../pi/status} & \texttt{edgeai/g07/xiao/imu} \\
+    \texttt{edgeai/+/xiao/imu} & the IMU topic of each group &
+      \texttt{edgeai/g07/pi/metrics} \\
+    \texttt{edgeai/g07/\#} & each topic of group 7, also
+      \texttt{edgeai/g07} & \texttt{edgeai/g08/xiao/imu} \\
+    \texttt{\#} & each topic & \texttt{\$SYS/...} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item \code{+} matches exactly one level. \code{\#} matches zero or more
+          levels, and it must be the last character.
+    \item Not valid: \code{edgeai/\#/imu} and \code{edgeai/g0+}. A wildcard
+          fills a complete level. The character \code{*} is not a wildcard
+          in MQTT.
+    \item Only a subscription has wildcards. A published topic has none.
+    \item A wide filter costs: the board receives and parses each message
+          that matches. Subscribe a board only to its own topics.
+  \end{itemize}
+  \source{OASIS, \emph{MQTT Version 3.1.1}, section 4.7.1.}
+\end{frame}
+
+% ------------------------------------------------------------------ tree design
+\begin{frame}{Design a topic tree}
+  \small
+  \begin{enumerate}
+    \item Fix the order of the levels, from general to specific. The lab:
+          \code{edgeai/<group>/<device>/<channel>}.
+    \item Put the identity in the topic and the data in the payload. A topic
+          has no time stamp and no sequence number.
+    \item Use one topic for each type of message. A program then selects
+          its messages with one filter.
+    \item Separate the two directions: data up (\code{imu},
+          \code{result}, \code{status}), commands down (\code{cmd}).
+    \item Start from the subscriptions. Write the filter that each program
+          needs. Many filters for one program show a bad order of the
+          levels.
+  \end{enumerate}
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{3.7cm}L{4.0cm}@{}}
+    \toprule
+    \textbf{Program} & \textbf{Filter} \\
+    \midrule
+    XIAOML Kit of group 7 & \texttt{edgeai/g07/xiao/cmd} \\
+    Decision program on the Pi & \texttt{edgeai/g07/xiao/result} \\
+    Dashboard of group 7 & \texttt{edgeai/g07/\#} \\
+    Instructor laptop & \texttt{edgeai/+/+/status} \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+% ------------------------------------------------------------------ qos flows
+\begin{frame}{Quality of service: three levels}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \foreach \x/\t in {0/{QoS 0: at most once}, 3.7/{QoS 1: at least once},
+                       7.4/{QoS 2: exactly once}} {
+      \node[font=\scriptsize\bfseries] at (\x+1.2,0.75) {\t};
+      \node[coolgray] at (\x,0.3) {sender};
+      \node[coolgray] at (\x+2.4,0.3) {receiver};
+      \draw[coolgray] (\x,0.1) -- (\x,-2.45);
+      \draw[coolgray] (\x+2.4,0.1) -- (\x+2.4,-2.45);
+    }
+    \draw[->, cardinalred] (0,-0.1) -- node[above, sloped] {PUBLISH}
+      (2.4,-0.45);
+    \draw[->, cardinalred] (3.7,-0.1) -- node[above, sloped] {PUBLISH}
+      (6.1,-0.45);
+    \draw[->, darkcyan] (6.1,-0.65) -- node[above, sloped] {PUBACK}
+      (3.7,-1.0);
+    \draw[->, cardinalred] (7.4,-0.1) -- node[above, sloped] {PUBLISH}
+      (9.8,-0.45);
+    \draw[->, darkcyan] (9.8,-0.65) -- node[above, sloped] {PUBREC}
+      (7.4,-1.0);
+    \draw[->, cardinalred] (7.4,-1.2) -- node[above, sloped] {PUBREL}
+      (9.8,-1.55);
+    \draw[->, darkcyan] (9.8,-1.75) -- node[above, sloped] {PUBCOMP}
+      (7.4,-2.1);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \textbf{QoS 0}: one packet, no answer. A lost connection loses the
+          message.
+    \item \textbf{QoS 1}: the sender keeps the message until the PUBACK, and
+          sends it again with the DUP flag. The receiver can get two
+          copies.
+    \item \textbf{QoS 2}: the receiver keeps the packet ID until the
+          PUBREL, so it can see a second copy and drop it. Four packets for
+          each message.
+    \item The two sides of a hop agree on the QoS of each message. The
+          sender selects it in each PUBLISH.
+  \end{itemize}
+  \source{OASIS, \emph{MQTT Version 3.1.1}, section 4.3.}
+\end{frame}
+
+% ------------------------------------------------------------------ qos hops
+\begin{frame}{The QoS applies to one hop}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      cl/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.0cm, minimum height=0.85cm}]
+    \node[cl, fill=cardinalred!12, text width=1.6cm] (p) at (0,0)
+      {Publisher};
+    \node[cl, fill=darkcyan!20] (b) at (4.6,0) {Broker};
+    \node[cl] (a) at (8.6,0.65) {Subscriber A\\ subscribed QoS 2};
+    \node[cl] (s) at (8.6,-0.65) {Subscriber B\\ subscribed QoS 0};
+    \draw[->] (p) -- node[above] {PUBLISH, QoS 1} (b);
+    \draw[->] (b.east) -- node[above, sloped] {QoS 1} (a.west);
+    \draw[->] (b.east) -- node[below, sloped] {QoS 0} (s.west);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The publisher sets the QoS of the first hop. The subscription sets
+          the largest QoS of the second hop. The broker sends with the lower
+          of the two values.
+    \item A PUBACK says: the broker has the message. It does not say that a
+          subscriber has it, or that a program acted on it.
+    \item For a confirmation from the application, the receiver publishes
+          a reply: a command on \code{.../xiao/cmd} gets an answer on
+          \code{.../xiao/ack} with the same command ID.
+  \end{itemize}
+  \source{OASIS, \emph{MQTT Version 3.1.1}, section 3.8.4.}
+\end{frame}
+
+% ------------------------------------------------------------------ qos cost
+\begin{frame}{Measured: the cost of each QoS level}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrrrr@{}}
+    \toprule
+    & & & \multicolumn{2}{c}{\textbf{Median time}} &
+      \multicolumn{2}{c}{\textbf{Messages each second}} \\
+    \cmidrule(lr){4-5}\cmidrule(l){6-7}
+    \textbf{QoS} & \textbf{Packets} & \textbf{Bytes} & \textbf{to the ack}
+      & \textbf{to the subscriber} & \textbf{1 in flight} &
+      \textbf{20 in flight} \\
+    \midrule
+    0 & 1 & 147 & 0.4 ms  & 10.9 ms & above 7000 & \\
+    1 & 2 & 193 & 21.5 ms & 10.9 ms & 47 & 551 \\
+    2 & 4 & 281 & 42.4 ms & 32.4 ms & 24 & 241 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Bytes: one IMU reading of the lab with the IP and TCP
+  headers. The proxy added 10 ms to each direction of the publisher link: a
+  round trip of 20 ms.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item QoS 1 waits one round trip for its PUBACK, and QoS 2 waits two
+          round trips.
+    \item Mosquitto gives a QoS 2 message to the subscribers only after the
+          PUBREL: after three trips over the link.
+    \item With one message in flight, QoS 1 sends one message in each round
+          trip: 47 each second. A window of 20 messages gave 551.
+    \item Use QoS 0 for a fast stream, and QoS 1 for a message that must
+          arrive.
+  \end{itemize}
+  \source{Experiment of this course (one computer, 200 messages for each
+    time, 1000 for each rate).}
+\end{frame}
+
+% ------------------------------------------------------------------ lost link
+\begin{frame}{Measured: a lost link}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1.45cm]
+    \draw[->, coolgray] (0,0) -- (6.3,0) node[right] {s};
+    \foreach \t in {0,...,6} {
+      \draw[coolgray] (\t,0) -- (\t,-0.08) node[below] {\t};
+    }
+    \fill[treegreen!25] (0,0.1) rectangle (2,0.45);
+    \fill[cardinalred!25] (2,0.1) rectangle (2.5,0.45);
+    \fill[cardinalred!55] (2.5,0.1) rectangle (3.5,0.45);
+    \fill[treegreen!25] (3.5,0.1) rectangle (6,0.45);
+    \node at (1,0.7) {normal};
+    \draw[coolgray] (2.25,0.45) -- (2.25,0.95);
+    \node[anchor=south] at (2.25,0.95) {no acks};
+    \node at (3.0,0.7) {no link};
+    \node at (4.75,0.7) {same session again};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrL{6.0cm}@{}}
+    \toprule
+    \textbf{QoS} & \textbf{Lost} & \textbf{Double} & \textbf{What happened}
+      \\
+    \midrule
+    0 & 51 & 0 & The client dropped each message while it had no
+      connection. \\
+    1 & 0 & 20 & The client sent the 20 messages with no PUBACK again, with
+      the DUP flag. \\
+    2 & 56 & 0 & See the next frame. \\
+    2, broker limit 100 & 0 & 0 & Exactly once, as the standard says. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item 50 messages each second for 6 s: 300 messages. A subscriber with
+          QoS 2 counted the sequence numbers.
+    \item QoS 1 gives no loss but doubles: the receiver drops a second copy
+          by its \code{seq}.
+  \end{itemize}
+  \source{Experiment of this course (Mosquitto 2.0.11, paho-mqtt 2.1.0).}
+\end{frame}
+
+% ------------------------------------------------------------------ qos2 loss
+\begin{frame}{Why QoS 2 lost 56 messages}
+  \small
+  \begin{enumerate}
+    \item During the cut, the client kept 20 messages in flight and more
+          than 50 new messages in its memory.
+    \item After the new connection, paho-mqtt 2.1.0 sent all of them at
+          once. Its count of messages in flight starts again at 0 after a
+          reconnection.
+    \item Mosquitto accepted at most 20 QoS 2 messages in flight from this
+          client (\code{max\_inflight\_messages}, default 20). It refused
+          the next 56 with the reason code 0x97, ``quota exceeded''.
+    \item A PUBREC of MQTT 3.1.1 has no field for a reason code. The client
+          saw a normal PUBREC and ended the flow. No program reported an
+          error.
+  \end{enumerate}
+  \begin{itemize}
+    \item With the limit at 100, the same test lost no message. MQTT 5 has
+          the reason code in the PUBREC, so a client can see the refusal.
+  \end{itemize}
+  \keypoint{A QoS level is a promise of the protocol, and each library has
+    limits. Number the messages, count them at the receiver, and test with
+    a lost link.}
+  \source{Experiment of this course; OASIS, \emph{MQTT Version 5.0},
+    section 2.4.}
+\end{frame}
+
+% ------------------------------------------------------------------ sessions
+\begin{frame}{Sessions: messages for a client that is away}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{5.0cm}rr@{}}
+    \toprule
+    \textbf{Subscriber that was away} & \textbf{QoS 0 messages} &
+      \textbf{QoS 1 messages} \\
+    \midrule
+    Persistent session, subscription QoS 1 & 0 of 10 & 10 of 10 \\
+    Clean session, subscription QoS 1 & 0 of 10 & 0 of 10 \\
+    Persistent session, subscription QoS 0 & 0 of 10 & 0 of 10 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The CONNECT packet has the flag ``clean session''. With the flag
+          off, the broker keeps the subscriptions of the client and its
+          QoS 1 and QoS 2 messages while it is away. The CONNACK says
+          ``session present''.
+    \item The session belongs to the client ID. Each device needs a fixed
+          and unique ID: a second client with the same ID disconnects the
+          first one.
+    \item The broker does not keep QoS 0 messages (Mosquitto option
+          \code{queue\_qos0\_messages}, default off). A subscription with
+          QoS 0 makes each message QoS 0.
+    \item The store has a limit: Mosquitto keeps at most 1000 messages for
+          each client. MQTT is not a database.
+  \end{itemize}
+  \source{Experiment of this course. OASIS, \emph{MQTT Version 3.1.1},
+    sections 3.1.2.4 and 3.1.4; Mosquitto 2.0.11 manual.}
+\end{frame}
+
+% ------------------------------------------------------------------ retained
+\begin{frame}{Retained messages: the last value}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      cl/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.1cm, minimum height=1.0cm}]
+    \node[cl, fill=cardinalred!12, text width=1.4cm] (p) at (0,0)
+      {XIAOML Kit};
+    \node[cl, fill=darkcyan!20, text width=2.6cm] (b) at (4.2,0)
+      {\textbf{Broker}\\ keeps the last retained message of each topic};
+    \node[cl, text width=1.8cm] (s) at (8.4,0) {New subscriber};
+    \draw[->] ([yshift=6pt]p.east) -- node[above, align=center] {1.
+      \texttt{online},\\ retained} ([yshift=6pt]b.west);
+    \draw[->] ([yshift=6pt]s.west) -- node[above, align=center] {2. later:\\
+      SUBSCRIBE} ([yshift=6pt]b.east);
+    \draw[->, darkcyan] ([yshift=-6pt]b.east) -- node[below, align=center]
+      {3. \texttt{online}\\ at once} ([yshift=-6pt]s.west);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Measured: a new subscriber to \code{edgeai/g07/\#} got the
+          retained status \code{online} with the retain flag at once. It
+          did not get the IMU message that was sent before and not
+          retained.
+    \item Use a retained message for a state or a setting: the status of a
+          device, a threshold, a mode.
+    \item Do not retain a command or an event. Measured: a retained
+          \code{led=1} came again at each of 3 new connections.
+    \item To delete a retained message, publish an empty retained message
+          to its topic. Measured: the next subscriber got nothing.
+  \end{itemize}
+  \source{Experiment of this course. OASIS, \emph{MQTT Version 3.1.1},
+    section 3.3.1.3.}
+\end{frame}
+
+% ------------------------------------------------------------------ keep-alive
+\begin{frame}{Keep-alive and the last will}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \draw[->, coolgray] (0,0) -- (9.6,0) node[right] {time};
+    \draw[darkcyan, line width=1pt] (0.3,0) -- (0.3,0.55);
+    \node[darkcyan, anchor=south] at (0.3,0.6) {last packet};
+    \node[cardinalred, font=\normalsize] at (1.2,0.25) {$\times$};
+    \node[cardinalred, anchor=west] at (1.4,0.25) {link lost};
+    \draw[coolgray, dashed] (0.3,-0.25) -- (5.3,-0.25);
+    \draw[coolgray] (5.3,-0.15) -- (5.3,-0.35);
+    \node[coolgray, below] at (2.8,-0.3) {keep-alive K: a PINGREQ is
+      due};
+    \draw[cardinalred, dashed] (0.3,-0.9) -- (7.8,-0.9);
+    \draw[cardinalred] (7.8,-0.8) -- (7.8,-1.0);
+    \node[cardinalred, below] at (4.05,-0.95) {1.5 K: the broker closes the
+      connection};
+    \draw[->, cardinalred, line width=1pt] (7.8,0.05) -- (7.8,0.8);
+    \node[cardinalred, anchor=south, align=center] at (7.8,0.85) {last will:
+      \texttt{offline}};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \textbf{Keep-alive} K: a client that sends nothing for K seconds
+          sends a PINGREQ (2 bytes), and the broker answers with a
+          PINGRESP.
+    \item With no packet for 1.5 K, the broker closes the connection.
+    \item \textbf{Last will}: a topic and a message in the CONNECT packet.
+          The broker publishes it when the connection ends with no
+          DISCONNECT packet: a lost link, a crash, no power.
+    \item \code{umqtt.simple} has K = 0 (off) by default: the broker then
+          never finds a lost board. The lab code sets 15 s.
+  \end{itemize}
+  \source{OASIS, \emph{MQTT Version 3.1.1}, sections 3.1.2.5 and 3.1.2.10;
+    code of \texttt{umqtt.simple} (micropython-lib).}
+\end{frame}
+
+\begin{frame}{Measured: when the last will arrives}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{4.6cm}L{2.5cm}L{2.4cm}@{}}
+    \toprule
+    \textbf{End of the connection} & \textbf{Last will after} &
+      \textbf{Rule: 1.5 K} \\
+    \midrule
+    Link lost, keep-alive 5 s & 8.4 to 11.1 s & 7.5 s \\
+    Link lost, keep-alive 10 s & 16.9 to 17.6 s & 15 s \\
+    Link lost, keep-alive 15 s & 22.8 to 23.4 s & 22.5 s \\
+    Process ends, no DISCONNECT & 0.6 ms & \\
+    Normal DISCONNECT & no last will & \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Three runs for each keep-alive. ``Link lost'': the proxy
+  stopped all traffic and kept the TCP connection open.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A crashed process closes its TCP connection: the broker knows at
+          once. A lost Wi-Fi link sends nothing: only the keep-alive finds
+          it. Mosquitto needed up to 3.6 s more than 1.5 K.
+    \item A short K finds a lost device faster, but costs bytes and energy:
+          with K = 15 s and no other traffic, 20\,160 bytes each hour.
+    \item The status pattern: the last will \code{offline} is retained, and
+          the client publishes \code{online} retained after each
+          connection. Each program knows the state of each device.
+  \end{itemize}
+  \source{Experiment of this course. Bytes: PINGREQ and PINGRESP with the
+    IP and TCP headers.}
+\end{frame}
+
+% ------------------------------------------------------------------ code
+\begin{frame}[fragile]{A client in Python}
+\begin{lstlisting}[style=python]
+import json
+import paho.mqtt.client as mqtt
+
+base = "edgeai/g07"
+c = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="pi-07",
+                clean_session=False)
+c.will_set(base + "/pi/status", "offline", qos=1, retain=True)
+def on_connect(client, userdata, flags, reason, props):
+    client.publish(base + "/pi/status", "online", qos=1, retain=True)
+    client.subscribe(base + "/xiao/result", qos=1)
+def on_message(client, userdata, msg):
+    r = json.loads(msg.payload)
+    if r["label"] == "yes" and r["score"] > 0.8:
+        client.publish(base + "/xiao/cmd", "led=1", qos=1)
+c.on_connect, c.on_message = on_connect, on_message
+c.connect("localhost", 1883, keepalive=15)
+c.loop_forever()                     # reconnects after a lost link
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item \code{on\_connect} runs after each new connection: the status and
+          the subscription come back after a lost link.
+    \item Keep \code{on\_message} short. The network loop waits while it
+          runs, so a slow callback delays the keep-alive.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ telemetry
+\begin{frame}{Telemetry and commands}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.5cm}lcL{2.0cm}L{3.7cm}@{}}
+    \toprule
+    \textbf{Message} & \textbf{Way} & \textbf{QoS} & \textbf{Retained} &
+      \textbf{Example} \\
+    \midrule
+    Telemetry stream & up & 0 & no & IMU reading, 5 each second \\
+    Result, event & up & 1 & no & \texttt{"label":"yes"} \\
+    Status & up & 1 & yes, last will & \texttt{online}, \texttt{offline} \\
+    Setting & down & 1 & yes & a threshold \\
+    Command & down & 1 & no & \texttt{led=1} \\
+    Reply & up & 1 & no & \texttt{"id":17,"ok":true} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Up: from the device to the server. Down: from the server to
+  the device.\par}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A stream can lose one reading: the next one comes soon. An event
+          or a command must arrive.
+    \item Give each command an ID, and write it as a state: \code{led=1},
+          not ``toggle''. A second copy then does no harm.
+    \item A command for a device that is away: drop it, or keep only the
+          newest. Commands in a fixed order need sequence numbers.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ formats
+\begin{frame}{Measured: payload formats}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{4.6cm}rrr@{}}
+    \toprule
+    \textbf{Format of one IMU reading} & \textbf{Payload} &
+      \textbf{PUBLISH} & \textbf{With IP, TCP} \\
+    \midrule
+    JSON (format of the lab) & 84 & 107 & 147 \\
+    CSV text & 41 & 64 & 104 \\
+    CBOR, \code{float32} values & 60 & 83 & 123 \\
+    Binary, \code{float32} values & 32 & 55 & 95 \\
+    Binary, \code{int16} values & 20 & 43 & 83 \\
+    JSON, 10 readings in one message & 851 & 875 & 915 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.1em
+  {\scriptsize Bytes. Topic of 19 bytes, QoS 0.\par}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item MQTT carries bytes. The sender and the receiver must agree on the
+          format.
+    \item JSON: each tool and each person can read it. It repeats the field
+          names in each message.
+    \item Binary \code{int16} is 4.2 times smaller as a payload, but only
+          1.8 times smaller on the link: the headers stay.
+    \item 10 readings in one message cut the bytes for each reading from 147
+          to 91.5. The cost is delay.
+  \end{itemize}
+  \source{Calculation of this course (\texttt{seq}, \texttt{ms}, 6 IMU
+    values).}
+\end{frame}
+
+\begin{frame}[fragile]{Rules for a payload}
+\begin{lstlisting}[style=python]
+{"seq":12,"ms":34567,"label":"yes","score":0.91}
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A \textbf{sequence number} \code{seq}: the receiver finds lost,
+          double, and old messages. It starts again at 0 after a restart.
+    \item A \textbf{time}: \code{ms} is the time since the start of the
+          board. A clock time needs a synchronized clock (Part 3).
+    \item \textbf{Units} in the field name or in a written schema:
+          \code{temp\_c}, not \code{temp}.
+    \item A \textbf{version} field when the format can change: a new
+          firmware can then add a field, and old receivers still work.
+    \item \textbf{Check} each message on receipt: the type and the range of
+          each field. Count and drop a bad message, as the guard of
+          Day 10.
+    \item A \textbf{size limit}: PubSubClient holds a complete packet in a
+          buffer of 256 bytes.
+  \end{itemize}
+  \source{Payload of the lab board (hardware folder HW-07); PubSubClient 2.8,
+    \texttt{PubSubClient.h}.}
+\end{frame}
+
+% ------------------------------------------------------------------ software
+\begin{frame}{The MQTT software of the lab}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.5cm}L{1.7cm}L{2.0cm}L{3.5cm}@{}}
+    \toprule
+    \textbf{Software} & \textbf{Role} & \textbf{QoS} & \textbf{Limits} \\
+    \midrule
+    Mosquitto 2 & broker on the Raspberry Pi & 0, 1, 2 & only local clients
+      with no \code{listener} line; 20 messages in flight, 1000 kept for
+      each client \\
+    paho-mqtt 2.1 & Python client & 0, 1, 2 & MQTT 3.1.1 and 5; reconnects
+      in \code{loop\_forever()} \\
+    PubSubClient 2.8 & Arduino client & publish 0; subscribe 0, 1 & buffer
+      of 256 bytes; keep-alive 15 s \\
+    \texttt{umqtt.simple} & MicroPython client & 0, 1 & keep-alive off by
+      default; no reconnection \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The lab uses MQTT 3.1.1 (OASIS, 2014). MQTT 5 (OASIS, 2019) adds
+          reason codes, a time limit for each message, and shared
+          subscriptions.
+    \item Ports: 1883 with no encryption, 8883 with TLS.
+    \item The lab network has no password. Module SY-2 adds user names,
+          passwords, and TLS.
+  \end{itemize}
+  \source{Mosquitto 2.0.11 manual; code of PubSubClient 2.8 and
+    \texttt{umqtt.simple}; OASIS, \emph{MQTT Version 3.1.1}, section 4.2.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{a topic tree for two rooms}{%
+  \small
+  A building has two rooms, \textbf{A} and \textbf{B}. Each room has five
+  devices: two XIAOML Kits (IMU and keyword model), one Raspberry Pi with a
+  camera (it counts people), one temperature sensor, and one fan.
+  \begin{enumerate}
+    \item Write the topic tree for the ten devices: data, results, status,
+          and commands.
+    \item Write the filter for: (a) a dashboard of all temperatures, (b) the
+          fan controller of room A, (c) a monitor of the status of all
+          devices.
+    \item Give the QoS and the retained flag for each type of topic.
+  \end{enumerate}
+  \vskip 0.3em
+  Work with your neighbour for 8 minutes.
+}
+
+\begin{frame}{Answer: a topic tree for two rooms}
+  \footnotesize
+  \textbf{Tree:} \texttt{site/<room>/<device>/<channel>}, for example
+  \texttt{site/a/temp-1/temp\_c}, \texttt{site/a/xiao-2/result},
+  \texttt{site/b/fan-1/cmd}.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.9cm}L{3.3cm}L{3.4cm}@{}}
+    \toprule
+    \textbf{Program} & \textbf{Subscribes to} & \textbf{Publishes to} \\
+    \midrule
+    (a) Temperature dashboard & \texttt{site/+/+/temp\_c} & none \\
+    (b) Fan controller, room A & \texttt{site/a/+/temp\_c},
+      \texttt{site/a/pi-1/count} & \texttt{site/a/fan-1/cmd} \\
+    (c) Status monitor & \texttt{site/+/+/status} & none \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{tabular}{@{}L{2.9cm}L{3.3cm}L{3.4cm}@{}}
+    \toprule
+    \textbf{Topic type} & \textbf{QoS} & \textbf{Retained} \\
+    \midrule
+    \texttt{imu}, \texttt{temp\_c} & 0 & no \\
+    \texttt{result}, \texttt{count} & 1 & no \\
+    \texttt{status} & 1 & yes, also the last will \\
+    \texttt{cmd} & 1 & no \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The channel name says the type: one filter selects all readings
+          of one type. The order room, then device, suits a controller for
+          each room.
+  \end{itemize}
+\end{frame}

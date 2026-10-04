@@ -1,0 +1,809 @@
+% Part 3 of Day 9: Power, energy, and temperature.
+%
+% Topics of the syllabus: power measurement methods; energy per inference;
+% duty cycle and battery life estimate. Exercise: estimate the battery life of
+% an always-on keyword spotting device.
+%
+% Nobody measured a power or a temperature for this course. The numbers of
+% this part have three origins, and each frame names its origin in the source
+% line.
+% 1. Published values: the data sheet of the ESP32-S3 (Espressif, version
+%    2.2), the page of the XIAO ESP32S3 boards (Seeed Studio), the
+%    documentation of the Raspberry Pi, the companion book, and the results
+%    of MLPerf Tiny v1.2.
+% 2. Calculations of this course with these values. The frames use 217 mW,
+%    157 mW, and 0.79 mW for the active state, the idle state, and the light
+%    sleep of the ESP32-S3 chip.
+% 3. Example values (a latency of 50 ms, a battery of 1000 mAh). The frame
+%    says that the value is an example.
+
+\theorypart{Power, energy, and temperature}%
+  {estimate the battery life of an always-on keyword spotting device}
+
+% ------------------------------------------------------------------ question
+\begin{frame}{How long does the battery supply the device?}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.52\textwidth}r@{}}
+    \toprule
+    \textbf{Keyword model on a Cortex-M33 board} & \textbf{Published} \\
+    \midrule
+    Latency of one inference   & 29.1 ms \\
+    Energy of one inference    & 656.2 $\mu$J \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A product makes one inference in each second. Its battery has
+          1000 mAh at 3.7 V.
+    \item The inferences alone use 0.66 mW. The battery has energy for 235
+          days of inferences.
+    \item No product gets this time. The device waits 971 ms in each second,
+          and the wait also needs power.
+    \item A board that waits with 157 mW empties the same battery in less
+          than one day.
+  \end{itemize}
+  \keypoint{The latency says how long the processor works. The battery
+    life depends on all 1000 ms of each second.}
+  \source{MLPerf Tiny v1.2, board NUCLEO-U575ZI-Q (MLCommons).\\
+    The latency and the battery values are calculations.}
+\end{frame}
+
+% --------------------------------------------------------------- definitions
+\begin{frame}{Power, energy, and a battery}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.16\textwidth}L{0.30\textwidth}L{0.44\textwidth}@{}}
+    \toprule
+    \textbf{Quantity} & \textbf{Formula and unit} & \textbf{It tells you} \\
+    \midrule
+    Power    & $P = V \times I$, in W
+             & How fast the device uses energy at this moment \\
+    Energy   & $E = P \times t$, in J
+             & What one task costs: one inference, one day \\
+    Capacity & mAh
+             & The charge of a battery. With its voltage: the energy. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item 1 J = 1 W for 1 s. 1 mW for 1 ms is 1 $\mu$J. 1 Wh = 3600 J.
+    \item A battery with 1000 mAh at 3.7 V has
+          $1 \,\text{Ah} \times 3.7 \,\text{V} = 3.7$ Wh. This is 13\,320 J.
+    \item Battery life in hours = energy of the battery in Wh, divided by
+          the mean power in W.
+    \item 3.7 Wh and a mean power of 0.217 W give 17 hours.
+  \end{itemize}
+  \keypoint{A data sheet gives a current in mA. Multiply it by the supply
+    voltage to get the power.}
+  \source{The battery is an example value.}
+\end{frame}
+
+% --------------------------------------------------------------------- range
+\begin{frame}{The power range of edge devices}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.92cm, y=0.5cm]
+    % Bars on a log scale: x = log10(power in mW) + 1.
+    \foreach \y/\w/\n/\v in {5/0.176/{Neural decision processor}/{150 $\mu$W},
+                             4/2.398/{Microcontroller (Cortex-M7)}/{25 mW},
+                             3/4.544/{Raspberry Pi 4}/{3.5 W},
+                             2/4.602/{Smartphone}/{4 W},
+                             1/5.097/{Smart camera}/{10 to 15 W},
+                             0/5.903/{Edge server}/{65 to 95 W}} {
+      \fill[darkcyan!60] (0,\y) rectangle (\w,\y+0.7);
+      \node[anchor=east] at (-0.1,\y+0.35) {\n};
+      \node[anchor=west] at (\w+0.08,\y+0.35) {\v};
+    }
+    \draw[coolgray] (0,-0.15) -- (0,5.9);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item The bars have a logarithmic scale. From the first row to the last
+          row, the power grows by a factor of about 500\,000.
+    \item The boards of this course: the ESP32-S3 chip uses about 0.2 W
+          when it calculates, and the Raspberry Pi 5 uses 3 W or more.
+    \item One measuring instrument cannot cover this range. A device for
+          microamperes and a device for amperes are two different tools.
+  \end{itemize}
+  \keypoint{Before you measure, estimate the range: microwatts, milliwatts,
+    or watts. Then select the instrument.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 12.\\
+    For a range, the bar shows the centre.}
+\end{frame}
+
+% ---------------------------------------------------------------- CMOS power
+\begin{frame}{Where the power of a chip goes}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Two parts}
+        \small
+        $P = \alpha\, C\, V^2 f \;+\; I_{\text{leak}}\, V$\\[3pt]
+        Switching: it grows with the clock $f$ and with the square of the
+        voltage $V$.\\[2pt]
+        Leakage: it is there with no work, and it grows with the
+        temperature.
+      \end{block}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{Accelerator} & \textbf{0.9 V} & \textbf{1.1 V} \\
+        \midrule
+        Clock          & 30.7 MHz & 98.7 MHz \\
+        Latency        & 4.4 ms   & 1.5 ms \\
+        Mean power     & 7.2 mW   & 29.6 mW \\
+        Energy         & 31.5 $\mu$J & 43.8 $\mu$J \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The same chip of Part 1. With the higher voltage and the faster
+          clock, it is 2.9 times as fast and uses 4.1 times the power.
+    \item The energy of one inference is 39 percent higher. The higher
+          voltage has a cost for each operation.
+    \item A faster clock needs a higher voltage. So the power grows faster
+          than the speed.
+  \end{itemize}
+  \keypoint{Speed costs power. A chip that runs slower at a lower voltage
+    uses less energy for the same work.}
+  \source{MLPerf Tiny v1.2, keyword model (MLCommons).\\
+    The latency and the power are calculations.}
+\end{frame}
+
+% ---------------------------------------------------------------- data sheet
+\begin{frame}{The ESP32-S3 in its data sheet}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.56\textwidth}rr@{}}
+    \toprule
+    \textbf{State of the chip, at 3.3 V} & \textbf{Current} & \textbf{Power} \\
+    \midrule
+    Wi-Fi transmits (peak)                             & 340 mA   & 1122 mW \\
+    240 MHz, one core calculates, the other core waits & 65.9 mA  & 217 mW \\
+    160 MHz, one core calculates                       & 54.6 mA  & 180 mW \\
+    80 MHz, one core calculates                        & 42.6 mA  & 141 mW \\
+    240 MHz, the two cores wait                        & 47.6 mA  & 157 mW \\
+    Light sleep                                        & 0.24 mA  & 0.79 mW \\
+    Deep sleep                                         & 0.008 mA & 0.03 mW \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item A chip that waits at 240 MHz uses 72 percent of the active power.
+          To wait is not to sleep. The light sleep uses 275 times less power.
+    \item The radio is off in the rows 2 to 7. The values are typical values
+          with the clocks of the peripherals on.
+  \end{itemize}
+  \keypoint{Three numbers decide most battery estimates: the active power,
+    the sleep power, and the time in each state.}
+  \source{Data sheet of the ESP32-S3, version 2.2 (Espressif Systems).\\
+    The power is a calculation.}
+\end{frame}
+
+\begin{frame}{A slower clock does not save energy}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}rrrrr@{}}
+    \toprule
+    \textbf{Clock} & \textbf{Current} & \textbf{Time}
+    & \textbf{Current $\times$ time} & \textbf{Factor} \\
+    \midrule
+    240 MHz & 65.9 mA & 1.0 $\times\, t$ & 65.9 $\times\, t$  & 1.00 \\
+    160 MHz & 54.6 mA & 1.5 $\times\, t$ & 81.9 $\times\, t$  & 1.24 \\
+    80 MHz  & 42.6 mA & 3.0 $\times\, t$ & 127.8 $\times\, t$ & 1.94 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The table has one assumption: the time of an inference is
+          proportional to 1 / clock. You measure this in the lab.
+    \item The voltage is the same in each row, so the energy follows the
+          current multiplied by the time.
+    \item At 80 MHz the current is 35 percent lower. But the inference needs
+          3 times as long, so its energy is almost 2 times as large.
+    \item A large part of the current does not depend on the clock. The
+          better plan: calculate at the full clock, then sleep.
+  \end{itemize}
+  \keypoint{Low power is not low energy. Compare the energy of the complete
+    task.}
+  \source{Calculations with the data sheet of the ESP32-S3.\\
+    Nobody measured these energies.}
+\end{frame}
+
+% ------------------------------------------------------------------ boundary
+\begin{frame}{The boundary: chip, board, product}
+  \begin{columns}[c]
+    \begin{column}{0.36\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize]
+        \draw[treegreen, thick, rounded corners=3pt] (0,0) rectangle (3.6,3.3);
+        \node[treegreen!60!black, anchor=north west] at (0.05,3.28)
+          {Product: battery, case};
+        \draw[darkcyan, thick, rounded corners=3pt] (0.25,0.25)
+          rectangle (3.35,2.75);
+        \node[darkcyan, anchor=north west, align=left] at (0.3,2.73)
+          {Board: regulator, light,\\camera, card};
+        \draw[cardinalred, thick, rounded corners=3pt, fill=boxgray]
+          (0.6,0.5) rectangle (3.0,1.6);
+        \node[cardinalred, align=center] at (1.8,1.05)
+          {Chip: processor,\\memory, radio};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.60\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}L{1.45cm}rrr@{}}
+        \toprule
+        & \textbf{Chip} & \textbf{XIAO board} & \textbf{Sense board} \\
+        \midrule
+        Light sleep & 0.79 mW  & 7.6 mW   & 19.0 mW \\
+        Deep sleep  & 0.03 mW  & 0.05 mW  & 11.4 mW \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.3em
+      Chip: data sheet, 3.3 V. Boards: values of the vendor at 3.8 V.
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The board of the kit, with its camera and its card slot, uses 24
+          times the light sleep power of the chip. In deep sleep the factor
+          is more than 400.
+    \item A battery estimate with the chip value is too good by this factor.
+    \item MLPerf Tiny measures the power of the core supply only. A USB
+          power meter measures the complete board.
+  \end{itemize}
+  \keypoint{Say where your power value comes from: the chip, the board, or
+    the product. Compare only values with the same boundary.}
+  \source{Data sheet of the ESP32-S3.\\
+    Page of the XIAO ESP32S3 boards (Seeed Studio).}
+\end{frame}
+
+% ------------------------------------------------------------------- methods
+\begin{frame}{Four ways to get a power value}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Method} & \textbf{It gives} & \textbf{Limit} \\
+    \midrule
+    Data sheet value
+        & A typical current for each state of the chip
+        & The chip only, and not your program \\
+    USB power meter between the supply and the board
+        & Voltage, current, and power of the complete board
+        & Slow, and not exact enough for a sleep current \\
+    Energy monitor, or a small resistor in the supply line with an
+    oscilloscope
+        & The current many times in each second: one inference is visible
+        & More equipment and more work \\
+    Sensors of the board (Raspberry Pi 5)
+        & The voltage and the current of each supply rail
+        & An estimate. Compare it with a meter one time. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item MLPerf Tiny uses an energy monitor that supplies the device and
+          measures the energy of the timed window.
+    \item The lab uses a USB power meter if the classroom has it. If not:
+          the data sheet for the kit, and the sensors for the Raspberry Pi.
+  \end{itemize}
+  \keypoint{Each method is valid if the report names it. A value with no
+    method is not valid.}
+  \source{MLPerf Tiny: Banbury et al., 2021.}
+\end{frame}
+
+% ----------------------------------------------------------- energy per inf.
+\begin{frame}{Energy per inference: two methods}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{From the power and the latency}
+        \small
+        $E = P_{\text{active}} \times t$\\[3pt]
+        Read the power during a long run. Multiply it by the median
+        latency.\\[3pt]
+        Example: 217 mW and 50 ms give 10.85 mJ.
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{From the energy of many inferences}
+        \small
+        $E = E_{\text{window}} \,/\, N$\\[3pt]
+        Measure the energy of a window with $N$ inferences, and divide.\\[3pt]
+        This is the method of MLPerf Tiny: 10 seconds or more for each
+        window.
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The first method needs only a slow meter. The second method needs
+          a meter that adds the energy.
+    \item Decide what you do with the idle power. ``Total'': the complete
+          power during the inference. ``Added'': the power above the idle
+          state. Write which one you report.
+    \item Use the same window as for the latency: the model only, or the
+          pipeline.
+    \item Warm up first. The power changes with the temperature.
+  \end{itemize}
+  \source{The latency of 50 ms is an example value.\\
+    MLPerf Tiny: Banbury et al., 2021.}
+\end{frame}
+
+\begin{frame}{A faster board is not always more efficient}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.48\textwidth}rr@{}}
+    \toprule
+    \textbf{Power of the Raspberry Pi 5} & \textbf{Value}
+    & \textbf{Divided by 217 mW} \\
+    \midrule
+    Published example with no load        & 3.2 W & 15 \\
+    Moderate load, lower limit            & 5 W   & 23 \\
+    Moderate load, upper limit            & 7 W   & 32 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The same model runs on the two boards. The Raspberry Pi is much
+          faster, and it uses much more power.
+    \item With 5 W against 217 mW, the Raspberry Pi uses less energy for
+          one inference only if it is more than 23 times as fast.
+    \item For a small model, the fixed power of the large board is the
+          problem: it pays 3 W also when it does nothing.
+    \item In the lab you measure the speed factor for four models. Then you
+          know the answer for each of them.
+  \end{itemize}
+  \keypoint{Energy per inference = power $\times$ latency. A board wins only
+    if its speed gain is larger than its power factor.}
+  \source{Raspberry Pi 5: \emph{Edge AI Engineering}, chapter ``Setup''.\\
+    ESP32-S3: its data sheet.}
+\end{frame}
+
+% --------------------------------------------------------------- duty cycle
+\begin{frame}{The duty cycle}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+    \draw[coolgray, ->, >={Stealth[length=4pt]}] (0,0) -- (10.3,0)
+      node[below left] {time};
+    \draw[coolgray, ->, >={Stealth[length=4pt]}] (0,0) -- (0,1.9);
+    \node[coolgray, anchor=west] at (0.1,1.95) {power};
+    \foreach \k in {0,1,2} {
+      \fill[cardinalred!55] (0.3+\k*3.2,0) rectangle (0.3+\k*3.2+0.5,1.5);
+      \fill[darkcyan!40] (0.8+\k*3.2,0) rectangle (3.5+\k*3.2,0.12);
+    }
+    \node[cardinalred] at (0.55,1.68) {active};
+    \node[darkcyan] at (2.1,0.62) {sleep};
+    \draw[coolgray] (0.3,-0.2) -- (0.3,-0.35) -- (3.5,-0.35) -- (3.5,-0.2);
+    \node[coolgray, below] at (1.9,-0.35) {period $T$};
+    \draw[coolgray] (3.5,1.68) -- (4.0,1.68);
+    \node[coolgray, anchor=west] at (4.0,1.68) {$t$: time of the work in one
+      period};
+    \draw[cardinalred, dashed, thick] (0,0.34) -- (10.1,0.34);
+    \node[cardinalred, anchor=west] at (7.2,0.52) {mean power};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \[
+    \alpha = \frac{t}{T}
+    \qquad
+    P_{\text{mean}} = \alpha\, P_{\text{active}} + (1 - \alpha)\, P_{\text{rest}}
+  \]
+  \begin{itemize}
+    \item $\alpha$ is the duty cycle: the part of the time in which the
+          device works.
+    \item $P_{\text{rest}}$ is the power of the state between two tasks: the
+          idle state, the light sleep, or the deep sleep.
+    \item A camera with a frame rate has $\alpha$ near 1. A sensor that
+          reports one value in each minute has $\alpha$ near 0.
+  \end{itemize}
+  \keypoint{The mean power, not the peak power, empties the battery.}
+\end{frame}
+
+\begin{frame}{From the mean power to the battery life}
+  \small
+  One inference of 50 ms in each second: a duty cycle of 5 percent. Active
+  power 217 mW. Battery 3.7 Wh.
+  \vskip 0.3em
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.42\textwidth}rrr@{}}
+    \toprule
+    \textbf{State between two inferences} & \textbf{Rest power}
+    & \textbf{Mean power} & \textbf{Battery life} \\
+    \midrule
+    The chip waits (idle)            & 157 mW  & 160.0 mW & 23 hours \\
+    Light sleep, the chip only       & 0.79 mW & 11.6 mW  & 13.3 days \\
+    Light sleep, the Sense board     & 19.0 mW & 28.9 mW  & 5.3 days \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Mean power: $0.05 \times 217 + 0.95 \times 0.79 = 11.6$ mW.
+          Battery life: $3700 / 11.6 = 319$ hours.
+    \item The same model, the same latency, the same battery: from 23
+          hours to 13 days.
+    \item The third row uses the board value of the vendor. It is the row
+          that a real product gets.
+  \end{itemize}
+  \keypoint{Decide the rest state first. An optimization of the model
+    changes only the first term of the formula.}
+  \source{Calculations. The latency and the battery are examples.}
+\end{frame}
+
+\begin{frame}{The rest state decides the battery life}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}rrrr@{}}
+    \toprule
+    \textbf{Duty cycle} & \textbf{Mean power} & \textbf{Battery life}
+    & \textbf{Part of the sleep in the energy} \\
+    \midrule
+    100 percent  & 217 mW   & 17 hours  & 0 percent \\
+    10 percent   & 22.4 mW  & 6.9 days  & 3 percent \\
+    1 percent    & 2.95 mW  & 52 days   & 26 percent \\
+    0.1 percent  & 1.01 mW  & 153 days  & 78 percent \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Active power 217 mW, light sleep of the chip 0.79 mW, battery
+          3.7 Wh.
+    \item From 100 to 10 percent, the battery life grows by a factor of
+          almost 10. From 1 to 0.1 percent, it grows only by a factor of 3.
+    \item At a low duty cycle, the sleep power is the limit. A faster model
+          then gives almost no gain.
+    \item With the light sleep of the Sense board (19 mW) and a duty cycle
+          of 1 percent, the sleep has 90 percent of the energy.
+  \end{itemize}
+  \keypoint{Find the larger term first: $\alpha\, P_{\text{active}}$ or
+    $(1 - \alpha)\, P_{\text{rest}}$. Optimize that term.}
+  \source{Calculations with the data sheet of the ESP32-S3\\
+    and the value of the vendor for the board.}
+\end{frame}
+
+\begin{frame}{The floor: energy times rate}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.40\textwidth}rr@{}}
+    \toprule
+    \textbf{Keyword model} & \textbf{Energy}
+    & \textbf{One inference each second} \\
+    \midrule
+    Cortex-M4 at 120 MHz             & 1820.5 $\mu$J & 1.82 mW \\
+    Cortex-M7 at 280 MHz             & 1375.6 $\mu$J & 1.38 mW \\
+    Cortex-M33 at 160 MHz            & 656.2 $\mu$J  & 0.66 mW \\
+    Neural accelerator at 0.9 V      & 31.5 $\mu$J   & 0.03 mW \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item Energy per inference $\times$ inferences in each second = the mean
+          power of the inferences. 1 $\mu$J in each second is 1 $\mu$W.
+    \item This is the lowest mean power that the device can have at this
+          rate. The rest power comes on top.
+    \item An always-on keyword detector makes about 4 inferences in each
+          second. It also needs the microphone and the features all the
+          time.
+    \item So a product uses two stages (Day 5): a very small detector that
+          runs all the time, and a larger model that starts on demand.
+  \end{itemize}
+  \source{MLPerf Tiny v1.2, closed division (MLCommons).\\
+    The power is a calculation.}
+\end{frame}
+
+\begin{frame}{The radio can cost more than the model}
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}L{0.52\textwidth}rr@{}}
+    \toprule
+    \textbf{ESP32-S3 at 3.3 V} & \textbf{Current} & \textbf{Power} \\
+    \midrule
+    One core calculates, radio off        & 65.9 mA & 217 mW \\
+    Wi-Fi receives                        & 88 mA   & 290 mW \\
+    Wi-Fi transmits (peak)                & 340 mA  & 1122 mW \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The peak of a transmission is 5.2 times the power of the
+          processor at work.
+    \item A device that sends each sensor value to a server keeps its radio
+          active. A device that decides locally sends only the events.
+    \item This is a reason for inference on the device (Day 1), and the
+          topic of Day 12: local decisions and MQTT.
+    \item A benchmark of the model only does not show this cost. Add the
+          radio to the energy budget of the product.
+  \end{itemize}
+  \keypoint{The energy budget of a product has three parts: the sensor,
+    the model, and the communication.}
+  \source{Data sheet of the ESP32-S3, version 2.2.\\
+    The power is a calculation.}
+\end{frame}
+
+% --------------------------------------------------------------- temperature
+\begin{frame}{Heat: why a chip becomes slower}
+  \begin{columns}[c]
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.40cm, y=0.05cm,
+          >={Stealth[length=4pt]}]
+        \draw[coolgray, ->] (0,40) -- (10.6,40) node[below left] {time};
+        \draw[coolgray, ->] (0,40) -- (0,92);
+        \foreach \v in {50,60,70,80} {
+          \draw[coolgray] (0,\v) -- (-0.15,\v) node[left] {\v};
+        }
+        \node[coolgray, anchor=south] at (0,92) {$^\circ$C};
+        \fill[cardinalred!12] (0,80) rectangle (10.2,85);
+        \draw[cardinalred, dashed] (0,85) -- (10.2,85);
+        \node[cardinalred, anchor=south east] at (10.2,85.5) {limit 85};
+        \node[cardinalred, anchor=north east] at (10.2,79.5) {slower from 80};
+        \draw[darkcyan, thick] (0,47) -- (1,47) .. controls (2.5,70) and
+          (4,80) .. (5.5,82) -- (10,82);
+        \draw[coolgray, dotted] (1,40) -- (1,36);
+        \node[coolgray, anchor=north] at (1,36) {load starts};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \small
+      \begin{itemize}
+        \item All the electric power of a chip becomes heat. The temperature
+              grows until the heat that leaves is equal to the power.
+        \item Near its limit, the board decreases the clock of the
+              processor: \textbf{thermal throttling}. The latency grows,
+              with no change of the program.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item Raspberry Pi: between 80 and 85 $^\circ$C, the clock of the cores
+          goes down in steps. The limit is 85 $^\circ$C.
+    \item The cooler of the Raspberry Pi 5 starts at 50 $^\circ$C and has
+          its full speed at 75 $^\circ$C.
+  \end{itemize}
+  \keypoint{A hot chip is a slower chip. The temperature is a part of the
+    system description.}
+  \source{The limits: the documentation of the Raspberry Pi.\\
+    The curve is a drawing, not a measurement.}
+\end{frame}
+
+\begin{frame}[fragile]{Read the thermal state of the Raspberry Pi}
+\begin{lstlisting}[style=shell]
+vcgencmd measure_temp                       # temp=47.2'C
+cat /sys/class/thermal/thermal_zone0/temp   # 47200: in 0.001 degrees
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq   # clock in kHz
+vcgencmd get_throttled                      # throttled=0x0
+\end{lstlisting}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.36\textwidth}lL{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Value} & \textbf{Now} & \textbf{Value} & \textbf{Since the start} \\
+    \midrule
+    \code{0x1} & The supply voltage is too low
+        & \code{0x10000} & The voltage was too low \\
+    \code{0x2} & The clock of the cores is limited
+        & \code{0x20000} & The clock was limited \\
+    \code{0x4} & The board throttles
+        & \code{0x40000} & The board throttled \\
+    \code{0x8} & The soft temperature limit is active
+        & \code{0x80000} & The soft limit was active \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item \code{0x0}: no event since the start of the board. \code{0x50000}:
+          the voltage was too low, and the board throttled, in the past.
+    \item A weak power supply also limits the clock. Use the 27 W supply.
+  \end{itemize}
+  \keypoint{Read these values before and after each benchmark. The script
+    of the lab stores them with each result.}
+  \source{The documentation of the Raspberry Pi.\\
+    The example temperature: \emph{Edge AI Engineering}.}
+\end{frame}
+
+\begin{frame}{The power of a Raspberry Pi 5 with no meter}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \begin{block}{The method}
+        \small
+        \code{vcgencmd pmic\_read\_adc} prints the voltage and the current of
+        each supply rail.\\[3pt]
+        Sum of all rails: $\sum V_i \times I_i$\\[3pt]
+        Estimate for the board:\\
+        $1.1451 \times \text{sum} + 0.5879$ W
+      \end{block}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.2}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}L{2.0cm}rr@{}}
+        \toprule
+        \textbf{State} & \textbf{$^\circ$C} & \textbf{W} \\
+        \midrule
+        No load         & 40 to 50 & 3.0 to 3.5 \\
+        Moderate load   & 55 to 70 & 5 to 7 \\
+        Heavy load      & 70 to 80 & 7 to 10 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The published example with no load: a sum of 2.312 W, an estimate
+          of 3.235 W, and 47 $^\circ$C.
+    \item The sum is the power of the main chips. The correction adds the
+          rest of the board. It is an estimate of the author of the book.
+    \item USB devices and the loss of the power supply are not in the value.
+    \item The lab script reads this estimate between the timed runs.
+  \end{itemize}
+  \keypoint{An estimate with a known method is useful. Compare it one time
+    with a power meter, and write the difference.}
+  \source{\emph{Edge AI Engineering}, chapter ``Setup''.\\
+    Published ranges with the active cooler.}
+\end{frame}
+
+\begin{frame}{A short run and a long run}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    & \textbf{Short run} & \textbf{Long run} \\
+    \midrule
+    Duration        & Some seconds          & Minutes \\
+    State of the chip & Cold                & At its final temperature \\
+    It answers      & How fast is the board at its best?
+                    & How fast is the product all day? \\
+    Use it for      & A comparison of two models
+                    & A product decision \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item A run of MLPerf Inference has 600 seconds or more.
+    \item Run until the temperature does not change. Report the latency of
+          the first window and of the last window.
+    \item State the cooling: the active cooler, a case, the temperature of
+          the room. A board in a closed box is a different system.
+  \end{itemize}
+  \keypoint{A short benchmark shows the peak. The product gets the
+    sustained value.}
+  \source{The rules of MLPerf Inference (MLCommons).}
+\end{frame}
+
+% ------------------------------------------------------------------- errors
+\begin{frame}{Common errors with power and energy}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.42\textwidth}L{0.50\textwidth}@{}}
+    \toprule
+    \textbf{Error} & \textbf{Result} \\
+    \midrule
+    The power in place of the energy
+        & The slow board with low power looks better \\
+    The active power only
+        & The battery estimate is too good: the rest state is missing \\
+    The chip value for a board
+        & An error of a factor of 10 to 400 in the sleep \\
+    The peak current as the mean current
+        & The battery estimate is too bad \\
+    No radio and no sensor in the budget
+        & The largest consumers are missing \\
+    A power value before the warm-up
+        & The power grows with the temperature \\
+    Energy with no accuracy and no window
+        & You cannot compare the value with a second system \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \keypoint{An energy value needs the same facts as a latency, and two
+    more: the boundary and the instrument.}
+\end{frame}
+
+% ----------------------------------------------------------------------- lab
+\begin{frame}{In the lab: one report for two boards}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.50\textwidth}L{0.24\textwidth}@{}}
+    \toprule
+    \textbf{Part} & \textbf{You do} & \textbf{From the lecture} \\
+    \midrule
+    A & Write the protocol and your predictions            & Parts 1 and 2 \\
+    B & Four models on the kit: latency, flash, and arena  & Part 2 \\
+    C & The same models, MobileNetV2, and your detector on the
+        Raspberry Pi, and a run of 3 minutes with the temperature
+                                                            & Parts 2 and 3 \\
+    D & Energy for one inference, a battery estimate, and the report
+                                                            & Part 3 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The power of the kit: a USB power meter, or the data sheet values
+          of this lecture.
+    \item The power of the Raspberry Pi: the meter, or the estimate of the
+          board.
+    \item Each number of the report has its method. Each energy has its
+          boundary.
+  \end{itemize}
+  \keypoint{Nobody measured these boards for this course. Your report has
+    the first values.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{the battery life of a keyword detector}{%
+  \small
+  A keyword detector uses an ESP32-S3. For each window of audio it works
+  for 50 ms: the features and the model. It has one window in each 250 ms.
+  \vskip 0.3em
+  {\footnotesize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{@{}L{0.46\textwidth}r@{}}
+    \toprule
+    Active power                              & 217 mW \\
+    Power when the chip waits (idle)          & 157 mW \\
+    Power in the light sleep                  & 0.79 mW \\
+    Battery                                   & 1000 mAh at 3.7 V \\
+    \bottomrule
+  \end{tabular}}
+  \vskip 0.2em
+  \begin{enumerate}
+    \item Calculate the duty cycle.
+    \item Calculate the mean power and the battery life if the chip waits
+          between two windows.
+    \item Do the same for the light sleep between two windows.
+    \item The product must run for one month (720 hours). Which mean power
+          is permitted? Which duty cycle gives it, with the light sleep?
+    \item Name two changes that can give this duty cycle, and one power
+          consumer that is not in the table.
+  \end{enumerate}
+  Work with your neighbour for 10 minutes.
+}
+
+\answerframe{the battery life of a keyword detector}{%
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.40\textwidth}rr@{}}
+    \toprule
+    \textbf{State between two windows} & \textbf{Mean power}
+    & \textbf{Battery life} \\
+    \midrule
+    The chip waits   & 169.0 mW & 21.9 hours \\
+    Light sleep      & 44.0 mW  & 84 hours: 3.5 days \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{enumerate}
+    \item $50 / 250 = 0.2$: a duty cycle of 20 percent.
+    \item $0.2 \times 217 + 0.8 \times 157 = 169.0$ mW. $3700 / 169.0 =
+          21.9$ hours.
+    \item $0.2 \times 217 + 0.8 \times 0.79 = 44.0$ mW. $3700 / 44.0 = 84$
+          hours.
+    \item $3700 / 720 = 5.14$ mW. $\alpha = (5.14 - 0.79) / (217 - 0.79) =
+          0.020$: a duty cycle of 2 percent, or 5 ms of work in each 250 ms.
+    \item Changes: a faster model (\code{int8}, a smaller network, better
+          kernels); fewer windows; a small first stage that starts the model
+          only when the sound is loud; an accelerator (0.03 mJ for one
+          inference in Part 1). Not in the table: the microphone, the
+          voltage regulator and the other parts of the board, and the
+          radio.
+  \end{enumerate}
+}

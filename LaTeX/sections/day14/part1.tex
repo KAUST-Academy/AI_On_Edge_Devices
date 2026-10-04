@@ -1,0 +1,520 @@
+% Part 1 of Day 14: Life cycle in production.
+%
+% Topics of the syllabus: model versions, over-the-air updates, rollback;
+% different hardware in one fleet; overview of on-device adaptation and
+% federated learning. Exercise: write the update plan for 100 devices with a
+% bad network.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course: tools/experiments/day14_lifecycle.py,
+%    values in tools/data/day14/day14_lifecycle.json. A simulated update of
+%    100 devices over a bad network (synthetic links, seed 0), and federated
+%    averaging of the Day 6 student CNN on Fashion-MNIST (x86 processor).
+%    Figures from tools/figures/day14_lifecycle.py.
+% 2. The esp32 Arduino core 3.3.12 (the partition table default_8MB.csv,
+%    the rollback setting, the hooks verifyOta and verifyRollbackLater). The
+%    sketch of the frame "Confirm or roll back on the XIAO" compiles for the
+%    board XIAO_ESP32S3 with no warning (271 705 bytes).
+% 3. The textbook, Volume II (a preview): the edge fleet controls, the
+%    rollout risk formula, the canary steps, the adaptation of each device
+%    class, and federated learning.
+
+\theorypart{Life cycle in production}%
+  {write the update plan for 100 devices with a bad network}
+
+% ------------------------------------------------------------------ life
+\begin{frame}{A deployed model has a life}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.55cm, minimum height=0.85cm}]
+    \node[st] (t) at (0,0) {Train\\ (version)};
+    \node[st] (p) at (2.15,0) {Package for each device};
+    \node[st] (v) at (4.3,0) {Test on the device};
+    \node[st, fill=cardinalred!12] (r) at (6.45,0) {Roll out\\ in stages};
+    \node[st, fill=darkcyan!15] (m) at (8.6,0) {Monitor\\ (Day 13)};
+    \draw[->] (t) -- (p); \draw[->] (p) -- (v); \draw[->] (v) -- (r);
+    \draw[->] (r) -- (m);
+    \draw[->, darkcyan] (m.south) -- ++(0,-0.45) -| node[pos=0.25, below]
+      {drift, a bug, new data: a new version} (t.south);
+    \draw[->, cardinalred, dashed] (r.north) -- ++(0,0.45) -| node[pos=0.25,
+      above] {a failed update: roll back} (v.north);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A device runs for years. Its model and its program change many
+          times in this time, often with no person near the device.
+    \item Each step needs a name for what it moves: a version.
+    \item An update over the network is ``over the air'' (OTA). It must not
+          stop the device, and a failed update must be undone.
+  \end{itemize}
+  \keypoint{Plan the second version before you ship the first one.}
+\end{frame}
+
+% ------------------------------------------------------------------ version
+\begin{frame}[fragile]{What a version names}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+{"model": "cupbottle-detector", "version": "1.4.0",
+ "file": "mnv2_int8.tflite", "bytes": 4107968,
+ "sha256": "0ee20427d55c421fb29734fb17fbad6df2e6f5498359309f04738fe3f6805e8c",
+ "runtime": "ai-edge-litert 2.2.0", "input": "224x224 RGB, ImageNet norm",
+ "data": "train-2026-09", "test_accuracy": 0.752, "min_app": "2.1.0"}
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A version number for each part: the model, the program, the
+          runtime, the settings. A model works only with the program and
+          the pre-processing that it was tested with (Day 13: skew).
+    \item The hash (SHA-256) proves that the file on the device is the file
+          that you tested. The device checks it before it uses the file.
+    \item The manifest also names the data, the test result, and the
+          oldest program that can run the model.
+  \end{itemize}
+  \source{Example manifest. The size, the hash, and the accuracy (75.2\,\%)
+    are those of the Day 7 lab file \texttt{mnv2\_int8.tflite}.}
+\end{frame}
+
+% ------------------------------------------------------------------ ota
+\begin{frame}{The steps of an over-the-air update}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.3cm, minimum height=0.85cm}]
+    \node[st] (a) at (0,0) {1. Ask: a new version?};
+    \node[st] (b) at (1.8,0) {2. Download (resume)};
+    \node[st] (c) at (3.6,0) {3. Check hash and signature};
+    \node[st] (d) at (5.4,0) {4. Write to the free slot};
+    \node[st, fill=cardinalred!12] (e) at (7.2,0) {5. Restart in the new slot};
+    \node[st, fill=darkcyan!15] (f) at (9.0,0) {6. Self-test};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \draw[->] (d) -- (e); \draw[->] (e) -- (f);
+    \node[treegreen, align=center] at (9.0,-1.0) {pass: confirm};
+    \node[cardinalred, align=center] at (7.2,-1.0) {fail: back to\\ the old
+      slot};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The device keeps the old version until the new one passes its
+          test. Two slots: one runs, the other receives the update (A/B).
+    \item A device that loses power in any step still starts: the old slot
+          is complete.
+    \item A device that does not confirm in time (a crash, a stop) goes back
+          to the old slot at the next start.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ xiao slots
+\begin{frame}{Two slots on the XIAO ESP32S3}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.12}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}llr@{}}
+        \toprule
+        \textbf{Name} & \textbf{Type} & \textbf{Size} \\
+        \midrule
+        \texttt{nvs} & settings & 20 KB \\
+        \texttt{otadata} & which slot runs & 8 KB \\
+        \texttt{app0} & program slot A & 3264 KB \\
+        \texttt{app1} & program slot B & 3264 KB \\
+        \texttt{spiffs} & files & 1536 KB \\
+        \texttt{coredump} & crash record & 64 KB \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      The default partition table of the board (8 MB of flash) has two
+      program slots of 3 342 336 bytes each.
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The model is in the program (Day 3: \code{model.h}), so a new
+          model is a new program. The Day 9 sketch with four models has
+          944 679 bytes: it fits one slot.
+    \item The scheme ``Maximum APP (No OTA)'' gives one slot of 7.9 MB and
+          no update over the air.
+    \item The Arduino core has the libraries \code{Update},
+          \code{HTTPUpdate}, and \code{ArduinoOTA}, and its bootloader has
+          the rollback on.
+  \end{itemize}
+  \source{esp32 Arduino core 3.3.12: \texttt{tools/partitions/default\_8MB.csv},
+    \texttt{boards.txt}, sdkconfig of the ESP32-S3.}
+\end{frame}
+
+% ------------------------------------------------------------------ confirm
+\begin{frame}[fragile]{Confirm or roll back on the XIAO}
+\begin{lstlisting}[style=cpp, basicstyle=\ttfamily\scriptsize]
+#include "esp_ota_ops.h"
+
+bool selfTest() { return true; }              // Day 3: the stored test window
+
+bool verifyRollbackLater() { return true; }   // the sketch decides, not the core
+
+void setup() {
+  Serial.begin(115200);
+  const esp_partition_t *slot = esp_ota_get_running_partition();
+  Serial.printf("running from %s\n", slot->label);   // app0 or app1
+  if (selfTest()) {
+    esp_ota_mark_app_valid_cancel_rollback();         // keep this version
+  } else {
+    esp_ota_mark_app_invalid_rollback_and_reboot();   // back to the old slot
+  }
+}
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item A new program starts in the state ``pending''. With no
+          \code{verifyRollbackLater()}, the core confirms it at once.
+    \item The self-test runs the model on a stored input and compares the
+          output, as the test window of Day 3.
+  \end{itemize}
+  \source{Hooks of the esp32 Arduino core 3.3.12 (\texttt{esp32-hal-misc.c}).
+    The sketch compiles for \texttt{XIAO\_ESP32S3}.}
+\end{frame}
+
+% ------------------------------------------------------------------ pi switch
+\begin{frame}[fragile]{Switch a model on the Raspberry Pi}
+\begin{lstlisting}[style=shell]
+models/1.3.0/   models/1.4.0/   models/current -> 1.3.0
+sha256sum -c 1.4.0/SHA256SUMS               # check the new files
+ln -sfn 1.4.0 current.new                   # a new link ...
+mv -T current.new current                   # ... replaces the old in one step
+sudo systemctl restart detector             # the program loads models/current
+ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The program always opens \code{models/current}. A rename is
+          atomic on Linux: the link points to the old or to the new folder,
+          never to a half-written file.
+    \item Keep the old folder until the new version passed its health check.
+    \item An update of the system and of the libraries is larger. Tools such
+          as Mender use two root file systems (A/B) for that.
+  \end{itemize}
+  \source{The commands ran on the work computer (the first line shows the
+    folders, not a command).}
+\end{frame}
+
+% ------------------------------------------------------------------ rollback
+\begin{frame}{When to roll back}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.36\textwidth}L{0.31\textwidth}@{}}
+    \toprule
+    \textbf{Trigger} & \textbf{Signal} & \textbf{Who acts} \\
+    \midrule
+    No start & No confirm after the restart & The bootloader, at once \\
+    Self-test fails & Wrong output for the stored input & The program, at
+      once \\
+    Crash loop & Restarts in one hour above a limit & A watchdog, minutes \\
+    Health check & No frames, latency, memory (Day 13) & The fleet server,
+      minutes \\
+    Model metrics & Confidence, class counts against the old version & A
+      person, hours \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The first rows need no network: the device saves itself.
+    \item A model metric needs a reference and enough samples (Day 13).
+          With no labels, a change says ``different'', not ``worse''.
+    \item A device can run the old model as a shadow next to the new one and
+          compare their outputs on the same frames.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume II, chapters ``ML
+    Operations at Scale'' and ``Edge Intelligence''.}
+\end{frame}
+
+% ------------------------------------------------------------------ stages
+\begin{frame}{Roll out in stages}
+  \small
+  \[ R_{\text{rollout}} = p_{\text{regression}} \times I_{\text{regression}}
+     \times E_{\text{exposure}} \]
+  \vskip 0.2em
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth, x=0.09cm]
+    \fill[cardinalred!45] (0,0) rectangle (5,0.6);
+    \fill[darkorange!45] (5,0) rectangle (30,0.6);
+    \fill[darkcyan!35] (30,0) rectangle (100,0.6);
+    \node at (2.5,0.95) {5};
+    \node at (17.5,0.3) {25 devices};
+    \node at (65,0.3) {the other 70 devices};
+    \draw[coolgray] (0,0) -- (100,0);
+    \node[below, text=coolgray] at (5,0) {canary};
+    \node[below, text=coolgray] at (30,0) {health check};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item The risk of a rollout is the chance of a regression, times its
+          impact, times the exposure: the devices that run the new version
+          before you see the problem.
+    \item A canary group of 5 devices limits the exposure of a bad version to
+          5 devices, not 100. Each stage waits for a health check.
+    \item Select the canary devices with care: they must be online and must
+          cover each hardware class and each type of place.
+  \end{itemize}
+  \source{Formula: \emph{Machine Learning Systems}, Volume II, chapter ``ML
+    Operations at Scale''.}
+\end{frame}
+
+% ------------------------------------------------------------------ net table
+\begin{frame}{Measured in a simulation: a bad network}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{File, download} & \textbf{50\,\%} & \textbf{90\,\%} &
+      \textbf{No file after 7 days} & \textbf{Bytes sent / byte} \\
+    \midrule
+    int8 (2.9 MB), restart & 7 min & 12.5 h & 1 & 7.1 \\
+    int8 (2.9 MB), resume & 4 min & 42 min & 0 & 1.0 \\
+    NCNN (9.9 MB), restart & 3.8 h & never & 17 & 60.7 \\
+    NCNN (9.9 MB), resume & 21 min & 2.5 h & 0 & 1.0 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item 100 devices. Link speed: median 0.21 Mbit/s. The link is up
+          for 2 minutes and down for 3 minutes on average (up 39 percent of
+          the time). 10 devices are off and come back after 1 to 72 hours.
+    \item ``Restart'': a lost link starts the download again from byte 0.
+          ``Resume'': it continues from the last byte (HTTP Range).
+  \end{itemize}
+  \source{Simulation of this part: synthetic links, seed 0. File sizes of the
+    Day 8 lab.}
+\end{frame}
+
+% ------------------------------------------------------------------ net plot
+\begin{frame}{How fast the fleet gets the file}
+  \begingroup\centering
+  \includegraphics[width=0.92\textwidth]{images/day14/ota.pdf}\par
+  \endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item With a restart, a slow device whose link drops before the end
+          never finishes the large file. It sends many bytes for nothing.
+    \item With a resume, all devices that are on get both files. The last
+          devices are the ones that were off: the time of the full fleet
+          does not depend on the file.
+    \item Small files help twice: a shorter download, and less chance of a
+          lost link during it. The \code{int8} file has 29 percent of the
+          size of the NCNN file.
+  \end{itemize}
+  \source{Simulation of this part.}
+\end{frame}
+
+% ------------------------------------------------------------------ staged result
+\begin{frame}{A staged rollout in the same simulation}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Stage} & \textbf{Devices} & \textbf{Start} & \textbf{90\,\% have
+      it} & \textbf{All have it} \\
+    \midrule
+    Canary & 5 & 0 h & 0.7 h & 0.7 h \\
+    Stage 2 & 25 & 24.7 h & 27.4 h & 69.9 h \\
+    Stage 3 & 70 & 51.4 h & 51.8 h & 57.9 h \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The \code{int8} file with resume. The next stage starts 24 hours
+          after 90 percent of a stage have the file: the health check.
+    \item The canary takes devices that are on. A canary that waits for a
+          device that is off waits for days.
+    \item 90 percent of the fleet run the new version after 51.8 hours, in
+          place of 0.7 hours with no stages. A bad version reaches at most
+          5 devices in the first day.
+  \end{itemize}
+  \source{Simulation of this part.}
+\end{frame}
+
+% ------------------------------------------------------------------ fleet
+\begin{frame}{Different hardware in one fleet}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.24\textwidth}L{0.22\textwidth}L{0.22\textwidth}@{}}
+    \toprule
+    \textbf{Device class} & \textbf{Artifact} & \textbf{Update} &
+      \textbf{Test} \\
+    \midrule
+    XIAO ESP32S3 & Program with an \code{int8} model (TFLM) & A/B program
+      slots & Self-test on the board \\
+    Raspberry Pi 5 & LiteRT \code{int8} or NCNN folder & Model folder and
+      link & Latency and accuracy on the board \\
+    Older Raspberry Pi & A smaller model, a smaller image size & The same &
+      Its own latency budget \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item One trained model gives several artifacts. Each device reports its
+          class, and the server sends the artifact of that class.
+    \item Test each artifact on a real device of its class. An accuracy
+          test on a laptop does not show that a model is too large or too hot
+          for the board.
+    \item Devices that are often off keep old versions for months. The
+          server must accept the messages of old versions (version skew).
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume II, chapter ``ML
+    Operations at Scale'' (edge fleet controls).}
+\end{frame}
+
+% ------------------------------------------------------------------ adapt
+\begin{frame}{On-device adaptation}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.34\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{What changes} & \textbf{Cost on the device} & \textbf{Example} \\
+    \midrule
+    Thresholds, a calibration & Almost none & Day 13: the reference of each
+      camera \\
+    The biases only & Little memory, a few values & Microcontroller class \\
+    Small adapter layers & Moderate memory, the backbone stays fixed & Phone
+      class \\
+    Selected layers & Activations and gradients in memory, much energy &
+      Large devices only \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Training needs memory for the activations and the gradients, not
+          only for the weights. A device that runs a model cannot always
+          train it.
+    \item Each device then has its own model state. The versions now include
+          the local state of each device.
+    \item Adapt only when the device is idle, has power, and stays below its
+          temperature limit.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume II, chapter ``Edge
+    Intelligence'' (the adaptation of each device class).}
+\end{frame}
+
+% ------------------------------------------------------------------ fl idea
+\begin{frame}{Federated learning}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.5cm, minimum height=0.8cm}]
+    \node[st, fill=darkcyan!15, text width=2.6cm] (s) at (4.2,1.5)
+      {\textbf{Server}\\ mean of the weights};
+    \foreach \x/\n in {0.6/1, 3.0/2, 5.4/3, 7.8/{N}} {
+      \node[st] (c\n) at (\x,-0.3) {Device \n\\ local data};
+    }
+    \foreach \n in {1,2,3,{N}} {
+      \draw[->, darkcyan] ([xshift=-3pt]s.south) -- ([xshift=-3pt]c\n.north);
+      \draw[->, cardinalred] ([xshift=3pt]c\n.north) -- ([xshift=3pt]s.south);
+    }
+    \node[darkcyan, anchor=west] at (8.6,1.4) {global weights};
+    \node[cardinalred, anchor=west] at (8.6,1.0) {new weights};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Each round: the server sends the model; each device trains on its
+          own data; the server takes the mean of the new weights, weighted
+          by the number of samples (federated averaging).
+    \item The raw data stays on the device. Only weights cross the network.
+    \item Not private by itself: weights and gradients can leak facts about
+          the data. Secure aggregation and differential privacy add
+          protection.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume II, chapter ``Edge
+    Intelligence''. Federated averaging: McMahan et al., 2017.}
+\end{frame}
+
+% ------------------------------------------------------------------ fl measured
+\begin{frame}{Measured: federated averaging}
+  \begingroup\centering
+  \includegraphics[width=0.88\textwidth]{images/day14/fedavg.pdf}\par
+  \endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item The Day 6 student CNN (6218 parameters), Fashion-MNIST, 10
+          clients, 1 local epoch in each round.
+    \item After 20 rounds: 82.3 percent with all classes on each client;
+          36.0 to 48.5 percent in the last 5 rounds with 1 or 2 classes.
+          Central training: 88.2 percent after 20 epochs.
+    \item Data that differs from device to device (non-IID) makes the local
+          models pull in different directions.
+  \end{itemize}
+  \source{Experiment of this part (Keras, x86 processor, seed 0).}
+\end{frame}
+
+% ------------------------------------------------------------------ fl cost
+\begin{frame}{The cost of federated learning}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lr@{}}
+    \toprule
+    One update of the model (6218 values in \code{float32}) & 24.3 KB \\
+    One round: 10 downloads and 10 uploads & 485.8 KB \\
+    20 rounds & 9.49 MB \\
+    The raw images of one client (6000 images of 28 x 28) & 4.49 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item For this small model, one update is much smaller than the data of
+          one client. For a model of millions of parameters, the rounds add
+          up to more than the data.
+    \item Each round needs devices that are on, have power, and have a
+          link. Slow devices (stragglers) must not stop a round.
+    \item Use it when the data must stay on the devices and the devices can
+          train. Else: collect a sample of data (Day 13) and train centrally.
+  \end{itemize}
+  \source{Calculation with the model of the experiment; 1 KB = 1024 bytes.}
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{An update plan}{%
+  Your company has 100 Raspberry Pi 5 cameras with the Day 8 detector. They
+  are in shops with a bad mobile link: about 0.2 Mbit/s, and the link drops
+  every few minutes. 10 shops switch their devices off at the weekend. You
+  have a new model.
+  \begin{itemize}
+    \item Which file do you send, and how is it downloaded?
+    \item What does a device check before and after the switch?
+    \item In which stages do you roll out, and how long does each stage
+          wait?
+    \item When do you roll back, and who decides?
+  \end{itemize}}
+
+\answerframe{An update plan}{%
+  \small
+  \begin{itemize}
+    \item \textbf{File}: the \code{int8} file (2.9 MB, not 9.9 MB) with a
+          manifest: version, size, SHA-256, signature, oldest program. The
+          download resumes after a lost link.
+    \item \textbf{On the device}: check the hash and the signature; put the
+          file in a new version folder; switch the link; restart; run a
+          self-test on stored frames. Keep the old folder.
+    \item \textbf{Stages}: 5 canary devices that are on (one of each shop
+          type), then 25, then 70. Each stage waits 24 hours of health
+          checks. In the simulation: 90 percent after 51.8 hours.
+    \item \textbf{Roll back}: the device itself when the self-test fails or
+          the program crashes again and again; the fleet server when the
+          health check fails; a person when the model metrics of the canary
+          change against the old version. Stop the rollout at once.
+  \end{itemize}}

@@ -1,0 +1,32 @@
+% Motivation and learning outcomes.
+% The outcomes are the outcomes of Day 12 in the syllabus.
+\begin{frame}{Why this day matters}
+  \begin{itemize}
+    \item On Day 11 the boards sent video. A system that sends only results
+          needs less bandwidth and keeps the images on the device. Today the
+          boards send small messages: a class, a reading, a command.
+    \item Some decisions cannot wait for a server: a door that must close, a
+          motor that must stop. The device must decide alone, also when the
+          network or the internet fails.
+    \item MQTT is the common protocol for such messages. A broker receives
+          each message and gives it to the devices that asked for its topic.
+          The protocol has settings for lost messages, lost devices, and the
+          last value.
+    \item In the lab you install a broker on the Raspberry Pi, send IMU
+          readings and model results from the XIAO, apply a local rule that
+          sends a command back, and show that the system works with no
+          internet and loses no message.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Learning outcomes}
+  After this day you can:
+  \begin{itemize}
+    \item Design a cascade that makes decisions locally.
+    \item Explain MQTT topics, quality of service levels, retained messages,
+          and the last will message.
+    \item Publish inference results from a microcontroller.
+    \item Build a system that continues to work without an internet
+          connection.
+  \end{itemize}
+\end{frame}

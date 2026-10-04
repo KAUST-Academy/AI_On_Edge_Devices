@@ -1,0 +1,34 @@
+% Fallbacks and common problems of the Day 5 lab. The rows come from
+% Labs/day05/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    The download of the keyword dataset fails
+      & The instructor gives the file \code{keywords2.zip}. Put it into
+        \code{downloads/} and run the script again. \\
+    The Studio is not available, or the training is not complete in time
+      & Use the library ZIP file that the instructor gives. Write this in
+        the report. \\
+    The build of the library fails with the core 3.3.12
+      & Install the core 2.0.17 and build again. The two sketches work
+        with the two cores. \\
+    The build prints \code{...\_inferencing.h: No such file}
+      & Change the first \code{\#include} line to the header of your
+        library. \\
+    \code{not enough memory}, or \code{Camera init failed}
+      & Set \code{Tools > PSRAM > OPI PSRAM}. \\
+    One word gives two or three events
+      & Complete task A2, or increase \code{SUPPRESSION\_MS}. \\
+    A spoken word gives no event
+      & Use fewer windows, a lower threshold, or a smaller stride. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}

@@ -1,0 +1,4 @@
+# Files that the programs of the lab write
+logs/
+dashboard/metrics_log/
+__pycache__/

@@ -1,0 +1,20 @@
+% Credits frame. Section 10 of the syllabus gives this text.
+% Each deck ends with this frame:
+%   \input{sections/credits}
+%
+% The list \coursecredits selects the sources. preamble/course.tex gives the
+% default list and one command for each source. The main file of a deck
+% changes the list before it inputs this file, so that the frame names only
+% the sources that the deck uses:
+%   \renewcommand{\coursecredits}{\creditmlsys\creditxiao}
+\begin{frame}[allowframebreaks]{Credits}
+  This lecture adapts material from these sources:
+  \vskip 0.6em
+  \begin{itemize}\footnotesize\itemsep 0.4em
+    \coursecredits
+  \end{itemize}
+  \vskip 0.8em
+  {\scriptsize\color{coolgray}
+   Material from a source with the licence CC BY-NC-SA 4.0 keeps that
+   licence.\par}
+\end{frame}

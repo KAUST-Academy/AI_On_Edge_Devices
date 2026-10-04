@@ -1,0 +1,37 @@
+# Python packages for the Day 8 lab on the laptop: the training and the
+# export of the detector (Parts B and C).
+#
+# Use a new virtual environment for this lab. The package litert-torch needs
+# its own version of torch, so do not install it into the environment of the
+# other labs.
+#
+# Install (Linux, macOS, or Windows with WSL), from the folder Labs/day08/:
+#   python3 -m venv ~/day08_env
+#   ~/day08_env/bin/pip install --upgrade pip
+#   ~/day08_env/bin/pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
+#   ~/day08_env/bin/jupyter notebook custom_detector.ipynb
+#
+# Upgrade pip first: an old version of pip needs a very long time to find
+# the package versions. The extra index gives the CPU version of torch on
+# Linux. The default package on Linux is much larger.
+
+# The model, the training, and the export. The export arguments of the lab
+# (format=litert, quantize=8) are the arguments of this version.
+torch
+torchvision
+ultralytics==8.4.171
+
+# The export to LiteRT. It installs ai-edge-litert, which runs the file, and
+# ai-edge-quantizer, which makes the int8 file.
+litert-torch
+onnx
+onnxslim
+
+# The export to NCNN, and the runtime for a test on the laptop.
+ncnn
+pnnx
+
+# The notebook. The two limits keep the versions that litert-torch accepts.
+notebook
+ipykernel<7
+jupyter-client<8.7

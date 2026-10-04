@@ -1,0 +1,20 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A benchmark looks at the system, at the model, and at the data. A
+          standard suite such as MLPerf Tiny fixes the task, the dataset, and
+          the run rules, so that two results compare.
+    \item A fair measurement has a warm-up, many repetitions, and fixed
+          inputs. Report the median and the 95th percentile of the latency,
+          not only the mean.
+    \item The time of the full pipeline is longer than the time of the model.
+          A report says which of the two times it gives.
+    \item The energy of one inference is the active power times the latency.
+          The duty cycle gives the mean power, and the mean power gives the
+          battery life. Record the temperature: a hot processor is slower.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{A number with no method is not a result. For each number, give the
+            device, the model file, the input, the warm-up, the number of
+            repetitions, and the statistic.}
+\end{frame}

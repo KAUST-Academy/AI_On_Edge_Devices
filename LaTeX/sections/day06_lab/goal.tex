@@ -1,0 +1,67 @@
+% Goal and plan of the Day 6 lab.
+% The parts and the times come from the Day 6 section of the syllabus.
+\begin{frame}{Goal of this lab}
+  \begin{itemize}
+    \item \textbf{Goal:} your group has a trade-off curve for one task, and
+          a model selection for the two boards of the course.
+    \item \textbf{Boards:} none. The lab runs on the laptop.
+    \item \textbf{Deliverable:} the plot \code{tradeoff.png} with at least
+          six models, and the file \code{report.md} with your selection
+          and the Decision Log.
+  \end{itemize}
+  \vskip 0.4em
+  \begin{block}{From the lecture to the lab}
+    The lecture gave three ways to a smaller model and a method for the
+    selection. In the lab, you prune a CNN, you distill a teacher into a
+    student, you quantize the candidates, and you select one model for
+    each board from your own plot.
+  \end{block}
+  \vskip 0.2em
+  \keypoint{A method is good only for a given budget. The plot shows all
+    candidates. The budget selects one of them.}
+\end{frame}
+
+\begin{frame}{Plan of the three hours}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.05cm, y=1cm]
+    % x unit: 1 = one minute. The bar is 180 minutes long.
+    \fill[coolgray!25]    (0,0)   rectangle (20,0.8);
+    \fill[darkcyan!55]    (20,0)  rectangle (65,0.8);
+    \fill[treegreen!60]   (65,0)  rectangle (110,0.8);
+    \fill[cardinalred!55] (110,0) rectangle (150,0.8);
+    \fill[coolgray!45]    (150,0) rectangle (180,0.8);
+    \draw[white, line width=1pt] (20,0) -- (20,0.8) (65,0) -- (65,0.8)
+      (110,0) -- (110,0.8) (150,0) -- (150,0.8);
+    \node at (10,0.4)   {quiz};
+    \node at (42.5,0.4) {\textbf{A}: 45 min};
+    \node at (87.5,0.4) {\textbf{B}: 45 min};
+    \node at (130,0.4)  {\textbf{C}: 40 min};
+    \node at (165,0.4)  {check};
+    \foreach \t in {0,20,65,110,150} {
+      \draw[coolgray] (\t,0) -- (\t,-0.12);
+      \node[below, text=coolgray] at (\t,-0.1) {\t};
+    }
+    \draw[coolgray] (180,0) -- (180,-0.12);
+    \node[below, text=coolgray] at (180,-0.1) {180 min};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begingroup\centering\small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}lL{0.64\textwidth}c@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{Time} \\
+    \midrule
+    Quiz & The quiz of Week 1 & 20 min \\
+    A & Pruning: prune a CNN at several sparsity levels and fine-tune it
+      & 45 min \\
+    B & Distillation: distill a teacher model into a smaller student model
+      & 45 min \\
+    C & Selection: quantize the candidates, plot, and select one model for
+        each board & 40 min \\
+    \midrule
+    \multicolumn{2}{@{}l}{Check by the instructor} & 30 min \\
+    \bottomrule
+  \end{tabular}\par\endgroup
+  \vskip 0.4em
+  Write each result in \code{report.md} when you get it.
+\end{frame}

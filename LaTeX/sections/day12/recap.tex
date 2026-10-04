@@ -1,0 +1,21 @@
+% Recap of the day. Three to five points, then the one point to keep.
+\begin{frame}{Recap}
+  \begin{itemize}
+    \item A decision that must happen within a fixed time, or with no network,
+          stays on the device. A rule or a state machine with hysteresis makes
+          it stable, and a safe state handles a failed part.
+    \item An MQTT broker gives each message to the subscribers of its topic. A
+          topic tree with a fixed order and the wildcards + and \# lets each
+          program select its messages.
+    \item A higher quality of service (0, 1, 2) sends more messages and adds
+          delay, and it lowers the risk of a lost or a double message. A
+          retained message gives the last value to a new subscriber. The last
+          will tells the others that a device is gone.
+    \item An edge device sends results, not raw data. It keeps messages in a
+          buffer when the link fails, sends them later with a sequence number
+          and a time stamp, and has its own identity.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Decide locally what must not wait. Send small results with MQTT,
+            and design for a link that fails.}
+\end{frame}

@@ -1,0 +1,690 @@
+% Part 2 of Day 1: Deep learning recap from a cost view.
+%
+% Topics of the syllabus: cost of each layer type; parameters, operations,
+% and activation memory are three different budgets; efficient blocks:
+% depthwise separable convolution and inverted residual. Exercise: calculate
+% the parameters and the output size of three layers by hand.
+%
+% All sizes use 1 KB = 1024 bytes. The example network of this part is:
+% input 96 x 96 x 3, three convolutions 3 x 3 with stride 2 and padding 1
+% (16, 32, and 64 filters), global average pooling, one fully connected
+% layer with 10 outputs.
+
+\theorypart{Deep learning recap from a cost view}%
+  {calculate the parameters and the output size of three layers}
+
+% \cellgrid{x}{y}{cells}{cell size}{fill colour} draws a square grid with its
+% lower left corner at (x,y). A frame cannot define a command with
+% parameters, so the definition is here.
+\providecommand{\cellgrid}[5]{%
+  \fill[#5] (#1,#2) rectangle ++(#3*#4,#3*#4);
+  \foreach \cellline in {0,...,#3} {
+    \draw[black!70, line width=0.3pt] (#1+\cellline*#4,#2) -- ++(0,#3*#4);
+    \draw[black!70, line width=0.3pt] (#1,#2+\cellline*#4) -- ++(#3*#4,0);
+  }%
+}
+
+% -------------------------------------------------------------- three budgets
+\begin{frame}{A model has three budgets}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\small, >={Stealth[length=5pt]},
+      m/.style={draw=cardinalred, line width=0.8pt, rounded corners=3pt,
+                fill=boxgray, minimum width=3.0cm, minimum height=1.0cm,
+                align=center},
+      d/.style={draw=darkcyan, line width=0.8pt, rounded corners=3pt,
+                fill=boxgray, minimum width=3.0cm, minimum height=1.0cm,
+                align=center},
+      q/.style={font=\footnotesize, text=coolgray, anchor=west, align=left}]
+    \node[font=\footnotesize\bfseries, text=coolgray] at (0,1.0) {The model};
+    \node[font=\footnotesize\bfseries, text=coolgray] at (4.2,1.0) {The device};
+    \node[m] (p) at (0,0)    {Parameters};
+    \node[m] (o) at (0,-1.4) {Operations};
+    \node[m] (a) at (0,-2.8) {Activation\\memory};
+    \node[d] (f) at (4.2,0)    {Flash};
+    \node[d] (t) at (4.2,-1.4) {Time and\\energy};
+    \node[d] (r) at (4.2,-2.8) {RAM};
+    \draw[->] (p) -- (f);
+    \draw[->] (o) -- (t);
+    \draw[->] (a) -- (r);
+    \node[q] at (5.9,0)    {Can the device store\\the model?};
+    \node[q] at (5.9,-1.4) {Is the answer in time?\\Does the battery last?};
+    \node[q] at (5.9,-2.8) {Do the tensors fit\\during inference?};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \keypoint{The three budgets are different numbers. A model can meet two
+    budgets and fail the third.}
+\end{frame}
+
+% ------------------------------------------------------------------- notation
+\begin{frame}{Notation: tensors and the output size}
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\footnotesize, line join=round]
+        % a tensor as a box: front face, top face, side face
+        \fill[boxgray] (0,0) rectangle (2.2,2.2);
+        \draw[coolgray, line width=0.8pt] (0,0) rectangle (2.2,2.2);
+        \draw[coolgray, line width=0.8pt, fill=boxgray]
+          (0,2.2) -- (0.9,2.9) -- (3.1,2.9) -- (2.2,2.2) -- cycle;
+        \draw[coolgray, line width=0.8pt, fill=boxgray]
+          (2.2,0) -- (3.1,0.7) -- (3.1,2.9) -- (2.2,2.2) -- cycle;
+        % kernel
+        \draw[cardinalred, line width=1pt] (0.3,1.2) rectangle (1.0,1.9);
+        \node[cardinalred] at (0.65,0.95) {$K \times K$};
+        \node at (1.1,-0.3) {$W$};
+        \node at (-0.3,1.1) {$H$};
+        \node at (3.0,0.15) {$C$};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \begin{itemize}
+        \item A feature map has $H \times W \times C$ values: height, width,
+              channels.
+        \item A kernel has the size $K \times K$.
+        \item $S$ is the stride. $P$ is the padding.
+      \end{itemize}
+      \begin{block}{Output size of a convolution or a pooling layer}
+        \[
+          H_{\text{out}} = \left\lfloor \frac{H + 2P - K}{S} \right\rfloor + 1
+        \]
+        The same formula gives $W_{\text{out}}$.
+      \end{block}
+      Example: $H = 96$, $K = 3$, $S = 2$, $P = 1$.
+      \[
+        H_{\text{out}} = \lfloor 95 / 2 \rfloor + 1 = 48
+      \]
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --------------------------------------------------------------- layer costs
+\begin{frame}{Cost of a fully connected layer}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      A layer with $N_{\text{in}}$ inputs and $N_{\text{out}}$ outputs:
+      \vskip 0.4em
+      \renewcommand{\arraystretch}{1.3}
+      \begin{tabular}{@{}ll@{}}
+        \toprule
+        Parameters  & $N_{\text{in}} \times N_{\text{out}} + N_{\text{out}}$ \\
+        Operations  & $N_{\text{in}} \times N_{\text{out}}$ MACs \\
+        Output size & $N_{\text{out}}$ values \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.6em
+      A MAC is one multiply-accumulate operation: $a \leftarrow a + w \times x$.
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{Example: 784 inputs, 128 outputs}
+        \begin{itemize}
+          \item Weights: $784 \times 128 = 100\,352$
+          \item Biases: 128
+          \item Parameters: 100\,480
+          \item Operations: 100\,352 MACs
+          \item Output: 128 values
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{Each weight is used one time. The number of operations is equal
+    to the number of weights. The layer is expensive in flash.}
+\end{frame}
+
+\begin{frame}{Cost of a convolution layer}
+  \begin{columns}[T]
+    \begin{column}{0.54\textwidth}
+      $C_{\text{out}}$ filters, each of size $K \times K \times
+      C_{\text{in}}$:
+      \vskip 0.4em
+      \footnotesize
+      \renewcommand{\arraystretch}{1.4}
+      \begin{tabular}{@{}ll@{}}
+        \toprule
+        Parameters  & $K^2 \, C_{\text{in}} \, C_{\text{out}} + C_{\text{out}}$ \\
+        Operations  & $K^2 \, C_{\text{in}} \, C_{\text{out}} \times
+                      H_{\text{out}} \, W_{\text{out}}$ MACs \\
+        Output size & $H_{\text{out}} \times W_{\text{out}} \times
+                      C_{\text{out}}$ values \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \begin{block}{Example: $3 \times 3$, 32 to 64 channels, output
+          $56 \times 56$}
+        \begin{itemize}
+          \item Weights: $9 \times 32 \times 64 = 18\,432$
+          \item Parameters: 18\,496
+          \item Operations: $18\,432 \times 3136 \approx 57.8$ million MACs
+          \item Output: 200\,704 values
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{The layer uses each weight again at each output position. It is
+    small in flash, but expensive in operations and in RAM.}
+\end{frame}
+
+\begin{frame}{The two layer types have opposite costs}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    & \textbf{Fully connected} & \textbf{Convolution} \\
+    \midrule
+    The parameters grow with & the number of inputs & the kernel size and
+      the channels \\
+    A larger image gives     & more parameters & the same parameters, more
+      operations \\
+    Operations for each weight & 1 & $H_{\text{out}} \times W_{\text{out}}$ \\
+    The main cost            & flash & operations and RAM \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \begin{itemize}
+    \item Example: a fully connected layer from 1024 inputs to 1024 outputs
+          has 1\,048\,576 weights.
+    \item A convolution layer with a $3 \times 3$ kernel shares its weights
+          across the image. Its parameters do not depend on the image size.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Layers with few parameters or no parameters}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}L{0.22\textwidth}L{0.17\textwidth}L{0.52\textwidth}@{}}
+    \toprule
+    \textbf{Layer} & \textbf{Parameters} & \textbf{Effect on the cost} \\
+    \midrule
+    Activation (ReLU) & 0 & One comparison for each value. The size does not
+      change. \\
+    Pooling, stride 2 & 0 & The output has one quarter of the values. All
+      later layers cost less. \\
+    Global average pooling & 0 & $H \times W \times C$ values become $C$
+      values. It replaces a large fully connected layer. \\
+    Batch normalization & $2C$ & After training, the converter merges it
+      into the convolution before it. Its cost at inference is then zero. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \keypoint{A stride of 2 early in the network is the cheapest method to
+    decrease the operations and the RAM of all later layers.}
+\end{frame}
+
+% ------------------------------------------------------------ example network
+\begin{frame}{Example: a small network, layer by layer}
+  Input $96 \times 96 \times 3$. Each convolution: $3 \times 3$, stride 2,
+  padding 1.
+  \vskip 0.5em
+  \small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}lrrrr@{}}
+    \toprule
+    \textbf{Layer} & \textbf{Output} & \textbf{Values} & \textbf{Parameters}
+      & \textbf{MACs} \\
+    \midrule
+    Input                  & $96 \times 96 \times 3$  & 27\,648 & & \\
+    Convolution 1, 16 filters & $48 \times 48 \times 16$ & 36\,864 & 448
+      & 995\,328 \\
+    Convolution 2, 32 filters & $24 \times 24 \times 32$ & 18\,432 & 4640
+      & 2\,654\,208 \\
+    Convolution 3, 64 filters & $12 \times 12 \times 64$ & 9216 & 18\,496
+      & 2\,654\,208 \\
+    Global average pooling & 64 & 64 & 0 & \\
+    Fully connected        & 10 & 10 & 650 & 640 \\
+    \midrule
+    \textbf{Total}         &    &    & \textbf{24\,234}
+      & \textbf{6\,304\,384} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \normalsize
+  Calculate one row with the formulas before you continue.
+\end{frame}
+
+\begin{frame}{Example: where the costs are}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=0.92cm, y=0.027cm]
+    % y unit: 1 = 1 percent. Three bars for each layer.
+    \draw[coolgray] (0,0) -- (10.2,0);
+    \foreach \v in {0,25,50,75,100} {
+      \draw[coolgray!50] (0,\v) -- (10.2,\v);
+      \node[left, coolgray] at (0,\v) {\v\,\%};
+    }
+    % convolution 1
+    \fill[cardinalred!75] (0.4,0) rectangle (1.0,1.8);
+    \fill[darkcyan!75]    (1.0,0) rectangle (1.6,15.8);
+    \fill[treegreen!75]   (1.6,0) rectangle (2.2,100);
+    \node[below] at (1.3,0) {Convolution 1};
+    % convolution 2
+    \fill[cardinalred!75] (2.9,0) rectangle (3.5,19.1);
+    \fill[darkcyan!75]    (3.5,0) rectangle (4.1,42.1);
+    \fill[treegreen!75]   (4.1,0) rectangle (4.7,85.7);
+    \node[below] at (3.8,0) {Convolution 2};
+    % convolution 3
+    \fill[cardinalred!75] (5.4,0) rectangle (6.0,76.3);
+    \fill[darkcyan!75]    (6.0,0) rectangle (6.6,42.1);
+    \fill[treegreen!75]   (6.6,0) rectangle (7.2,42.9);
+    \node[below] at (6.3,0) {Convolution 3};
+    % pooling and fully connected
+    \fill[cardinalred!75] (7.9,0) rectangle (8.5,2.7);
+    \fill[darkcyan!75]    (8.5,0) rectangle (9.1,0.3);
+    \fill[treegreen!75]   (9.1,0) rectangle (9.7,14.4);
+    \node[below] at (8.8,0) {Pooling and FC};
+    % legend
+    \fill[cardinalred!75] (0.4,118) rectangle (0.7,126);
+    \node[anchor=west] at (0.75,122) {parameters (share of the total)};
+    \fill[darkcyan!75] (5.6,118) rectangle (5.9,126);
+    \node[anchor=west] at (5.95,122) {MACs (share of the total)};
+    \fill[treegreen!75] (0.4,106) rectangle (0.7,114);
+    \node[anchor=west] at (0.75,110) {RAM: input and output of the layer
+      (share of the maximum)};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \begin{itemize}
+    \item The first layer has 2\,\% of the parameters, but it needs the most
+          RAM.
+    \item The last convolution has 76\,\% of the parameters.
+  \end{itemize}
+  \keypoint{The early layers set the RAM budget. The late layers set the
+    flash budget.}
+\end{frame}
+
+% -------------------------------------------------------------------- budget 1
+\begin{frame}{Budget 1: parameters and flash}
+  \begin{block}{Rule}
+    Model size $\approx$ number of parameters $\times$ bytes for each
+    parameter.
+  \end{block}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \begin{itemize}
+        \item \code{float32}: 4 bytes
+        \item \code{int8}: 1 byte (Day 4)
+        \item The model file also holds the structure of the network. This
+              part is small.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.25}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        \textbf{Model} & \textbf{Parameters} & \textbf{float32} \\
+        \midrule
+        Example network  & 24\,234     & 95 KB \\
+        Keyword spotting & 26\,000     & $<$ 100 KB \\
+        MobileNetV2      & 3.5 million & 13.4 MB \\
+        ResNet-50        & 25.6 million & 98 MB \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  On a microcontroller, the flash holds the program and the model. The
+  weights stay in the flash. The device does not copy them to the RAM.
+  \source{Parameters of the three models: \emph{Machine Learning Systems},
+    Volume I, chapters 2 and 6. Sizes with 1 MB = 1024 KB.}
+\end{frame}
+
+% -------------------------------------------------------------------- budget 2
+\begin{frame}{Budget 2: operations, time, and energy}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \begin{itemize}
+        \item Count the MACs of each layer and add them.
+        \item One MAC is two floating-point operations (FLOPs).
+        \item Many papers write ``FLOPs'' for the number of MACs. Read the
+              definition before you compare.
+        \item More operations need more time and more energy on the same
+              device.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{block}{The count is an estimate}
+        \begin{itemize}
+          \item The time also depends on memory access, on the kernel
+                library, and on the data type.
+          \item Example of the book: MobileNetV2 has 14 times fewer
+                operations than ResNet-50, but it can be slower on a
+                data-centre GPU.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{Use the count to compare models. Then measure the latency on
+    the device (Day 9).}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 6.}
+\end{frame}
+
+% -------------------------------------------------------------------- budget 3
+\begin{frame}{Budget 3: activation memory and RAM}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, x=1cm, y=0.065cm,
+      >={Stealth[length=5pt]}]
+    % y unit: 1 = 1000 values
+    \draw[coolgray] (-0.2,0) -- (10.4,0);
+    \fill[cardinalred!70] (0.2,0) rectangle (1.2,27.6);
+    \fill[cardinalred!70] (2.4,0) rectangle (3.4,36.9);
+    \fill[coolgray!45]    (4.6,0) rectangle (5.6,18.4);
+    \fill[coolgray!45]    (6.8,0) rectangle (7.8,9.2);
+    \fill[coolgray!45]    (9.0,0) rectangle (10.0,0.6);
+    \node[above] at (0.7,27.6) {27\,648};
+    \node[above] at (2.9,36.9) {36\,864};
+    \node[above] at (5.1,18.4) {18\,432};
+    \node[above] at (7.3,9.2)  {9216};
+    \node[above] at (9.5,0.6)  {64};
+    \node[below] at (0.7,0) {input};
+    \node[below] at (2.9,0) {output 1};
+    \node[below] at (5.1,0) {output 2};
+    \node[below] at (7.3,0) {output 3};
+    \node[below] at (9.5,0) {pooled};
+    \draw[->] (1.3,10) -- node[above] {conv 1} (2.3,10);
+    \draw[->] (3.5,10) -- node[above] {conv 2} (4.5,10);
+    \draw[->] (5.7,5)  -- node[above] {conv 3} (6.7,5);
+    \draw[->] (7.9,3)  -- node[above] {pool} (8.9,3);
+    \node[cardinalred, anchor=west] at (4.0,40) {peak: $27\,648 + 36\,864
+      = 64\,512$ values};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \begin{itemize}
+    \item When a layer runs, its input and its output are in the RAM at the
+          same time.
+    \item After the layer, the runtime uses the memory of the input again.
+    \item The peak activation memory is the largest sum over all layers.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{The same network in two data types}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    & \textbf{float32} & \textbf{int8} \\
+    \midrule
+    Bytes for each value                 & 4 & 1 \\
+    Model size (24\,234 parameters)      & 95 KB & 24 KB \\
+    Peak activation memory (64\,512 values) & 252 KB & 63 KB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  A microcontroller with 256 KB of RAM:
+  \begin{itemize}
+    \item \code{float32}: the tensors need 252 KB. No RAM remains for the
+          program, so the model does not fit.
+    \item \code{int8}: the tensors need 63 KB. The model fits.
+  \end{itemize}
+  \vskip 0.4em
+  \keypoint{This model is small in flash in the two data types. The RAM
+    decides. You cannot see this from the number of parameters.}
+\end{frame}
+
+\begin{frame}{The budgets are independent}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.36\textwidth}rrr@{}}
+    \toprule
+    \textbf{One layer} & \textbf{Parameters} & \textbf{Model size}
+      & \textbf{Output tensor} \\
+    \midrule
+    Fully connected, 1024 to 1024 & 1\,049\,600 & 4.0 MB & 4 KB \\
+    Convolution $3 \times 3$, 3 to 16 channels, image $224 \times 224$
+      & 448 & 2 KB & 3.1 MB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  {\footnotesize\color{coolgray} All sizes are for \code{float32}.\par}
+  \vskip 0.6em
+  \normalsize
+  \begin{itemize}
+    \item The first layer needs much flash and almost no RAM.
+    \item The second layer needs almost no flash and much RAM.
+    \item A pruned model has fewer parameters. Its tensors can have the
+          same size as before.
+  \end{itemize}
+  \keypoint{Report three numbers for each model: parameters, operations,
+    and peak activation memory.}
+\end{frame}
+
+% ------------------------------------------------------------ efficient blocks
+\begin{frame}{Efficient block 1: depthwise separable convolution}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize]
+    % ---- standard convolution
+    \node[anchor=west, font=\small\bfseries] at (-0.1,5.0)
+      {Standard convolution: one step};
+    \cellgrid{0.26}{3.36}{6}{0.22}{darkcyan!55}
+    \cellgrid{0.13}{3.23}{6}{0.22}{treegreen!55}
+    \cellgrid{0}{3.1}{6}{0.22}{cardinalred!55}
+    \node at (2.2,3.85) {\large$\ast$};
+    \cellgrid{3.06}{3.71}{3}{0.22}{orange!45}
+    \cellgrid{2.93}{3.58}{3}{0.22}{orange!45}
+    \cellgrid{2.8}{3.45}{3}{0.22}{orange!45}
+    \node[anchor=west, align=left] at (4.1,3.85)
+      {$C_{\text{out}}$ filters of size\\$K \times K \times C_{\text{in}}$};
+    \node at (7.7,3.85) {\large$=$};
+    \foreach \o in {0.4,0.3,0.2,0.1,0} {
+      \cellgrid{8.2+\o}{3.3+\o}{4}{0.22}{white}
+    }
+    % ---- separable convolution
+    \node[anchor=west, font=\small\bfseries] at (-0.1,2.6)
+      {Depthwise separable convolution: two steps};
+    \cellgrid{0.26}{0.96}{6}{0.22}{darkcyan!55}
+    \cellgrid{0.13}{0.83}{6}{0.22}{treegreen!55}
+    \cellgrid{0}{0.7}{6}{0.22}{cardinalred!55}
+    \node at (2.2,1.45) {\large$\ast$};
+    \cellgrid{3.4}{1.55}{3}{0.22}{darkcyan!30}
+    \cellgrid{3.1}{1.25}{3}{0.22}{treegreen!30}
+    \cellgrid{2.8}{0.95}{3}{0.22}{cardinalred!30}
+    \node[align=center] at (3.4,0.25) {depthwise: $C_{\text{in}}$ filters\\
+      of size $K \times K \times 1$};
+    \node at (5.0,1.45) {\large$\ast$};
+    \cellgrid{6.16}{1.51}{1}{0.22}{violet!45}
+    \cellgrid{6.08}{1.43}{1}{0.22}{violet!45}
+    \cellgrid{6.0}{1.35}{1}{0.22}{violet!45}
+    \node[align=center] at (6.2,0.25) {pointwise: $C_{\text{out}}$ filters\\
+      of size $1 \times 1 \times C_{\text{in}}$};
+    \node at (7.7,1.45) {\large$=$};
+    \foreach \o in {0.4,0.3,0.2,0.1,0} {
+      \cellgrid{8.2+\o}{0.9+\o}{4}{0.22}{white}
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \small
+  The depthwise step filters the space. The pointwise step mixes the
+  channels. The output has the same size in the two cases.
+\end{frame}
+
+\begin{frame}{Depthwise separable convolution: the cost}
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    & \textbf{Weights} & \textbf{$3 \times 3$, 32 to 64 channels} \\
+    \midrule
+    Standard convolution & $K^2 \, C_{\text{in}} \, C_{\text{out}}$
+      & 18\,432 \\
+    Depthwise step       & $K^2 \, C_{\text{in}}$ & 288 \\
+    Pointwise step       & $C_{\text{in}} \, C_{\text{out}}$ & 2048 \\
+    Separable, total     & $K^2 \, C_{\text{in}} + C_{\text{in}} \,
+      C_{\text{out}}$ & 2336 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \[
+    \frac{\text{separable}}{\text{standard}}
+      = \frac{1}{C_{\text{out}}} + \frac{1}{K^2}
+      = \frac{1}{64} + \frac{1}{9} \approx \frac{1}{7.9}
+  \]
+  \begin{itemize}
+    \item The operations decrease by the same factor, because the output
+          size is the same.
+    \item The output tensor is the same. The RAM does not decrease.
+  \end{itemize}
+  \source{The book gives a factor of 8 to 9 for $3 \times 3$ kernels:
+    \emph{Machine Learning Systems}, Volume I, chapter 6.}
+\end{frame}
+
+\begin{frame}{Efficient block 2: the inverted residual}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      narrow/.style={draw=darkcyan, line width=0.8pt, fill=boxgray,
+                     minimum width=0.7cm, minimum height=1.0cm},
+      wide/.style={draw=cardinalred, line width=0.8pt, fill=boxgray,
+                   minimum width=0.7cm, minimum height=3.0cm},
+      op/.style={align=center, text=coolgray}]
+    \node[narrow] (i) at (0,0) {};
+    \node[wide]   (e) at (2.9,0) {};
+    \node[wide]   (d) at (5.8,0) {};
+    \node[narrow] (o) at (8.7,0) {};
+    \draw[->] (i) -- node[op, above] {expand\\$1 \times 1$, ReLU6} (e);
+    \draw[->] (e) -- node[op, above] {depthwise\\$3 \times 3$, ReLU6} (d);
+    \draw[->] (d) -- node[op, above] {project\\$1 \times 1$, linear} (o);
+    \draw[->, darkcyan, line width=0.8pt, rounded corners=4pt]
+      (i.south) -- (0,-2.0) -- node[below] {skip connection (add)}
+      (8.7,-2.0) -- (o.south);
+    \node[below, darkcyan] at (0,1.1) {};
+    \node[above] at (0,0.55)   {$C$};
+    \node[above] at (2.9,1.55) {$t \times C$};
+    \node[above] at (5.8,1.55) {$t \times C$};
+    \node[above] at (8.7,0.55) {$C$};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.2em
+  \begin{itemize}
+    \item The block of MobileNetV2. The expansion factor $t$ is usually 6.
+    \item The $3 \times 3$ filter operates on many channels, but it is a
+          depthwise filter, so it is cheap.
+    \item The skip connection joins the two narrow tensors. A classic
+          residual block joins the wide tensors. Thus the name
+          ``inverted''.
+  \end{itemize}
+  \source{Sandler et al., ``MobileNetV2'', 2018.}
+\end{frame}
+
+\begin{frame}{Inverted residual: cheap in flash, expensive in RAM}
+  Example: $C = 32$, $t = 6$, feature map $28 \times 28$, stride 1.
+  \vskip 0.4em
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Weights}
+        \begin{itemize}
+          \item Expand: $32 \times 192 = 6144$
+          \item Depthwise: $9 \times 192 = 1728$
+          \item Project: $192 \times 32 = 6144$
+          \item Total: 14\,016
+        \end{itemize}
+        A standard $3 \times 3$ convolution on 192 channels: 331\,776
+        weights, 24 times more.
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Tensors}
+        \begin{itemize}
+          \item Input: $28 \times 28 \times 32 = 25\,088$ values
+          \item Expanded: 150\,528 values
+          \item During the depthwise step: two expanded tensors and the
+                input for the skip connection
+          \item Peak: 326\,144 values. This is 13 times the input.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \keypoint{The block saves parameters and operations. It does not save
+    RAM. On a microcontroller, the expanded tensors are often the limit.}
+  \source{Calculated for this course, with separate buffers for the input
+    and the output of each layer.}
+\end{frame}
+
+\begin{frame}{The result: two models for the same task}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \small
+      \renewcommand{\arraystretch}{1.3}
+      \setlength{\tabcolsep}{4pt}
+      \begin{tabular}{@{}lrr@{}}
+        \toprule
+        & \textbf{ResNet-50} & \textbf{MobileNetV2} \\
+        \midrule
+        Parameters      & 25.6 M & 3.5 M \\
+        Operations      & 4.1 G  & 300 M \\
+        Size, float32   & 98 MB  & 13.4 MB \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.6em
+      \normalsize
+      Both models classify ImageNet images.
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{itemize}
+        \item 7 times fewer parameters.
+        \item 14 times fewer operations.
+        \item The cause is the block design, not a smaller input image.
+        \item MobileNetV2 still does not fit a microcontroller with 256 KB
+              of RAM. Part 3 shows why.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{The design of the blocks decides the cost before you apply
+    quantization or pruning.}
+  \source{Parameters and operations: \emph{Machine Learning Systems}, Volume
+    I, chapter 6. Sizes with 1 MB = 1024 KB.}
+\end{frame}
+
+% ---------------------------------------------------------------------- method
+\begin{frame}{Method: calculate the cost of a model}
+  \begin{enumerate}
+    \item Write the output size of each layer: $H_{\text{out}} \times
+          W_{\text{out}} \times C_{\text{out}}$.
+    \item Calculate the parameters of each layer. Add them.\\
+          $\rightarrow$ model size $\rightarrow$ compare with the flash.
+    \item Calculate the MACs of each layer. Add them.\\
+          $\rightarrow$ first estimate of the latency and of the energy.
+    \item For each layer, add the size of its input and of its output.
+          Take the maximum.\\
+          $\rightarrow$ peak activation memory $\rightarrow$ compare with
+          the RAM.
+  \end{enumerate}
+  \vskip 0.6em
+  \begin{block}{In the lab}
+    A notebook does these four steps for three models. You compare the
+    results with the budgets of four devices.
+  \end{block}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{three layers by hand}{%
+  Calculate the output size and the number of parameters of each layer.
+  Include the biases.
+  \begin{enumerate}
+    \item \textbf{Convolution.} Input $96 \times 96 \times 3$. 16 filters of
+          size $3 \times 3$, stride 2, padding 1.
+    \item \textbf{Depthwise separable convolution.} Input
+          $48 \times 48 \times 16$. Depthwise step: $3 \times 3$, stride 1,
+          padding 1. Pointwise step: 32 filters.
+    \item \textbf{Fully connected layer.} Input: 32 values from a global
+          average pooling layer. Output: 10 classes.
+  \end{enumerate}
+  Then answer: how many parameters does a standard $3 \times 3$ convolution
+  need in place of layer 2?
+  \vskip 0.3em
+  Work alone for 7 minutes. Use no calculator.
+}
+
+\answerframe{three layers by hand}{%
+  \begin{enumerate}
+    \item Output: $\lfloor (96 + 2 - 3) / 2 \rfloor + 1 = 48$, so
+          $48 \times 48 \times 16$.\\
+          Parameters: $3 \times 3 \times 3 \times 16 + 16 = 448$.
+    \item Output: $48 \times 48 \times 32$. The stride is 1 and the padding
+          keeps the size.\\
+          Depthwise: $3 \times 3 \times 16 + 16 = 160$.
+          Pointwise: $16 \times 32 + 32 = 544$.\\
+          Parameters: $160 + 544 = 704$.
+    \item Output: 10 values. Parameters: $32 \times 10 + 10 = 330$.
+  \end{enumerate}
+  Standard convolution in place of layer 2:
+  $3 \times 3 \times 16 \times 32 + 32 = 4640$ parameters. The separable
+  layer needs 6.6 times fewer.
+}

@@ -1,0 +1,652 @@
+% Part 1 of Day 3: Deployment formats and conversion.
+%
+% Topics of the syllabus: Keras to LiteRT; PyTorch to ONNX to LiteRT;
+% FlatBuffers; operator support and conversion errors. Exercise: open a LiteRT
+% file in Netron and list its operators and tensor types.
+%
+% The example network of this part has 300 inputs, two hidden layers with 20
+% and 10 neurons, and 4 outputs. The numbers of the frames (parameters, file
+% sizes, operators) are results of TensorFlow 2.21.0, PyTorch 2.14.1, and
+% onnx2tf 1.29.24 on the work computer of the course.
+
+\theorypart{Deployment formats and conversion}%
+  {list the operators and the tensor types of a LiteRT file in Netron}
+
+% ------------------------------------------------------------------- the gap
+\begin{frame}{From the laptop to the device}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    & \textbf{Training, on the laptop} & \textbf{Inference, on the XIAO} \\
+    \midrule
+    Language   & Python & C++ \\
+    Framework  & Keras or PyTorch: hundreds of megabytes
+               & A runtime of some tens of kilobytes \\
+    Model      & A file on the disk & A constant array in the flash \\
+    Memory     & Gigabytes, from the operating system
+               & One fixed block of RAM \\
+    Operations & All operations of the framework, with training
+               & Only the operations of this model, inference only \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \begin{itemize}
+    \item You cannot copy a training framework to a microcontroller.
+    \item You change the model into a format that a small runtime can read.
+          This step is the conversion.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The format of the model and the runtime on the device are one
+    decision. You make it before you design the model.}
+\end{frame}
+
+\begin{frame}{The conversion pipeline of today}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.75cm, minimum height=1.0cm, align=center},
+      lab/.style={font=\scriptsize, text=coolgray, align=center}]
+    \node[b] (a) at (0,0)    {Trained\\model};
+    \node[b, draw=cardinalred] (b) at (2.15,0) {Converter};
+    \node[b] (c) at (4.3,0)  {LiteRT file\\\code{.tflite}};
+    \node[b] (d) at (6.45,0) {C array\\\code{model.h}};
+    \node[b] (e) at (8.6,0)  {Firmware};
+    \foreach \a/\b in {a/b, b/c, c/d, d/e} { \draw[->] (\a) -- (\b); }
+    \node[lab] at (0,-0.95)    {Keras or\\PyTorch};
+    \node[lab] at (2.15,-0.95) {on the\\laptop};
+    \node[lab] at (4.3,-0.95)  {graph and\\weights};
+    \node[lab] at (6.45,-0.95) {the same\\bytes};
+    \node[lab] at (8.6,-0.95)  {model and\\runtime};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item \textbf{LiteRT} is the new name of TensorFlow Lite. The file
+          extension is still \code{.tflite}.
+    \item \textbf{TensorFlow Lite Micro} is the runtime for microcontrollers.
+          It reads the same file format. Part 2 explains it.
+    \item The C array is the file, byte for byte. The compiler puts it in
+          the flash with the program.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Three runtimes, three device classes}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.20\textwidth}L{0.23\textwidth}L{0.27\textwidth}@{}}
+    \toprule
+    & \textbf{TensorFlow} & \textbf{LiteRT}
+    & \textbf{TensorFlow Lite Micro} \\
+    \midrule
+    Training          & Yes & Limited & No \\
+    Inference         & Yes & Yes & Yes \\
+    Operators         & All & Inference operators
+                      & The operators that the model selects \\
+    Operating system  & Necessary & Necessary & Not necessary \\
+    Model access      & File system & File or mapped memory
+                      & Array in the program \\
+    Typical device    & Server, laptop & Phone, Raspberry Pi
+                      & Microcontroller \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \keypoint{Each step to a smaller device removes a part of the software:
+    first the training, then the operating system, then all operators that
+    the model does not use.}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter 7.}
+\end{frame}
+
+% ------------------------------------------------------------- model file
+\begin{frame}{What a model file holds}
+  \begin{columns}[T]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{In the file}
+        \begin{itemize}
+          \item The graph: the operators and their order.
+          \item The tensors: shape and data type of each input, output,
+                and weight.
+          \item The weights: the trained values.
+          \item The parameters of the quantization (Day 4).
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Not in the file}
+        \begin{itemize}
+          \item The Python code of the model.
+          \item The optimizer and the loss function.
+          \item The gradients.
+          \item Layers that work only in training, for example dropout.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \begin{itemize}
+    \item A deployment format describes only the forward pass.
+    \item The runtime needs no knowledge of the framework that trained the
+          model.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{FlatBuffers: read the file with no parsing step}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]}, x=1cm,
+      y=0.8cm]
+    \foreach \x/\w/\c/\t in {0/1.2/coolgray!30/header,
+        1.2/1.5/cardinalred!30/model table, 2.7/1.7/darkcyan!30/operators,
+        4.4/1.7/treegreen!30/tensors, 6.1/3.9/coolgray!15/weight buffers} {
+      \fill[\c] (\x,0) rectangle (\x+\w,1);
+      \draw[coolgray] (\x,0) rectangle (\x+\w,1);
+      \node at (\x+0.5*\w,0.5) {\t};
+    }
+    \draw[->, cardinalred] (0.6,1.0) to[bend left=50] (1.9,1.0);
+    \draw[->, cardinalred] (1.9,1.0) to[bend left=50] (3.5,1.0);
+    \draw[->, cardinalred] (2.1,1.0) to[bend left=50] (5.2,1.0);
+    \draw[->, cardinalred] (5.4,1.0) to[bend left=50] (8.0,1.0);
+    \node[cardinalred] at (5.0,2.35) {offsets: the position of the next
+      part, in bytes};
+    \draw[<->, coolgray] (0,-0.3) -- node[below, text=black]
+      {one array of bytes in the flash} (10,-0.3);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.3em
+  \small
+  \begin{itemize}
+    \item FlatBuffers is a storage format. Each part holds the offset of
+          the parts that it uses.
+    \item The runtime reads a value at its position in the array. It makes
+          no copy and builds no objects.
+    \item So the weights stay in the flash. The RAM holds only the
+          activations.
+  \end{itemize}
+  \keypoint{A format that needs a parsing step makes a second copy of the
+    model in RAM. A microcontroller has no RAM for that copy.}
+\end{frame}
+
+\begin{frame}{The structure of a LiteRT file}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\footnotesize,
+          n/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                    minimum height=0.6cm, minimum width=2.2cm, align=center},
+          r/.style={n, draw=cardinalred}]
+        \node[r] (m) at (0,0) {Model};
+        \node[n] (oc) at (-1.4,-1.2) {operator codes};
+        \node[n] (sg) at (1.4,-1.2)  {subgraph};
+        \node[n] (bf) at (-1.4,-3.6) {buffers};
+        \node[n] (te) at (1.4,-2.4)  {tensors};
+        \node[n] (op) at (1.4,-3.6)  {operators};
+        \draw[coolgray] (m) -- (oc) (m) -- (sg) (sg) -- (te) (te) -- (op);
+        \draw[coolgray] (m.west) -| (-2.75,-3.6) -- (bf.west);
+        \draw[->, darkcyan, dashed] (te.west) -- (bf.north east);
+        \draw[->, darkcyan, dashed] (op.north west) to[bend left=25]
+          (oc.south east);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{description}\itemsep 0.2em
+        \item[Operator codes] The list of the operator types that the
+          model uses.
+        \item[Tensors] Shape, data type, and name. A weight tensor names
+          its buffer.
+        \item[Operators] One entry for each step: the type, the input
+          tensors, and the output tensors.
+        \item[Buffers] The bytes of the weights.
+      \end{description}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{The list of the operator codes says which kernels the device
+    needs. A small model uses three or four operator types.}
+\end{frame}
+
+% --------------------------------------------------------------------- Keras
+\begin{frame}[fragile]{Keras to LiteRT}
+\begin{lstlisting}[style=python]
+import keras
+import tensorflow as tf
+
+model = keras.Sequential([
+    keras.Input(shape=(300,)),               # 2 s at 50 Hz, 3 axes
+    keras.layers.Dense(20, activation="relu"),
+    keras.layers.Dense(10, activation="relu"),
+    keras.layers.Dense(4, activation="softmax"),
+])
+# ... train the model ...
+
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()           # bytes of the LiteRT file
+with open("model.tflite", "wb") as handle:
+    handle.write(tflite_model)
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The model has 6274 parameters. With \code{float32}, the weights
+          need $6274 \times 4 = 25\,096$ bytes.
+    \item The LiteRT file has 26\,732 bytes: the weights, and 1636 bytes
+          for the graph and the tensor descriptions.
+  \end{itemize}
+  \source{File size: result of the converter of TensorFlow 2.21.0 for this
+    model.}
+\end{frame}
+
+\begin{frame}{What the converter does}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      k/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                minimum width=1.5cm, minimum height=0.6cm, align=center},
+      t/.style={k, draw=cardinalred, minimum width=3.5cm}]
+    \node[anchor=west, text=coolgray] at (-0.6,0.75) {Keras: 6 steps};
+    \node[anchor=west, text=coolgray] at (-0.6,-0.9)
+      {LiteRT: 4 operators (FC = FULLY\_CONNECTED)};
+    \node[k, minimum width=1.3cm] (a1) at (0.05,0)   {Dense};
+    \node[k, minimum width=1.3cm] (a2) at (1.55,0) {ReLU};
+    \node[k, minimum width=1.3cm] (a3) at (3.35,0) {Dense};
+    \node[k, minimum width=1.3cm] (a4) at (4.85,0) {ReLU};
+    \node[k, minimum width=1.3cm] (a5) at (6.65,0) {Dense};
+    \node[k, minimum width=1.3cm] (a6) at (8.45,0) {Softmax};
+    \node[t, minimum width=2.8cm] (b1) at (0.8,-1.7) {FC with ReLU};
+    \node[t, minimum width=2.8cm] (b2) at (4.1,-1.7) {FC with ReLU};
+    \node[t, minimum width=1.3cm] (b3) at (6.65,-1.7) {FC};
+    \node[t, minimum width=1.3cm] (b4) at (8.45,-1.7) {SOFTMAX};
+    \foreach \a/\b in {a1/a2, a2/a3, a3/a4, a4/a5, a5/a6} {
+      \draw[->] (\a) -- (\b); }
+    \draw[->, coolgray] (0.8,-0.35) -- (0.8,-0.6);
+    \draw[->, coolgray] (4.1,-0.35) -- (4.1,-0.6);
+    \draw[->, coolgray] (6.65,-0.35) -- (6.65,-0.6);
+    \draw[->, coolgray] (8.45,-0.35) -- (8.45,-0.6);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \begin{itemize}
+    \item \textbf{Freeze:} each variable becomes a constant.
+    \item \textbf{Remove:} the converter removes the operations that only
+          the training uses.
+    \item \textbf{Fuse:} an activation function becomes a part of the
+          operator before it. A batch normalization becomes a part of the
+          weights of the convolution before it.
+    \item \textbf{Map:} each layer becomes one operator of the LiteRT list.
+  \end{itemize}
+  \keypoint{The example has six Keras steps and four LiteRT operators. Fewer
+    operators give fewer tensors in RAM.}
+\end{frame}
+
+\begin{frame}[fragile]{Check the converted model before you deploy it}
+\begin{lstlisting}[style=python]
+import numpy as np
+from ai_edge_litert.interpreter import Interpreter
+
+interpreter = Interpreter(model_path="model.tflite")
+interpreter.allocate_tensors()
+inp = interpreter.get_input_details()[0]
+out = interpreter.get_output_details()[0]
+
+x = np.random.rand(1, 300).astype("float32")
+interpreter.set_tensor(inp["index"], x)
+interpreter.invoke()
+y_litert = interpreter.get_tensor(out["index"])
+
+y_keras = model(x).numpy()
+print(np.abs(y_litert - y_keras).max())      # about 0.00000003
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The LiteRT interpreter runs on the laptop, with the same file
+          that goes to the device.
+    \item Compare the two outputs for the same input. Then compare the
+          accuracy on the test set. Do this after each conversion step.
+  \end{itemize}
+  \source{Difference: result for the example model with TensorFlow 2.21.0.}
+\end{frame}
+
+\begin{frame}[fragile]{From the file to a C array}
+\begin{lstlisting}[style=shell]
+python3 tflite_to_header.py model.tflite model.h
+\end{lstlisting}
+\begin{lstlisting}[style=cpp]
+// Model: model.tflite (26732 bytes)
+alignas(16) const unsigned char g_model[] = {
+    0x1c, 0x00, 0x00, 0x00, 0x54, 0x46, 0x4c, 0x33, 0x14, 0x00, 0x20, 0x00,
+    ...
+};
+const int g_model_len = sizeof(g_model);
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The sketch includes \code{model.h}. The model is then a part of
+          the program.
+    \item \code{const}: the array stays in the flash. With no \code{const},
+          the program copies it to RAM at the start.
+    \item \code{alignas(16)}: the runtime reads numbers of 4 and 8 bytes at
+          fixed positions. The array must start at a correct address.
+    \item The bytes 4 to 7 are \code{TFL3}: the identifier of a LiteRT
+          file.
+  \end{itemize}
+  \source{The script is in \texttt{Labs/hardware/HW-02/}. The command
+    \texttt{xxd -i} gives the same bytes.}
+\end{frame}
+
+% ------------------------------------------------------------------- PyTorch
+\begin{frame}{PyTorch needs one more step: ONNX}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=0.8cm, align=center}]
+    \node[b] (k) at (0,1.1)   {Keras};
+    \node[b] (p) at (0,-1.1)  {PyTorch};
+    \node[b, draw=cardinalred] (o) at (3.0,-1.1) {ONNX};
+    \node[b] (l) at (6.0,0)   {LiteRT file};
+    \node[b] (r) at (6.0,-2.0) {ONNX Runtime};
+    \node[b] (t) at (8.6,0)   {TensorFlow\\Lite Micro};
+    \draw[->] (k.east) -- node[above, sloped, font=\scriptsize]
+      {converter} (l.west);
+    \draw[->] (p) -- node[above, font=\scriptsize] {export} (o);
+    \draw[->] (o.east) -- node[above, sloped, font=\scriptsize]
+      {onnx2tf} (l.south west);
+    \draw[->] (o.east) -- (r.west);
+    \draw[->] (l) -- (t);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \begin{itemize}
+    \item ONNX is an exchange format for models. Many frameworks write it,
+          and many runtimes read it.
+    \item A PyTorch model goes to ONNX first. A second tool makes the
+          LiteRT file from the ONNX file.
+    \item ONNX Runtime runs the ONNX file directly. Day 7 uses it on the
+          Raspberry Pi. It does not run on a microcontroller.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{Each conversion step can change the model. Two steps need two
+    checks.}
+\end{frame}
+
+\begin{frame}[fragile]{PyTorch to ONNX to LiteRT}
+\begin{lstlisting}[style=python]
+import torch, torch.nn as nn
+
+model = nn.Sequential(
+    nn.Linear(300, 20), nn.ReLU(),
+    nn.Linear(20, 10), nn.ReLU(),
+    nn.Linear(10, 4), nn.Softmax(dim=1),
+).eval()
+
+example = torch.rand(1, 300)                 # fixes the input shape
+torch.onnx.export(model, (example,), "model.onnx",
+                  input_names=["input"], output_names=["output"])
+\end{lstlisting}
+\begin{lstlisting}[style=shell]
+onnx2tf -i model.onnx -o saved_model         # writes model_float32.tflite
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item The export runs the model one time with the example input. The
+          example fixes the shape of each tensor.
+    \item The ONNX file has the operators \code{Gemm}, \code{Relu},
+          \code{Gemm}, \code{Relu}, \code{Gemm}, \code{Softmax}.
+    \item The tool \code{onnx2tf} maps them to the LiteRT operators.
+  \end{itemize}
+  \source{Operator list: result of the export with PyTorch 2.14.1 for this
+    model.}
+\end{frame}
+
+\begin{frame}{The same network in four files}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.26\textwidth}rL{0.19\textwidth}L{0.31\textwidth}@{}}
+    \toprule
+    \textbf{File} & \textbf{Bytes} & \textbf{Storage format}
+    & \textbf{Operators} \\
+    \midrule
+    Keras file (\code{.keras})          & 43\,416 & ZIP archive
+        & 3 Dense layers \\
+    ONNX file from PyTorch              & 25\,818 & Protocol Buffers
+        & Gemm, Relu, Softmax \\
+    LiteRT file from Keras              & 26\,732 & FlatBuffers
+        & FULLY\_CONNECTED, SOFTMAX \\
+    LiteRT file from ONNX               & 27\,020 & FlatBuffers
+        & FULLY\_CONNECTED, SOFTMAX \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.8em
+  \begin{itemize}
+    \item All four files hold the same 25\,096 bytes of weights. The
+          difference is the description around the weights.
+    \item The two LiteRT files come from different converters. They are
+          not equal byte for byte, but they calculate the same function.
+    \item The file size is the flash that the model needs on the device.
+  \end{itemize}
+  \source{Results on the work computer of the course: TensorFlow 2.21.0,
+    PyTorch 2.14.1, onnx2tf 1.29.24.}
+\end{frame}
+
+\begin{frame}{NCHW and NHWC: the order of the channels}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\footnotesize]
+        \node[draw=darkcyan, rounded corners=2pt, fill=boxgray,
+              minimum width=4.2cm, minimum height=0.8cm] at (0,0.9)
+          {PyTorch, ONNX: \textbf{N C H W}};
+        \node[draw=cardinalred, rounded corners=2pt, fill=boxgray,
+              minimum width=4.2cm, minimum height=0.8cm] at (0,-0.4)
+          {LiteRT: \textbf{N H W C}};
+        \node[font=\scriptsize, text=coolgray, align=center] at (0,-1.4)
+          {N: batch, C: channels,\\H: height, W: width};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \small
+      \begin{itemize}
+        \item An image tensor of PyTorch has the shape (1, 3, 96, 96).
+        \item The same tensor in LiteRT has the shape (1, 96, 96, 3).
+        \item The converter changes the order of the weights. It can also
+              add \code{TRANSPOSE} operators, which cost time and RAM.
+        \item Your code on the device must fill the input in the order of
+              LiteRT.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \keypoint{A wrong order gives no error. The model runs, and the result is
+    wrong. Compare the outputs with a real input after the conversion.}
+\end{frame}
+
+% ------------------------------------------------------------------ operators
+\begin{frame}{Operator support decides if a model can run}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize]
+    \node[draw=coolgray, rounded corners=6pt, minimum width=10.2cm,
+          minimum height=3.3cm, line width=0.8pt] (a) at (0,0) {};
+    \node[draw=darkcyan, rounded corners=6pt, minimum width=7.0cm,
+          minimum height=2.3cm, line width=0.8pt] (b) at (-1.3,-0.3) {};
+    \node[draw=cardinalred, rounded corners=6pt, fill=boxgray,
+          minimum width=4.0cm, minimum height=1.2cm, line width=0.8pt,
+          align=center] (c) at (-2.5,-0.6)
+      {TensorFlow Lite Micro\\99 operators};
+    \node[anchor=north east, text=coolgray] at (a.north east)
+      {Training framework: all operations};
+    \node[anchor=north east, text=darkcyan] at (b.north east)
+      {LiteRT: about 200 operators};
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A runtime has one kernel for each operator that it supports. A
+          kernel is the function that calculates the operator.
+    \item A model can run only if the runtime has a kernel for each of its
+          operators.
+    \item A smaller runtime has fewer kernels. The common layers are
+          there: convolution, depthwise convolution, fully connected,
+          pooling, softmax.
+  \end{itemize}
+  \source{Numbers: the operator list of TensorFlow 2.21.0, and the file
+    \texttt{micro\_mutable\_op\_resolver.h} of the library
+    Chirale\_TensorFlowLite 2.0.0.}
+\end{frame}
+
+\begin{frame}{Conversion errors and their causes}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.31\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Cause} & \textbf{Example} & \textbf{Correction} \\
+    \midrule
+    An operator with no kernel & A new activation function, a custom layer
+        & Use a layer from the supported list \\
+    A shape that is not fixed & An input of variable length
+        & Fix the input shape before the conversion \\
+    Control flow & A loop or a condition that depends on the data
+        & Write the model with no such step \\
+    A data type with no kernel & \code{float64}, or \code{int8} for an
+          operator that has only a \code{float32} kernel
+        & Change the type, or change the operator \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \keypoint{Read the operator list of the target runtime before you select
+    the layers of the model.}
+\end{frame}
+
+\begin{frame}[fragile]{An error can come on the device}
+  \small
+  The conversion gives no error. The sketch compiles. On the board, the
+  serial port shows:
+\begin{lstlisting}
+Didn't find op for builtin opcode 'SOFTMAX' version '1'.
+Failed to get registration from op code SOFTMAX
+\end{lstlisting}
+  \begin{itemize}
+    \item The file is correct. The \emph{program} has no kernel for one
+          operator of the model.
+    \item With TensorFlow Lite Micro, the program names each operator that
+          it needs. This list is the operator resolver. Part 2 explains it.
+    \item An operator that the program does not name is not in the
+          firmware. This keeps the firmware small.
+  \end{itemize}
+  \vskip 0.3em
+  \begin{block}{Three places for an operator error}
+    \begin{enumerate}
+      \item At the conversion: the converter has no mapping.
+      \item At the build: the library has no kernel.
+      \item On the device: the resolver of the sketch does not name the
+            operator.
+    \end{enumerate}
+  \end{block}
+  \source{Message text: files \texttt{op\_resolver.cpp} and
+    \texttt{micro\_interpreter.cpp} of the library Chirale\_TensorFlowLite
+    2.0.0.}
+\end{frame}
+
+\begin{frame}{Convert first, train later}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\footnotesize, >={Stealth[length=5pt]},
+      b/.style={draw=coolgray, rounded corners=3pt, fill=boxgray,
+                minimum width=1.9cm, minimum height=0.9cm, align=center}]
+    \node[b] (a) at (0,0)   {Define the\\model};
+    \node[b, draw=cardinalred] (b) at (2.7,0) {Convert the\\untrained model};
+    \node[b, draw=cardinalred] (c) at (5.6,0) {Run it on\\the board};
+    \node[b] (d) at (8.4,0) {Train};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \draw[->, coolgray] (c.south) -- ++(0,-0.5) -| node[pos=0.25, below]
+      {an error: change the model} (a.south);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.6em
+  \begin{itemize}
+    \item The conversion and the runtime do not need trained weights. A
+          model with random weights has the same operators, the same
+          tensors, and the same size.
+    \item So you can test the complete path on the first day: the
+          conversion, the flash, the arena, and the latency.
+    \item A model that cannot run on the device costs no training time.
+  \end{itemize}
+  \vskip 0.2em
+  \keypoint{The deployment is not the last step of a project. It is the
+    first test of the model design.}
+\end{frame}
+
+% ---------------------------------------------------------------------- Netron
+\begin{frame}{Netron: look inside a model file}
+  \begin{columns}[c]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=4pt]},
+          op/.style={draw=cardinalred, rounded corners=3pt, fill=boxgray,
+                     minimum width=3.2cm, align=left, inner sep=3pt},
+          io/.style={draw=coolgray, rounded corners=6pt, fill=white,
+                     minimum width=1.6cm}]
+        \node[io] (i) at (0,0) {input};
+        \node[op] (a) at (0,-1.2) {\textbf{FullyConnected}\\weights
+          $\langle 16 \times 1\rangle$\\bias $\langle 16 \rangle$};
+        \node[op] (b) at (0,-2.7) {\textbf{FullyConnected}\\weights
+          $\langle 16 \times 16\rangle$\\bias $\langle 16 \rangle$};
+        \node[io] (o) at (0,-3.8) {\dots};
+        \draw[->] (i) -- node[right] {$1 \times 1$} (a);
+        \draw[->] (a) -- node[right] {$1 \times 16$} (b);
+        \draw[->] (b) -- (o);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \small
+      \begin{itemize}
+        \item Netron is a viewer for model files. It reads LiteRT, ONNX,
+              Keras, and other formats.
+        \item Open \code{netron.app} in a browser and select a file. The
+              file stays on your computer.
+        \item Each box is one operator. Each line is one tensor, with its
+              shape.
+        \item Click a box: you see the data type of each input, the shape
+              of the weights, and the fused activation function.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \keypoint{Look at each converted model in Netron. You see in one minute
+    if the operators and the types are the ones that you expect.}
+  \source{The drawing shows the form of the Netron view. It is not a copy
+    of the screen.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{read a LiteRT file in Netron}{%
+  Open this file in Netron (\code{netron.app}):
+  \vskip 0.2em
+  \code{Labs/hardware/HW-02/models/hello\_world.tflite}
+  \vskip 0.4em
+  The file is the ``hello world'' model of TensorFlow Lite Micro. It has 2488
+  bytes. It calculates an approximation of the sine function.
+  \begin{enumerate}
+    \item List the operators of the model, in order.
+    \item What are the shape and the data type of the input and of the
+          output?
+    \item What is the data type of the weights? What is the data type of
+          the biases?
+    \item How many parameters does the model have? How many bytes do they
+          need in this file?
+    \item The file has 2488 bytes. Which part of the file are the
+          parameters?
+  \end{enumerate}
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{read a LiteRT file in Netron}{%
+  \small
+  \begin{enumerate}
+    \item Three operators: FullyConnected, FullyConnected, FullyConnected.
+          The first two have a fused ReLU activation.
+    \item The input has the shape (1, 1) and the type \code{int8}. The
+          output has the same shape and the same type.
+    \item The weights have the type \code{int8}. The biases have the type
+          \code{int32}. The model is quantized. Day 4 explains why the bias
+          has more bits.
+    \item Weights: $16 + 256 + 16 = 288$. Biases: $16 + 16 + 1 = 33$. The
+          model has 321 parameters. They need
+          $288 \times 1 + 33 \times 4 = 420$ bytes.
+    \item $420 / 2488 = 17$ percent. For a very small model, the
+          description of the graph is larger than the weights. For the
+          example model of this part, the weights are 94 percent of the
+          file.
+  \end{enumerate}
+}

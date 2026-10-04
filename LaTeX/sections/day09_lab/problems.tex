@@ -1,0 +1,39 @@
+% Fallbacks and common problems of the Day 9 lab. The rows come from
+% Labs/day09/README.md. Nobody tested the fixes on a board.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    \code{ERROR: no memory for an arena}
+      & Set \code{OPI PSRAM} and upload again. If the error stays, write
+        ``does not fit'': this is also a result. \\
+    The median and the p95 of the kit are 0
+      & Task B1 is not complete \\
+    \code{Same result as LiteRT: NO}
+      & Copy the sketch folder again. Write the library version in the
+        report. \\
+    The Serial Monitor shows nothing
+      & Send a character: the sketch measures again \\
+    \code{No module named 'ncnn'}
+      & \code{deactivate}, then \code{source \textasciitilde/yolo/bin/activate} \\
+    \code{pi/bench.py} prints \code{not found}
+      & Copy the file of Day 7 or Day 8 with \code{scp}, or give it with
+        \code{--model} \\
+    The column \code{watt} is empty
+      & Write your meter value, or the published range of 5 to 7 W, in the
+        row \code{pi,active} of \code{power.csv} \\
+    The throttle state is not \code{0x0}
+      & Use the 27 W supply, check the cooler, and write the value in the
+        report \\
+    A task is not complete in time
+      & Use the file of \code{solutions/}, and write this in the report \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}

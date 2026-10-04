@@ -1,0 +1,36 @@
+% Fallbacks and common problems of the Day 6 lab. The rows come from
+% Labs/day06/README.md.
+\begin{frame}{If a part does not work, and common problems}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
+    \toprule
+    \textbf{Problem} & \textbf{Fix or fallback} \\
+    \midrule
+    The download of the dataset fails
+      & The instructor gives the folder \code{fashion-mnist}. Copy it into
+        the folder \code{.keras/datasets/} of your home folder. \\
+    A task is not complete in time
+      & Copy the function from the notebook of \code{solutions/}. Write
+        this in the report. \\
+    An experiment prints that it does not run
+      & Complete the task before it, run its check cell, then run the
+        experiment. \\
+    \code{Task 1: not complete} after your change
+      & The mask has the type \code{float32}. A weight stays only if its
+        magnitude is above the threshold. \\
+    \code{Task 5: not complete}
+      & Divide the two logit arrays by \code{T} before the softmax. \\
+    Section 8 has fewer than six models
+      & Complete tasks 1, 3, and 5, and run the three experiments again. \\
+    The latency changes from run to run
+      & Close other programs. Some microseconds are noise. \\
+    \code{Task 7: not complete}
+      & Read the two lines that the check prints for each product. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  The README of the lab has the complete list.
+\end{frame}

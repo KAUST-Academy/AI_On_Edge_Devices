@@ -1,0 +1,677 @@
+% Part 3 of Day 11: Stream architectures.
+%
+% Topics of the syllabus: inference on the camera node or on a central node;
+% buffers, dropped frames, and latency; privacy of video data. Exercise:
+% select the inference location for three camera systems.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. An experiment of this course on the work computer (x86 with 24 cores,
+%    MediaMTX v1.21.1, FFmpeg 4.4, OpenCV 5.0.0):
+%    tools/experiments/day11_buffers.py, values in
+%    tools/data/day11/day11_buffers.json. A publisher writes its clock time
+%    into each frame (640 x 480, 30 frames each second, H.264 at 1 Mbit/s,
+%    RTSP over TCP). The reader decodes the time and calculates the age of
+%    the frame. The stream does not leave the computer: no value is a value
+%    of a board or of a network.
+% 2. Values of Part 2 and of Day 8, and published values of the sources.
+% 3. Example values for the calculations. The frame says so.
+
+\theorypart{Stream architectures}%
+  {select the inference location for three camera systems}
+
+% ------------------------------------------------------------------ places
+\begin{frame}{Where does the model run?}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      nd/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.9cm, minimum height=0.75cm}]
+    \node[font=\footnotesize\bfseries, anchor=west] at (-1.0,2.0)
+      {A. Camera node};
+    \node[nd, fill=cardinalred!12] (a1) at (0,1.3) {Camera + model};
+    \node[nd] (a2) at (5.3,1.3) {Central node};
+    \draw[->, darkcyan] (a1) -- node[above] {results: a few KB/s} (a2);
+    \node[font=\footnotesize\bfseries, anchor=west] at (-1.0,0.45)
+      {B. Central node};
+    \node[nd] (b1) at (0,-0.25) {Camera};
+    \node[nd, fill=cardinalred!12] (b2) at (5.3,-0.25) {Central node\\ +
+      model};
+    \draw[->, cardinalred, line width=1.1pt] (b1) -- node[above]
+      {video: Mbit/s} (b2);
+    \node[font=\footnotesize\bfseries, anchor=west] at (-1.0,-1.1)
+      {C. Split};
+    \node[nd, fill=cardinalred!6] (c1) at (0,-1.8) {Camera + small\\
+      model (filter)};
+    \node[nd, fill=cardinalred!12] (c2) at (5.3,-1.8) {Central node\\ +
+      large model};
+    \draw[->, darkcyan] (c1) -- node[above] {only the events} (c2);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A: the camera node runs the model and sends results. Example: the
+          Raspberry Pi with its camera runs the Day 8 detector.
+    \item B: the camera sends video. A central node runs the model for many
+          cameras. Example: the XIAO sends MJPEG to the Raspberry Pi.
+    \item C: a small model on the camera node selects the frames that the
+          large model sees.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ locality
+\begin{frame}{The data locality invariant}
+  \small
+  The textbook compares two complete paths with the deadline of the
+  service:
+  \[
+    T_{\text{remote}} = \frac{D}{\text{BW}} + L_{\text{network}} +
+      \frac{O}{R_{\text{remote}} \cdot \eta}
+    \qquad\text{remote is possible only if } T_{\text{remote}} \leq
+      T_{\text{deadline}}
+  \]
+  \vskip 0.2em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}lL{0.70\textwidth}@{}}
+    \toprule
+    \textbf{Symbol} & \textbf{Meaning} \\
+    \midrule
+    $D$                  & The data of one request: a frame, or a part of a
+                           stream \\
+    $\text{BW}$          & The bandwidth to the remote node \\
+    $L_{\text{network}}$ & The round trip of the network (Part 1) \\
+    $O$, $R \cdot \eta$  & The operations of the model, and the real rate of
+                           the remote processor \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Compute $T_{\text{local}}$ in the same way: the model time on the
+          camera node. Then compare the paths that meet the deadline.
+    \item The result is small: a class or a few boxes. Its transfer time
+          is almost zero.
+    \item A faster remote processor does not help when the transfer is the
+          largest part.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter ``ML
+    Systems'', section ``The data locality invariant''.}
+\end{frame}
+
+% ------------------------------------------------------------------ bandwidth
+\begin{frame}{Bandwidth: send the video or the results}
+  \small
+  12 cameras on one Wi-Fi channel:
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.42\textwidth}rr@{}}
+    \toprule
+    \textbf{What the camera node sends} & \textbf{One camera} &
+    \textbf{12 cameras} \\
+    \midrule
+    H.264, 1280 $\times$ 720, keyframe each 1 s (Part 2) & 2.62 Mbit/s &
+      31.4 Mbit/s \\
+    MJPEG, 1280 $\times$ 720, quality 5 (Part 2) & 11.09 Mbit/s & 133.1
+      Mbit/s \\
+    Results: 10 frames each second, 300 bytes of JSON each & 0.024 Mbit/s &
+      0.29 Mbit/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The results need about 100 times fewer bits than the H.264
+          stream.
+    \item 12 MJPEG streams do not fit one Wi-Fi channel. 12 H.264 streams
+          use most of it, and the channel then has no room for other
+          traffic.
+    \item With the results only, the channel stays almost free, and a
+          device with a weak signal does not slow the others.
+  \end{itemize}
+  \keypoint{Each camera that sends video uses the shared channel. A camera
+    that sends results uses almost nothing.}
+  \source{Bit rates: Part 2 (moving camera). The size of the JSON message
+    is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ compare
+\begin{frame}{Compare the two places}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.35\textwidth}L{0.37\textwidth}@{}}
+    \toprule
+    & \textbf{A. Model on the camera node} & \textbf{B. Model on a central
+      node} \\
+    \midrule
+    Network      & Results only & A video stream for each camera \\
+    Delay        & No video path: capture, model & Encoder, network,
+                   buffers, decoder, model \\
+    Model size   & Limited by the camera node & A larger model, a faster
+                   processor \\
+    Without network & Still decides & Stops \\
+    Updates      & One update for each camera & One update for all cameras
+                   \\
+    Cost and power & A processor in each camera & Simple cameras, one
+                   strong node \\
+    Privacy      & Images can stay on the camera & Images leave the camera
+                   \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item No place wins in all rows. The deadline, the network, and the
+          number of cameras decide.
+    \item The textbook: local processing ``reduces the data attack
+          surface''. Data that stays on the device still needs access
+          control.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter ``ML
+    Systems'', section ``The data locality invariant''.}
+\end{frame}
+
+% ------------------------------------------------------------------ split
+\begin{frame}{A split pipeline: filter on the camera node}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.7cm, minimum height=0.9cm}]
+    \node[st] (c) at (0,0) {Camera\\ 30 frames/s};
+    \node[st, fill=cardinalred!6] (f) at (2.8,0) {Small model or a
+      motion test};
+    \node[st, fill=darkcyan!15] (s) at (5.6,0) {Send a short clip or one
+      frame};
+    \node[st, fill=cardinalred!12] (l) at (8.4,0) {Large model on the
+      central node};
+    \draw[->] (c) -- (f);
+    \draw[->] (f) -- node[above] {event} (s);
+    \draw[->] (s) -- (l);
+    \draw[->, coolgray] (f) -- ++(0,-1.0) node[below] {no event: send
+      nothing};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The small model runs on each frame. It must be fast and must not
+          miss events. A false alarm costs only one transfer.
+    \item Example: events in 5 percent of the time. The network carries 5
+          percent of the video: 20 times less.
+    \item The central node runs the large model only on the frames that
+          matter. It can serve more cameras.
+    \item The XIAO can be such a filter: a small image model of Day 5 on the
+          kit, and a frame to the Raspberry Pi only for an event.
+  \end{itemize}
+  \source{The share of 5 percent is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ delay parts
+\begin{frame}{Where the age of a frame comes from}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, x=1cm]
+    \foreach \x/\w/\t/\c in {0/1.1/Capture/boxgray, 1.1/1.2/Encode/cardinalred!15,
+        2.3/1.2/Send/darkcyan!20, 3.5/1.4/Buffers/darkcyan!35,
+        4.9/1.4/Decode/cardinalred!15, 6.3/1.2/Queue/darkcyan!35,
+        7.5/1.6/Model/cardinalred!30, 9.1/1.0/Show/boxgray} {
+      \draw[coolgray, fill=\c] (\x,0) rectangle ++(\w,0.7);
+      \node at (\x+\w/2,0.35) {\t};
+    }
+    \draw[<->, coolgray] (0,-0.25) -- node[below] {age of the frame when the
+      result appears} (10.1,-0.25);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item \textbf{Capture}: the exposure and the transfer from the sensor.
+    \item \textbf{Encode} and \textbf{decode}: B-frames and decoder threads
+          hold frames.
+    \item \textbf{Buffers}: the server queue, the TCP buffers, and the
+          jitter buffer of the reader protect against changes of the
+          network delay. Each one holds frames.
+    \item \textbf{Queue}: frames that wait for a slow model.
+    \item A buffer smooths the stream, and it makes each frame older. A live
+          system keeps the buffers small.
+  \end{itemize}
+  \keypoint{The latency of the model is one box of eight. Measure the age of
+    the frame at the moment of the result.}
+\end{frame}
+
+% ------------------------------------------------------------------ method
+\begin{frame}{The experiment: a clock in each frame}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.0cm, minimum height=0.9cm}]
+    \node[st] (p) at (0,0) {Publisher: clock time as a bar code};
+    \node[st, fill=cardinalred!12] (e) at (2.75,0) {FFmpeg: H.264,\\ 1
+      Mbit/s};
+    \node[st, fill=darkcyan!15] (m) at (5.5,0) {MediaMTX: RTSP over TCP};
+    \node[st] (r) at (8.25,0) {Reader: OpenCV, then the model};
+    \draw[->] (p) -- (e); \draw[->] (e) -- (m); \draw[->] (m) -- (r);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \begingroup\centering
+  \begin{tikzpicture}[x=0.16cm, y=0.16cm]
+    \foreach \i/\b in {0/1,1/0,2/1,3/1,4/0,5/0,6/1,7/0,8/1,9/1,10/1,11/0,
+                       12/0,13/1,14/0,15/1,16/1,17/0,18/1,19/0} {
+      \ifnum\b=1 \fill[black] (\i,1) rectangle ++(1,1);
+                 \draw[coolgray] (\i,0) rectangle ++(1,1);
+      \else \draw[coolgray] (\i,1) rectangle ++(1,1);
+            \fill[black] (\i,0) rectangle ++(1,1); \fi
+    }
+    \node[anchor=west, font=\scriptsize, text width=5.2cm] at (21,1) {bits
+      of the time in ms, and below them the inverted bits as a check};
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item 640 $\times$ 480 at 30 frames each second. The top rows of each
+          frame hold the capture time in ms.
+    \item The reader decodes the time. Age = clock time now $-$ capture
+          time. One computer, one clock: no clock error.
+    \item The ``model'' is a pause of 0, 20, or 100 ms. Each run lasts 20 s.
+    \item The stream does not leave the computer: the age has no network
+          part. The lab measures with a real network.
+  \end{itemize}
+  \source{Experiment of this course: MediaMTX v1.21.1, FFmpeg 4.4, OpenCV
+    5.0.0, x86 work computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ threads
+\begin{frame}{Measured: decoder threads hold frames}
+  \begin{columns}[c]
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.2cm, y=0.0058cm]
+        \draw[->, coolgray] (0,0) -- (17.8,0) node[right] {threads};
+        \draw[->, coolgray] (0,0) -- (0,600);
+        \node[coolgray, anchor=west] at (0.3,600) {age in ms};
+        \foreach \x in {1,2,4,8,16} {
+          \draw[coolgray] (\x,0) -- (\x,-12) node[below] {\x};
+        }
+        \foreach \y in {100,200,300,400,500} {
+          \draw[coolgray] (0,\y) -- (-0.3,\y) node[left] {\y};
+          \draw[coolgray!40, dotted] (0,\y) -- (17,\y);
+        }
+        \draw[cardinalred, line width=1.1pt] plot coordinates
+          {(1,40) (2,72) (4,139) (8,272) (16,539)};
+        \foreach \x/\y in {1/40, 2/72, 4/139, 8/272, 16/539} {
+          \fill[cardinalred] (\x,\y) circle (1.6pt);
+        }
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.1}
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        \textbf{Decoder threads} & \textbf{Median age} \\
+        \midrule
+        1  & 40 ms \\
+        2  & 72 ms \\
+        4  & 139 ms \\
+        8  & 272 ms \\
+        16 & 539 ms \\
+        Default of OpenCV & 538 ms \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.2em
+      {\scriptsize No model, reader in order.\par}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item The H.264 decoder of FFmpeg gives each thread one frame. Each
+          thread adds one frame time: about 33 ms.
+    \item The default of OpenCV on 24 cores acted like 16 threads. A
+          Raspberry Pi 5 has 4 cores: expect about 4 frames.
+    \item For a live stream, open the stream with one decoder thread:
+          \code{cv2.CAP\_PROP\_N\_THREADS} = 1.
+  \end{itemize}
+  \source{Experiment of this course, x86 work computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ slow model
+\begin{frame}{A slow model behind a fast stream}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \foreach \i in {0,...,8} {
+      \draw[coolgray, fill=darkcyan!20] (\i*0.45,0) rectangle ++(0.38,0.6);
+    }
+    \node[below] at (1.95,-0.05) {queue};
+    \draw[->, darkcyan] (-2.1,0.3) -- node[above] {30 frames/s in}
+      (-0.1,0.3);
+    \node[draw=coolgray, rounded corners=2pt, fill=cardinalred!15,
+          minimum width=1.6cm, minimum height=0.8cm] (m) at (5.4,0.3)
+      {Model};
+    \draw[->] (4.0,0.3) -- (m);
+    \draw[->, cardinalred] (m.east) -- node[above] {10 frames/s out}
+      ++(2.1,0);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A model of 100 ms takes 10 frames each second. The stream brings
+          30.
+    \item A reader that takes each frame in order adds 20 frames to its
+          queue each second. Each frame waits longer than the frame before.
+    \item The age grows by $1 - 10/30 = 0.67$ s each second, with no
+          limit until a buffer is full.
+    \item A full buffer then drops data at a place that the program does
+          not control: a packet in the server, or a frame in the reader.
+  \end{itemize}
+  \keypoint{When the model is slower than the stream, the program must drop
+    frames. Select which frames it drops.}
+\end{frame}
+
+% ------------------------------------------------------------------ measured readers
+\begin{frame}{Measured: read in order or keep the newest}
+  \begin{columns}[c]
+    \begin{column}{0.47\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.21cm, y=0.24cm]
+        \draw[->, coolgray] (0,0) -- (21,0);
+        \draw[->, coolgray] (0,0) -- (0,14.5);
+        \node[coolgray, anchor=west] at (0.3,14.5) {age in s};
+        \node[coolgray] at (10.5,-2.6) {time of the run in s};
+        \foreach \x in {0,5,10,15,20} {
+          \draw[coolgray] (\x,0) -- (\x,-0.3) node[below] {\x};
+        }
+        \foreach \y in {4,8,12} {
+          \draw[coolgray] (0,\y) -- (-0.3,\y) node[left] {\y};
+          \draw[coolgray!40, dotted] (0,\y) -- (20.5,\y);
+        }
+        \draw[cardinalred, line width=1.1pt] plot coordinates {(0.10,0.04)
+          (0.71,0.45) (1.32,0.86) (1.94,1.27) (2.55,1.68) (3.16,2.10)
+          (3.77,2.51) (4.38,2.92) (4.99,3.33) (5.60,3.74) (6.21,4.15)
+          (6.82,4.56) (7.43,4.97) (8.04,5.38) (8.65,5.79) (9.26,6.20)
+          (9.87,6.61) (10.48,7.02) (11.09,7.43) (11.70,7.84) (12.31,8.25)
+          (12.92,8.66) (13.53,9.07) (14.14,9.48) (14.75,9.89) (15.37,10.30)
+          (15.98,10.71) (16.59,11.13) (17.20,11.54) (17.81,11.95)
+          (18.42,12.36) (19.03,12.77) (19.64,13.18)};
+        \draw[darkcyan, line width=1.1pt] plot coordinates {(0.10,0.04)
+          (0.71,0.04) (1.31,0.05) (1.91,0.05) (2.51,0.05) (3.11,0.05)
+          (3.72,0.05) (4.32,0.06) (4.92,0.06) (5.52,0.06) (6.12,0.06)
+          (6.73,0.06) (7.33,0.07) (7.93,0.07) (8.53,0.07) (9.13,0.07)
+          (9.74,0.04) (10.34,0.04) (10.94,0.04) (11.54,0.05) (12.14,0.05)
+          (12.75,0.05) (13.35,0.05) (13.95,0.06) (14.55,0.06) (15.16,0.06)
+          (15.76,0.06) (16.36,0.06) (16.96,0.07) (17.56,0.07) (18.17,0.07)
+          (18.77,0.07) (19.37,0.04) (19.97,0.04)};
+        \node[cardinalred, anchor=west] at (4.5,9.5) {in order};
+        \node[darkcyan!80!black, anchor=south] at (15,0.5) {newest};
+      \end{tikzpicture}
+      \vskip 0.1em
+      {\scriptsize Model of 100 ms.\par}
+    \end{column}
+    \begin{column}{0.51\textwidth}
+      \scriptsize
+      \renewcommand{\arraystretch}{1.12}
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}lrrr@{}}
+        \toprule
+        \textbf{Reader, model} & \textbf{Rate} & \textbf{Median} &
+        \textbf{Last 2 s} \\
+        \midrule
+        In order, 20 ms  & 29.9 & 39 ms & 38 ms \\
+        Newest, 20 ms    & 29.9 & 40 ms & 39 ms \\
+        In order, 100 ms & 9.8  & 6711 ms & 12\,734 ms \\
+        Newest, 100 ms   & 9.95 & 56 ms & 42.5 ms \\
+        \bottomrule
+      \end{tabular}
+      \vskip 0.2em
+      Rate: frames that the model took each second. Age of the frame when
+      the model takes it. 1 decoder thread.
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item A model that is faster than the stream: the two readers are the
+          same.
+    \item A slow model: the reader in order shows a result for a frame of
+          12.7 s ago at the end. The newest reader skipped 402 of 601
+          frames and kept the age below 75 ms.
+  \end{itemize}
+  \source{Experiment of this course: OpenCV 5.0.0, MediaMTX v1.21.1, x86
+    work computer.}
+\end{frame}
+
+% ------------------------------------------------------------------ drop on purpose
+\begin{frame}{Drop frames on purpose}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.32\textwidth}L{0.60\textwidth}@{}}
+    \toprule
+    \textbf{Method} & \textbf{Effect} \\
+    \midrule
+    Keep the newest frame & A thread reads all frames; the model takes the
+      last one. The lab reader does this. \\
+    A lower frame rate at the camera & 10 frames each second for a model of
+      100 ms: less encoder work and fewer bits \\
+    A second, smaller stream & MediaMTX can send a second stream of the same
+      camera with its own size and rate \\
+    Skip a fixed number of frames & Simple, but the queue still grows when
+      the model time changes \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A result for an old frame is a wrong result for a moving object.
+          A person who walks at 1.4 m/s moves 9.4 m in 6.7 s.
+    \item A dropped frame is a choice of the program. A full buffer drops
+          data with no choice.
+    \item Report two numbers: the frames each second that the model takes,
+          and the age of those frames.
+  \end{itemize}
+  \source{MediaMTX documentation, ``Raspberry Pi Cameras'' (MIT). The
+    walking speed is an example.}
+\end{frame}
+
+% ------------------------------------------------------------------ buffers everywhere
+\begin{frame}{Buffers on the two boards}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \renewcommand{\arraystretch}{1.08}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.33\textwidth}L{0.35\textwidth}@{}}
+    \toprule
+    \textbf{Place} & \textbf{Setting} & \textbf{Effect} \\
+    \midrule
+    XIAO camera driver & \code{fb\_count}, \code{grab\_mode} &
+      \code{CAMERA\_GRAB\_WHEN\_EMPTY}: the first \code{fb\_count} frames
+      can be old \\
+    H.264 encoder & B-frames & Hold later frames; the lab uses none \\
+    MediaMTX & \code{writeQueueSize} & Packets for a slow reader; drops
+      when full \\
+    TCP & Socket buffers & Keep data for a reader that does not read \\
+    OpenCV reader & Decoder threads & One frame for each thread \\
+    Your program & A queue or the newest frame & Grows with a slow model \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The stream sketch of the XIAO uses one frame buffer
+          (\code{fb\_count = 1}) with \code{CAMERA\_GRAB\_WHEN\_EMPTY}.
+    \item In the experiment, the server dropped no packet in 20 s: TCP and
+          the buffers kept the old frames, so the age grew. Over UDP, a full
+          queue drops packets instead.
+  \end{itemize}
+  \source{\texttt{esp\_camera.h} of the esp32-camera driver (esp32 core
+    3.3.12). MediaMTX documentation,\\ ``Decrease packet loss'' (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------------ privacy
+\begin{frame}{Video shows people}
+  \small
+  \begin{itemize}
+    \item A camera records faces, number plates, clothes, places, and
+          behaviour. Video of people is personal data in many laws, for
+          example the GDPR of the European Union and the Personal Data
+          Protection Law of Saudi Arabia.
+    \item A stream can show more than its task needs: a person counter
+          does not need the face of the person.
+    \item Each copy is a risk: the stream on the network, a recording on a
+          disk, a frame in a log, a test image on a laptop.
+  \end{itemize}
+  \vskip 0.3em
+  Questions before you install a camera:
+  \begin{enumerate}
+    \item Which result does the task need? A count, a class, a box, or an
+          image?
+    \item Where does each image go, and who can see it?
+    \item How long does each copy stay? Who deletes it?
+    \item Do the people know about the camera?
+  \end{enumerate}
+  \keypoint{Collect the least data that the task needs. An edge device can
+    send the result and keep the image.}
+\end{frame}
+
+% ------------------------------------------------------------------ protect
+\begin{frame}{Protect a stream}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \begin{tabular}{@{}L{0.26\textwidth}L{0.32\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Risk} & \textbf{The lab setup} & \textbf{A product} \\
+    \midrule
+    Anybody on the network watches & No password: each device on
+      \code{edgeai-lab} can open the stream & User names and passwords in
+      MediaMTX \\
+    Somebody reads the packets & RTSP and RTP with no encryption & RTSPS,
+      and SRTP for the packets, with a TLS certificate \\
+    Images leave the site & A closed lab network & Results only; images on
+      request \\
+    Old recordings & None & A fixed time, then delete \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The lab network is closed, and the cameras show the lab. This is
+          why the lab needs no password.
+    \item Encryption costs CPU time on the camera node. Measure it, like
+          the encoder.
+    \item The MJPEG stream of the XIAO has no password and no encryption.
+          Use it only on a closed network.
+  \end{itemize}
+  \source{MediaMTX documentation, ``RTSP-specific features'' (section
+    ``Encryption'') and ``Authentication'' (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------------ privacy by design
+\begin{frame}{Privacy in the architecture}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.9cm, minimum height=0.9cm}]
+    \node[st] (c) at (0,0) {Camera};
+    \node[st, fill=cardinalred!12] (m) at (2.7,0) {Model on the camera
+      node};
+    \node[st, fill=darkcyan!15] (r) at (5.4,0) {Result: ``2 persons''};
+    \node[st] (d) at (8.1,0) {Dashboard (Day 13)};
+    \draw[->] (c) -- (m); \draw[->] (m) -- (r); \draw[->] (r) -- (d);
+    \node[st, fill=white, text width=2.4cm] (b) at (2.7,-1.45) {Image: blur
+      the faces, or delete it};
+    \draw[->, coolgray] (m) -- (b);
+  \end{tikzpicture}
+  \par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item \textbf{Send results, not images.} The detector runs where the
+          image is made.
+    \item \textbf{Change the image before it leaves.} Blur faces and number
+          plates on the camera node, then stream.
+    \item \textbf{Store events, not video.} Keep a short clip for an event,
+          and delete it after a fixed time.
+    \item \textbf{Limit the access.} Passwords for the stream, a separate
+          network for the cameras, a log of each access.
+  \end{itemize}
+  \keypoint{The place of the model is also a privacy decision. An image that
+    never leaves the device cannot leak from the network.}
+\end{frame}
+
+% ------------------------------------------------------------------ course systems
+\begin{frame}{The architectures of this course}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.18}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.17\textwidth}L{0.24\textwidth}L{0.23\textwidth}@{}}
+    \toprule
+    \textbf{System} & \textbf{Place} & \textbf{Network} & \textbf{Day} \\
+    \midrule
+    XIAO: keyword or image model on the kit & Camera node & A class, later
+      over MQTT & Days 5 and 12 \\
+    Raspberry Pi: camera and detector & Camera node & Results, a stream for
+      a person & Days 8 and 11 \\
+    Raspberry Pi stream to a laptop & Central node & H.264 over RTSP & Day
+      11, Part C \\
+    XIAO camera to a Raspberry Pi or a laptop & Central node & MJPEG over
+      HTTP & Day 11, Part D \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Published times: an image model on the kit needs 81 ms of
+          pre-processing and 205 ms of inference at 96 $\times$ 96 pixels.
+          A YOLO11n model at 320 pixels needs about 80 ms on the Raspberry
+          Pi 5 with NCNN.
+    \item The lab measures the same detector in two places: on the stream of
+          the Raspberry Pi, and on the stream of the XIAO.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, kit lab ``Image
+    Classification''.\\ \emph{Edge AI Engineering}, ``Computer Vision
+    Applications with YOLO''.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{select the inference location}{%
+  \small
+  For each system, select A (model on the camera node), B (model on a
+  central node), or C (split). Give two reasons: one number and one other
+  reason.
+  \begin{enumerate}
+    \item \textbf{Parking site.} 8 cameras count the free places each
+          minute. The site has an internet link of 5 Mbit/s. No image of a
+          car may leave the site.
+    \item \textbf{Doorbell.} A camera on a battery. It must show a video on
+          the phone of the owner when a person rings. Most of the day,
+          nothing happens.
+    \item \textbf{Factory line.} One camera checks each part for a defect.
+          The belt must stop within 100 ms. A strong computer stands in the
+          same room, with a cable to the camera.
+  \end{enumerate}
+  Use the bit rates of Part 2 (2.62 Mbit/s for H.264) and the frame ages of
+  this part.
+  \vskip 0.3em
+  Work with your neighbour for 8 minutes.
+}
+
+\answerframe{select the inference location}{%
+  \small
+  \begin{enumerate}
+    \item \textbf{A, or B with a node on the site.} 8 H.264 streams need
+          $8 \times 2.62 = 21$ Mbit/s: 4 times the link. A count each
+          minute is a few bytes. The images must stay on the site.
+    \item \textbf{C.} A small model or a motion test on the camera wakes
+          the radio and the stream only for a person. The battery cannot
+          send video all day. The video goes to the phone, with
+          encryption.
+    \item \textbf{B is possible, A is safer.} A stream with 1 decoder
+          thread had an age of 40 ms on one computer; the cable, the model,
+          and the stop signal must fit into the other 60 ms. With 4 decoder
+          threads (139 ms), B fails. A model on the camera node removes the
+          video path.
+  \end{enumerate}
+  \keypoint{Write the time budget and the bit rate first. Then select the
+    place, and add the privacy and the power.}
+}

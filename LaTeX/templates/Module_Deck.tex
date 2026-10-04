@@ -1,0 +1,27 @@
+% Backup module MODID. Skeleton: see LaTeX/templates/README.md.
+% The deck stands alone. It names no frame and no file of a core day.
+% Build: bash build.sh --file Module_MODID.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Module MODID]{Module MODID: TITLE OF THE MODULE}
+
+% Name only the sources that this module uses.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/modules/MODID/outcomes}
+\input{sections/modules/MODID/content}
+% A module of type T+L keeps the lab part. A module of type T deletes the
+% next line and the file lab.tex.
+\input{sections/modules/MODID/lab}
+\input{sections/credits}
+
+\end{document}

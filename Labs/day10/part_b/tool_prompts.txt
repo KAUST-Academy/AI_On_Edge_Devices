@@ -1,0 +1,6 @@
+# Requests for tools.py (Part B). One request on each line.
+What is the temperature in the office?
+Set the heater in the bedroom to 21 degrees.
+It is cold in the kitchen. Set the heater there to 23 degrees.
+Set the heater in the garage to 300 degrees.
+How humid is the bedroom?

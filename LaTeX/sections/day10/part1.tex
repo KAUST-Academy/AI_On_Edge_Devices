@@ -1,0 +1,719 @@
+% Part 1 of Day 10: Small language models from a systems view.
+%
+% Topics of the syllabus: parameters, precision, and disk size; quantization
+% levels and the GGUF format; RAM budget: weights, KV cache, and the rest of
+% the system; tokens per second and what is usable; why distillation makes
+% small models good. Exercise: calculate the RAM of a 3-billion-parameter
+% model at 4 bits with two context lengths.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. The GGUF headers of the two lab models, llama3.2:1b and llama3.2:3b of
+%    the Ollama library, read for this course (tools/experiments/day10_gguf.py).
+%    The shapes, the types, and the counts come from the files.
+% 2. Calculations of this course from these headers and from the block sizes
+%    of ggml-common.h of llama.cpp (tools/experiments/day10_slm.py).
+% 3. Numbers that the authors of the sources published: the speed on the
+%    Raspberry Pi 5 (lab "Small Language Models" of Machine Learning Systems)
+%    and the rules of the guide "SLMs at the Edge". Nobody measured a speed
+%    on a board for this course.
+% Sizes in GB are 10^9 bytes, as in the Ollama library.
+
+\theorypart{Small language models from a systems view}%
+  {calculate the RAM of a 4-bit model with 3 billion parameters}
+
+% ------------------------------------------------------------------ the loop
+\begin{frame}{A language model writes one token at a time}
+  \centering
+  \begin{tikzpicture}[font=\small, >=stealth, x=0.9cm,
+      box/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                  minimum height=0.9cm, align=center}]
+    \node[box, text width=2.8cm] (in) at (0,0)
+      {Tokens so far\\ \scriptsize prompt + answer};
+    \node[box, text width=2.2cm, fill=darkcyan!15] (m) at (4.1,0)
+      {Model\\ \scriptsize all weights};
+    \node[box, text width=2.6cm] (p) at (8.0,0)
+      {Probability of each of 128\,256 tokens};
+    \node[box, text width=1.7cm, fill=cardinalred!12] (t) at (8.0,-2.0)
+      {Next token};
+    \draw[->, thick] (in) -- (m);
+    \draw[->, thick] (m) -- (p);
+    \draw[->, thick] (p) -- node[right, font=\scriptsize] {select} (t);
+    \draw[->, thick] (t) -| node[pos=0.25, below, font=\scriptsize]
+      {append, and run the model again} (in);
+  \end{tikzpicture}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A classifier of Days 1 to 9 runs once for one input. A language
+          model runs once for each token of its answer.
+    \item An answer of 100 tokens needs 100 runs of the model. The speed is
+          a rate: tokens in each second.
+    \item The model stops at a stop token, or at a limit of the runtime.
+  \end{itemize}
+  \keypoint{The cost of an answer grows with its length. A short answer is
+    a fast answer.}
+\end{frame}
+
+% -------------------------------------------------------------------- tokens
+\begin{frame}{Tokens}
+  \small
+  \begin{itemize}
+    \item A tokenizer cuts the text into tokens: words, parts of words, and
+          signs. The model sees only the numbers of the tokens.
+    \item The vocabulary of Llama 3.2 has 128\,256 tokens. The tokenizer
+          joins small parts with 280\,147 merge rules (byte-pair encoding).
+    \item The GGUF file of the model contains the tokenizer. You need no
+          other file.
+    \item The context is the number of tokens that the model can see: the
+          prompt and the answer. Llama 3.2 is trained for 131\,072 tokens.
+  \end{itemize}
+  \vskip 0.4em
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.40\textwidth}L{0.50\textwidth}@{}}
+    \toprule
+    \textbf{Rate of a person} & \textbf{Rate of a model} \\
+    \midrule
+    Reading: 5 to 7 words in each second & About 8 to 10 tokens in each
+      second \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \keypoint{Count in tokens, not in words. The prompt, the context, the
+    speed, and the price of a cloud model all use tokens.}
+  \source{Vocabulary, merge rules, and context: the GGUF header of
+    \code{llama3.2:3b}.\\ Reading rate: guide ``SLMs at the Edge'',
+    section 2.6.}
+\end{frame}
+
+% ------------------------------------------------------------- two phases
+\begin{frame}{Two phases: the prompt and the generation}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Prompt evaluation (prefill)}
+      \begin{itemize}
+        \item All tokens of the prompt go through the model together.
+        \item The weights multiply a matrix of tokens: many operations for
+              each byte that the processor reads.
+        \item The result: the time to the first token.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Generation (decode)}
+      \begin{itemize}
+        \item One new token for each run of the model.
+        \item The weights multiply one vector: few operations for each
+              byte.
+        \item The result: the tokens in each second of the answer.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.42\textwidth}rrr@{}}
+    \toprule
+    \textbf{\code{llama3.2:1b}, Raspberry Pi 5} & \textbf{Tokens}
+    & \textbf{Time} & \textbf{Rate} \\
+    \midrule
+    Prompt eval  & 32  & 1.64 s  & 19.46 tokens/s \\
+    Eval (the answer) & 8 & 0.89 s & 8.99 tokens/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \small
+  Ollama prints the two rates with \code{--verbose}. A benchmark of a
+  language model gives the two rates and the two token counts.
+  \source{Lab ``Small Language Models'' of \emph{Machine Learning Systems}.
+    \\ The token count of the answer is $8.99 \times 0.89$ s, a
+    calculation.}
+\end{frame}
+
+% ----------------------------------------------------------- inside a model
+\begin{frame}{Inside the two lab models}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.48\textwidth}rr@{}}
+    \toprule
+    \textbf{Value in the GGUF header} & \code{llama3.2:1b} & \code{llama3.2:3b} \\
+    \midrule
+    Layers (transformer blocks) & 16      & 28 \\
+    Width of the model, $d$     & 2048    & 3072 \\
+    Attention heads             & 32      & 24 \\
+    Key and value heads         & 8       & 8 \\
+    Size of one head            & 64      & 128 \\
+    Width of the MLP            & 8192    & 8192 \\
+    Vocabulary                  & 128\,256 & 128\,256 \\
+    Parameters                  & 1\,235\,814\,432 & 3\,212\,749\,888 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The names say 1B and 3B. The files have 1.24 and 3.21 billion
+          parameters.
+    \item Fewer key and value heads than attention heads: grouped-query
+          attention. It makes the KV cache smaller (later in this part).
+  \end{itemize}
+  \source{The GGUF headers of the two files of the Ollama library, read for
+    this course.}
+\end{frame}
+
+% --------------------------------------------------------- count parameters
+\begin{frame}{Count the parameters of the 3B model}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.40\textwidth}r@{}}
+    \toprule
+    \textbf{Part} & \textbf{Calculation} & \textbf{Parameters} \\
+    \midrule
+    Attention: Q and output & $2 \times 3072 \times 3072$ & 18\,874\,368 \\
+    Attention: K and V      & $2 \times 3072 \times (8 \times 128)$ & 6\,291\,456 \\
+    MLP: gate, up, down     & $3 \times 3072 \times 8192$ & 75\,497\,472 \\
+    Two norms               & $2 \times 3072$ & 6\,144 \\
+    \midrule
+    One layer               & sum of the four lines & 100\,669\,440 \\
+    28 layers               & $28 \times 100\,669\,440$ & 2\,818\,744\,320 \\
+    Token table             & $128\,256 \times 3072$ & 394\,002\,432 \\
+    Last norm and RoPE      & $3072 + 64$ & 3\,136 \\
+    \midrule
+    \textbf{Total}          & & \textbf{3\,212\,749\,888} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The MLP has 75 percent of the weights of a layer.
+    \item The token table is also the output layer (tied weights). It has
+          12 percent of all parameters.
+  \end{itemize}
+  \source{Shapes: the GGUF header of \code{llama3.2:3b}.\\ The total is the
+    sum of the tensors in the file.}
+\end{frame}
+
+% ------------------------------------------------------------- disk size
+\begin{frame}{Precision and size}
+  \small
+  \textbf{Size in bytes = parameters $\times$ bits for each weight / 8}
+  \vskip 0.4em
+  \renewcommand{\arraystretch}{1.12}
+  \begin{tabular}{@{}L{0.30\textwidth}rrr@{}}
+    \toprule
+    \textbf{Format} & \textbf{Bits} & \textbf{1.24 B parameters} & \textbf{3.21 B parameters} \\
+    \midrule
+    \code{float32}            & 32   & 4.94 GB & 12.85 GB \\
+    \code{float16}            & 16   & 2.47 GB & 6.43 GB \\
+    \code{Q8\_0}              & 8.5  & 1.31 GB & 3.41 GB \\
+    \code{Q4\_0}              & 4.5  & 0.70 GB & 1.81 GB \\
+    Only the 4 bits           & 4    & 0.62 GB & 1.61 GB \\
+    \midrule
+    The file of the lab       &      & 1.32 GB, \code{Q8\_0} & 2.02 GB, \code{Q4\_K\_M} \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Training gives \code{float16} or \code{float32}. A 3B model in
+          \code{float16} uses most of the 8 GB of the Raspberry Pi 5.
+    \item A 4-bit format needs more than 4 bits: each block of weights also
+          stores its scale.
+  \end{itemize}
+  \keypoint{Quantization makes a small language model fit on the board.}
+  \source{Parameters: the GGUF headers.\\ File sizes: the Ollama registry.}
+\end{frame}
+
+% ------------------------------------------------------------- blocks
+\begin{frame}{Quantization in blocks: \code{Q8\_0} and \code{Q4\_0}}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, x=0.33cm, y=0.5cm]
+    \fill[cardinalred!25] (0,0) rectangle (2,1);
+    \node at (1,0.5) {$d$};
+    \foreach \i in {0,...,31} {
+      \draw[coolgray, fill=darkcyan!12] (2+\i*0.75,0) rectangle (2.75+\i*0.75,1);
+    }
+    \draw[coolgray] (0,0) rectangle (2,1);
+    \node[anchor=west] at (0,1.6) {\code{Q8\_0}: one block of 32 weights = 2 + 32 bytes = 34 bytes};
+    \draw[coolgray, |-|] (2,-0.15) -- (26,-0.15)
+      node[midway, below=1pt] {32 integers $q$ of 8 bits};
+    \node[anchor=north] at (1,-0.2) {FP16 scale};
+    \begin{scope}[yshift=-2.7cm]
+      \fill[cardinalred!25] (0,0) rectangle (2,1);
+      \draw[coolgray] (0,0) rectangle (2,1);
+      \node at (1,0.5) {$d$};
+      \foreach \i in {0,...,15} {
+        \draw[coolgray, fill=darkcyan!12] (2+\i*0.75,0) rectangle (2.75+\i*0.75,1);
+      }
+      \node[anchor=west] at (0,1.6) {\code{Q4\_0}: one block of 32 weights = 2 + 16 bytes = 18 bytes};
+      \draw[coolgray, |-|] (2,-0.15) -- (14,-0.15)
+        node[midway, below=1pt] {32 integers of 4 bits, two in each byte};
+    \end{scope}
+  \end{tikzpicture}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Each weight is $w = d \times q$. Each block of 32 weights has its
+          own scale $d$.
+    \item \code{Q8\_0}: $34 \times 8 / 32 = 8.5$ bits for each weight.
+          \code{Q4\_0}: $18 \times 8 / 32 = 4.5$ bits.
+    \item Day 6 used one scale for each tensor or for each channel. A small
+          block gives a better fit to the weights, for some more bytes.
+  \end{itemize}
+  \source{Block definitions in \code{ggml-common.h} of llama.cpp (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------- k-quants
+\begin{frame}{K-quants: blocks in a super-block}
+  \small
+  A K-quant groups 256 weights into a super-block of 8 blocks with 32
+  weights. Each block has a scale and a minimum of 6 bits. The super-block
+  has two FP16 values for these scales: $w = a \times q + b$.
+  \vskip 0.4em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lL{0.42\textwidth}rr@{}}
+    \toprule
+    \textbf{Type} & \textbf{Bytes of one super-block} & \textbf{Bytes} &
+    \textbf{Bits for each weight} \\
+    \midrule
+    \code{Q4\_K} & $2 + 2 + 12 + 128$             & 144 & 4.5 \\
+    \code{Q5\_K} & $2 + 2 + 12 + 32 + 128$        & 176 & 5.5 \\
+    \code{Q6\_K} & $2 + 16 + 64 + 128$            & 210 & 6.5625 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The bits per weight: bytes $\times$ 8 / 256. Example:
+          $144 \times 8 / 256 = 4.5$.
+    \item The minimum $b$ gives a better fit when the weights of a block
+          are not centred on zero.
+    \item The scales themselves are quantized: 6 bits, not 16. So the cost
+          of 8 scales stays small.
+  \end{itemize}
+  \source{Block definitions in \code{ggml-common.h} of llama.cpp (MIT).}
+\end{frame}
+
+% ------------------------------------------------------------- names
+\begin{frame}{Read the name of a quantization level}
+  \centering
+  \begin{tikzpicture}[font=\small, >=stealth]
+    \node[font=\LARGE\ttfamily] (n) at (0,0) {Q4\_K\_M};
+    \node[align=center, text width=3.0cm, font=\scriptsize] (a) at (-3.6,-1.5)
+      {\textbf{4}: the main number of bits};
+    \node[align=center, text width=3.0cm, font=\scriptsize] (b) at (0,-1.7)
+      {\textbf{K}: a K-quant with super-blocks};
+    \node[align=center, text width=3.4cm, font=\scriptsize] (c) at (3.8,-1.5)
+      {\textbf{M}: medium mix. Some tensors keep more bits. S: small, L:
+      large.};
+    \draw[->, coolgray] (-0.55,-0.3) -- (a.north);
+    \draw[->, coolgray] (0.05,-0.3) -- (b.north);
+    \draw[->, coolgray] (0.65,-0.3) -- (c.north);
+  \end{tikzpicture}
+  \vskip 0.6em
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.18\textwidth}L{0.74\textwidth}@{}}
+    \toprule
+    \textbf{Level} & \textbf{Advice of the guide} \\
+    \midrule
+    \code{Q8\_0}   & Almost no loss. For models of 1B or smaller. \\
+    \code{Q5\_K\_M} & A good compromise near 1B, for example for
+                     structured output. \\
+    \code{Q4\_K\_M} & The default of Ollama. For models of 2B and larger. \\
+    \code{Q3}, \code{Q2} & The quality drops fast. A 1B model at
+                     \code{Q2} is often worse than a 360M model at \code{Q8}. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.3em
+  \begin{itemize}
+    \item A small model loses more quality from fewer bits than a large
+          model.
+  \end{itemize}
+  \source{Guide ``SLMs at the Edge'', section 2.2.\\ Published advice, not
+    measurements of this course.}
+\end{frame}
+
+% ------------------------------------------------------------- real mix
+\begin{frame}{\code{Q4\_K\_M} is a mix: the file of the lab}
+  \small
+  The tensors of \code{llama3.2:3b}, from its GGUF header:
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrL{0.38\textwidth}rr@{}}
+    \toprule
+    \textbf{Type} & \textbf{Tensors} & \textbf{Which tensors} &
+    \textbf{Weights} & \textbf{Bytes} \\
+    \midrule
+    \code{Q4\_K} & 168 & Q, K, output, gate, up; one half of V and down
+                 & 2.422 B & 1.362 GB \\
+    \code{Q6\_K} & 29  & The token table; the other half of V and down
+                 & 0.790 B & 0.648 GB \\
+    \code{F32}   & 58  & The norms and the RoPE values
+                 & 0.0002 B & 0.0007 GB \\
+    \midrule
+    Sum          & 255 & & 3.213 B & 2.012 GB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Mean: $2.012 \times 8 / 3.213 = 5.0$ bits for each weight, not 4.
+    \item The tensors V and down of 14 of the 28 layers keep 6 bits. These
+          tensors are the most sensitive to the error.
+    \item The file has 2.019 GB. The other 7.8 MB are the header: most of
+          it is the tokenizer.
+  \end{itemize}
+  \keypoint{Calculate the RAM from the size of the file, not from the name of
+    the level.}
+  \source{The GGUF header of \code{llama3.2:3b}.}
+\end{frame}
+
+% ------------------------------------------------------------- GGUF
+\begin{frame}[fragile]{The GGUF file format}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize,
+          seg/.style={draw=coolgray, minimum width=3.6cm, align=center}]
+        \node[seg, fill=cardinalred!15, minimum height=0.6cm] (h) at (0,0)
+          {Header: \code{GGUF}, version 3,\\ counts};
+        \node[seg, fill=boxgray, minimum height=1.0cm, below=0pt of h] (m)
+          {Metadata: 30 keys\\ architecture, shapes,\\ tokenizer, chat template};
+        \node[seg, fill=boxgray, minimum height=0.7cm, below=0pt of m] (t)
+          {Tensor list: 255 names,\\ shapes, types, offsets};
+        \node[seg, fill=darkcyan!15, minimum height=2.2cm, below=0pt of t] (d)
+          {Tensor data\\ 2.012 GB};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.57\textwidth}
+\begin{lstlisting}
+general.architecture   llama
+general.name           Llama 3.2 3B Instruct
+general.file_type      15 (Q4_K_M)
+llama.block_count      28
+llama.embedding_length 3072
+llama.context_length   131072
+llama.attention.head_count_kv  8
+tokenizer.ggml.tokens  128256 strings
+\end{lstlisting}
+      \small
+      \begin{itemize}
+        \item One file has the weights, the tokenizer, and the chat
+              template.
+        \item llama.cpp, Ollama, and LM Studio read GGUF.
+        \item The runtime can map the tensor data into memory: it loads
+              only the pages that it reads.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \source{Keys and counts: the GGUF header of \code{llama3.2:3b}, read for
+    this course.}
+\end{frame}
+
+% ------------------------------------------------------------- RAM budget
+\begin{frame}{The RAM budget}
+  \centering
+  \begin{tikzpicture}[font=\scriptsize, x=1.25cm, y=0.8cm]
+    \fill[coolgray!35]     (0,0)   rectangle (0.4,1);
+    \fill[darkcyan!35]     (0.4,0) rectangle (2.42,1);
+    \fill[cardinalred!30]  (2.42,0) rectangle (2.89,1);
+    \fill[darkbeige!40]    (2.89,0) rectangle (3.4,1);
+    \draw[coolgray] (0,0) rectangle (8,1);
+    \node[rotate=90] at (0.2,0.5) {OS};
+    \node at (1.41,0.5) {weights 2.02 GB};
+    \node[rotate=90, font=\tiny] at (2.655,0.5) {KV};
+    \node[rotate=90, font=\tiny] at (3.145,0.5) {other};
+    \node at (5.7,0.5) {free for your application};
+    \foreach \x in {0,2,4,6,8} { \node[below] at (\x,0) {\x\ GB}; }
+  \end{tikzpicture}
+  \vskip 0.3em
+  {\scriptsize Example: \code{llama3.2:3b} with a context of 4096 tokens on a
+  Raspberry Pi 5 with 8 GB. The width of ``other'' is not a measurement.\par}
+  \vskip 0.4em
+  \small
+  \begin{enumerate}
+    \item \textbf{Weights:} the size of the file.
+    \item \textbf{KV cache:} it grows with the context length.
+    \item \textbf{Other:} buffers of the runtime, the operating system, and
+          your program.
+  \end{enumerate}
+  \begin{itemize}
+    \item The source measured 3.24 GB in use with a 3.8B model loaded,
+          and about 377 MB after Ollama stopped (no desktop).
+    \item Rule of the guide: usable model size $\approx$ (total RAM $-$
+          operating system and applications) $\times$ 0.7. For 8 GB:
+          $(8 - 0.4) \times 0.7 = 5.3$ GB for the weights and the cache.
+  \end{itemize}
+  \source{Memory values: lab ``Small Language Models'' of \emph{Machine
+    Learning Systems}.\\ Rule: guide ``SLMs at the Edge'', section 2.4.}
+\end{frame}
+
+% ------------------------------------------------------------- KV cache
+\begin{frame}{The KV cache}
+  \begin{columns}[c]
+    \begin{column}{0.45\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, x=0.5cm, y=0.5cm]
+        \foreach \i in {0,...,6} {
+          \draw[coolgray, fill=darkcyan!15] (\i,2) rectangle (\i+1,3);
+          \draw[coolgray, fill=cardinalred!12] (\i,0.6) rectangle (\i+1,1.6);
+        }
+        \draw[coolgray, fill=darkcyan!45] (7,2) rectangle (8,3);
+        \draw[coolgray, fill=cardinalred!40] (7,0.6) rectangle (8,1.6);
+        \node[anchor=east] at (-0.1,2.5) {K};
+        \node[anchor=east] at (-0.1,1.1) {V};
+        \node[anchor=north] at (3.5,0.4) {tokens before: stored};
+        \node[anchor=south] at (7.5,3.1) {new};
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \small
+      \begin{itemize}
+        \item Attention compares the new token with all tokens before it.
+              It needs their keys K and values V in each layer.
+        \item The runtime stores K and V. It does not calculate them again
+              for each new token.
+        \item The cache grows by one row for each token.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \centering
+  \textbf{Bytes = 2 $\times$ layers $\times$ KV heads $\times$ head size
+  $\times$ context $\times$ bytes for each value}
+  \vskip 0.4em
+  \raggedright
+  \small
+  \begin{itemize}
+    \item The 2 counts K and V. Ollama stores the values in \code{f16}: 2
+          bytes. \code{q8\_0} uses about one half of this memory.
+    \item The default context of Ollama is 4096 tokens. The runtime
+          allocates the cache for this context.
+  \end{itemize}
+  \source{Ollama FAQ: the context window and the type of the K/V cache.}
+\end{frame}
+
+\begin{frame}{The KV cache of the two lab models}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.36\textwidth}rr@{}}
+    \toprule
+    & \code{llama3.2:1b} & \code{llama3.2:3b} \\
+    \midrule
+    Calculation for one token
+      & $2 \cdot 16 \cdot 8 \cdot 64 \cdot 2$ & $2 \cdot 28 \cdot 8 \cdot 128 \cdot 2$ \\
+    Bytes for one token         & 32\,768  & 114\,688 \\
+    4096 tokens (default)       & 0.13 GB  & 0.47 GB \\
+    32\,768 tokens              & 1.07 GB  & 3.76 GB \\
+    131\,072 tokens (maximum)   & 4.29 GB  & 15.03 GB \\
+    \midrule
+    The weights (file)          & 1.32 GB  & 2.02 GB \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item With the maximum context, the cache of the 3B model is 7 times
+          its weights. It does not fit in 8 GB.
+    \item With 24 KV heads instead of 8, the 3B cache would be 3 times as
+          large: grouped-query attention saves this memory.
+  \end{itemize}
+  \keypoint{Set the context to the length that your application needs, not
+    to the maximum of the model.}
+  \source{Calculation of this course from the GGUF headers,\\ with
+    \code{f16} values.}
+\end{frame}
+
+% ------------------------------------------------------------- memory-bound
+\begin{frame}{Generation is memory-bound}
+  \small
+  For each new token, the model reads each weight once and does about 2
+  operations with it.
+  \vskip 0.4em
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.46\textwidth}L{0.44\textwidth}@{}}
+    \toprule
+    \textbf{\code{llama3.2:3b}, one token} & \textbf{Value} \\
+    \midrule
+    Operations                  & $2 \times 3.21$ B = 6.4 GFLOP \\
+    Bytes read                  & 2.02 GB (the file) \\
+    Intensity                   & $6.4 / 2.02 = 3.2$ FLOP for each byte \\
+    At 5.3 tokens/s (published) & $6.4 \times 5.3 = 34$ GFLOP/s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item Day 7: the peak of the 4 cores is 153.6 GFLOP/s. The generation
+          uses less than one quarter of it.
+    \item An intensity of 3.2 is low: the memory sets the limit, as for the
+          matrix times vector of Day 7.
+    \item The prompt is different: all its tokens use each weight. Its
+          intensity is higher, so its rate is higher.
+  \end{itemize}
+  \source{Calculation of this course. Rate: lab ``Small Language Models''
+    of \emph{Machine Learning Systems}.}
+\end{frame}
+
+\begin{frame}{The published rates agree with the memory limit}
+  \small
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}L{0.22\textwidth}rrrr@{}}
+    \toprule
+    \textbf{Model} & \textbf{Parameters} & \textbf{File} & \textbf{Eval rate}
+    & \textbf{File $\times$ rate} \\
+    \midrule
+    \code{llama3.2:1b} & 1.24 B & 1.32 GB & 8.99 tokens/s & 11.9 GB/s \\
+    \code{llama3.2:3b} & 3.21 B & 2.02 GB & 5.3 tokens/s  & 10.7 GB/s \\
+    \midrule
+    Ratio 3B / 1B      & 2.6    & 1.53    & 1.70 (slower) & \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.4em
+  \begin{itemize}
+    \item The 3B model has 2.6 times the parameters, but it is only 1.7
+          times slower. Its file is only 1.53 times as large.
+    \item The product of the file size and the rate is almost the same for
+          the two models: about 11 GB of weights in each second.
+    \item So the bytes set the speed, not the parameters. Fewer bits give
+          more tokens in each second.
+  \end{itemize}
+  \keypoint{Upper limit: tokens per second $\approx$ memory bandwidth / size
+    of the file. Measure the rate in the lab to see your limit.}
+  \source{Rates: lab ``Small Language Models'' of \emph{Machine Learning
+    Systems}, about 2 GB for the\\ 3B file in the source. Products and
+    ratios: calculations of this course.}
+\end{frame}
+
+% ------------------------------------------------------------- usable
+\begin{frame}{Tokens per second: what is usable?}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.30\textwidth}L{0.24\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Use} & \textbf{Rate that you need} & \textbf{Why} \\
+    \midrule
+    Chat with a person & 8 to 10 tokens/s & A person reads at this rate \\
+    A job with no person: summarize a log, classify a message
+      & 2 tokens/s can be enough & Nobody waits for each word \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \textbf{The total time of one answer} (if the rates stay the same):
+  \vskip 0.2em
+  \begin{itemize}
+    \item A prompt of 500 tokens at 19.46 tokens/s: 25.7 s before the
+          first token.
+    \item An answer of 100 tokens: 11.1 s with the 1B model, 18.9 s with
+          the 3B model.
+    \item A reasoning model first writes a ``think'' text. The person waits
+          for these tokens too.
+  \end{itemize}
+  \keypoint{The time to the first token depends on the prompt. A long
+    prompt can cost more time than the answer.}
+  \source{Uses and rates of a person: guide ``SLMs at the Edge'', section
+    2.6. Times: calculations\\ of this course with the published rates.}
+\end{frame}
+
+% ------------------------------------------------------------- distillation
+\begin{frame}{Why small models got good: distillation}
+  \begin{columns}[c]
+    \begin{column}{0.45\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, >=stealth,
+          box/.style={draw=coolgray, rounded corners=2pt, align=center}]
+        \node[box, fill=darkcyan!15, minimum width=2.6cm, minimum height=1.3cm]
+          (T) at (0,0) {Teacher\\ large model};
+        \node[box, fill=cardinalred!12, minimum width=1.6cm, minimum height=0.8cm]
+          (S) at (0,-2.6) {Student\\ small model};
+        \node[box, fill=boxgray] (X) at (-2.6,-1.3) {Text};
+        \draw[->] (X) |- (T);
+        \draw[->] (X) |- (S);
+        \draw[->, thick] (T) -- node[right, align=left]
+          {probability of\\ each next token} (S);
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \small
+      \begin{itemize}
+        \item The student learns the full probabilities of the teacher, not
+              only the correct next token.
+        \item These soft targets also show which wrong tokens are almost
+              correct. This is more information for each example.
+        \item Day 6 used the same idea for a classifier.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.5em
+  \small
+  \textbf{Llama 3.2 1B and 3B:} the authors pruned the 8B model of Llama
+  3.1. Then the outputs of the 8B and 70B models were the targets for each
+  token. The training used 9 trillion tokens.
+  \keypoint{A small model with good data and a good teacher can do a narrow
+    task well. It does not have the breadth of the teacher.}
+  \source{Hinton, Vinyals, and Dean, 2015. Llama 3.2: lab ``Small Language
+    Models'' of\\ \emph{Machine Learning Systems}.}
+\end{frame}
+
+% ------------------------------------------------------------- scope
+\begin{frame}{What a small model does well}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{@{}L{0.45\textwidth}L{0.45\textwidth}@{}}
+    \toprule
+    \textbf{Good tasks for a model of about 1B} & \textbf{Weak tasks} \\
+    \midrule
+    Summarize a text                     & Reasoning in many steps \\
+    Find the intent of a short command   & Facts that are not in the prompt \\
+    Answer questions on a narrow topic   & Exact arithmetic \\
+    Extract fields from messy text       & Long and complex instructions \\
+    A basic conversation                 & A guaranteed correct answer \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \begin{itemize}
+    \item The guide: the question at the edge is not ``how large a model
+          fits'', but ``how small a model still does the task''.
+    \item Part 3 adds tools that help a small model: a schema for the
+          output, function calls, and retrieval.
+  \end{itemize}
+  \keypoint{Test the model with your own prompts. A ranking on a public
+    leaderboard does not tell you the result on your task.}
+  \source{Guide ``SLMs at the Edge'', sections 1 and 7.}
+\end{frame}
+
+% -------------------------------------------------------------------- exercise
+\exerciseframe{the RAM of a 4-bit 3B model}{%
+  \small
+  A model has 3.2 billion parameters, 28 layers, 8 key and value heads, and
+  a head size of 128. The runtime stores the KV cache in \code{f16}. The
+  board is a Raspberry Pi 5 with 8 GB. The operating system uses 0.4 GB.
+  \begin{enumerate}
+    \item Calculate the size of the weights at 4 bits for each weight.
+    \item Calculate the bytes of the KV cache for one token.
+    \item Calculate the RAM of the weights and the KV cache for a context of
+          4096 tokens and for a context of 32\,768 tokens.
+    \item Use the rule of the guide: (8 $-$ 0.4) $\times$ 0.7 = 5.3 GB. Which
+          context fits?
+    \item The file of the lab has 2.02 GB, not your value of question 1.
+          Why?
+    \item Give two changes that make the larger context fit.
+  \end{enumerate}
+  Work with your neighbour for 8 minutes. Use GB = $10^9$ bytes.
+}
+
+\answerframe{the RAM of a 4-bit 3B model}{%
+  \small
+  \begin{enumerate}
+    \item $3.2 \times 10^9 \times 4 / 8 = 1.6$ GB.
+    \item $2 \times 28 \times 8 \times 128 \times 2 = 114\,688$ bytes.
+    \item 4096 tokens: $114\,688 \times 4096 = 0.47$ GB, total
+          $1.6 + 0.47 = 2.07$ GB.\\
+          32\,768 tokens: $114\,688 \times 32\,768 = 3.76$ GB, total
+          $1.6 + 3.76 = 5.36$ GB.
+    \item 4096 tokens fits with a large margin. 32\,768 tokens is above
+          5.3 GB: it does not fit with the rule. The real file is larger
+          too.
+    \item Each block stores its scales, and \code{Q4\_K\_M} keeps some
+          tensors at 6 bits: 5.0 bits for each weight on average.
+    \item A \code{q8\_0} KV cache: 1.88 GB, total 3.48 GB. Or a shorter
+          context, for example 16\,384 tokens. Or a smaller model.
+  \end{enumerate}
+  \keypoint{The weights are fixed. The context is your choice, and it can
+    cost more RAM than the weights.}
+}

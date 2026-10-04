@@ -1,0 +1,50 @@
+% Check criterion, deliverable, and the Decision Log question of Day 13.
+% The criterion comes from the Day 13 section of the syllabus and from
+% Labs/day13/README.md.
+\begin{frame}{Check criterion}
+  \small
+  The instructor checks this at the end of the lab:
+  \begin{itemize}
+    \item \cmark\ \code{monitor\_detect.py} prints \code{Task A1: complete}
+          and \code{Task A2: complete}, and the log has \code{start},
+          \code{summary}, and \code{stop} records.
+    \item \cmark\ The dashboard shows the live system and model metrics,
+          and the state bar shows no lost message.
+    \item \cmark\ \code{reference.py} prints \code{Task C1: complete} and a
+          threshold from your reference period.
+    \item \cmark\ Live demonstration: during a dim light event,
+          \code{alert.py} (with \code{Task D1: complete}) prints
+          \code{ALERT ON}, and the state bar becomes red. After the event,
+          the alert clears.
+    \item \cmark\ The report has the incident report and a Decision Log with
+          numbers and one trade-off.
+  \end{itemize}
+  \vskip 0.4em
+  \textbf{Hand in:} the file \code{report.md} with the drift table and the
+  incident report.
+\end{frame}
+
+\begin{frame}{Decision Log}
+  \begin{exerciseblock}
+    A shop uses 20 Raspberry Pi cameras to count the people at its doors.
+    One camera stands near a window, so its light changes with the time of
+    day. The shop has one person who looks at alerts.
+    \begin{itemize}
+      \item Which metrics does each device send, how often, and where are
+            they stored?
+      \item Which alert rules do you use, with which thresholds, windows,
+            and durations?
+      \item How many false alerts each week do you expect, and what does
+            the person do for each alert?
+    \end{itemize}
+  \end{exerciseblock}
+  \vskip 0.2em
+  A good Decision Log (about 100 words):
+  \begin{itemize}
+    \item gives your measured size of a summary, your threshold, and the
+          delay of your alert,
+    \item explains the camera near the window: one reference is not enough,
+    \item names what you lose: for example a fast alert against fewer false
+          alerts.
+  \end{itemize}
+\end{frame}

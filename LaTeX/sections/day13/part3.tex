@@ -1,0 +1,604 @@
+% Part 3 of Day 13: Visualization and alerts.
+%
+% Topics of the syllabus: dashboards and thresholds; drift detection from
+% confidence and input statistics; the loop back to data collection and
+% training. Exercise: set alert thresholds from a given metric history.
+%
+% The numbers of this part have three origins. Each frame says so in its
+% source line.
+% 1. A simulation of this course: tools/experiments/day13_alerts.py,
+%    values in tools/data/day13/day13_alerts.json. It replays the stored
+%    values of each image of the Part 1 experiment (MobileNetV2, 500
+%    Imagenette images) as a camera stream of 10 frames each second, with
+%    independent frames. Figures from tools/figures/day13_alerts.py.
+% 2. The textbook (dashboard views, the false alarm formula, PSI and its
+%    thresholds, retraining on a schedule or on a trigger).
+% 3. The files of Labs/hardware/HW-08 (alert rules, the Python dashboard).
+
+\theorypart{Visualization and alerts}%
+  {set alert thresholds from a given metric history}
+
+% ------------------------------------------------------------------ loop
+\begin{frame}{From a metric to an action}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.55cm, minimum height=0.9cm}]
+    \node[st, fill=cardinalred!12] (a) at (0,0) {Device\\ measures};
+    \node[st] (b) at (2.15,0) {Store\\ (Part 2)};
+    \node[st] (c) at (4.3,0) {Dashboard};
+    \node[st] (d) at (6.45,0) {Alert rule};
+    \node[st, fill=darkcyan!15] (e) at (8.6,0) {Person\\ acts};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (b.south) |-
+      ++(0,-0.5) -| (d.south);
+    \draw[->] (d) -- (e);
+    \draw[->, darkcyan] (e.north) |- ++(0,0.55) -| node[pos=0.25, above]
+      {repair, new data, new model} (a.north);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A dashboard shows the metrics to a person who looks. An alert calls
+          a person who does not look.
+    \item Nobody watches a dashboard of 30 devices all day. The alert rules
+          do the watching; the dashboard helps to find the cause.
+    \item An alert is useful only when a person can act on it: clean a lens,
+          restart a program, collect new data.
+  \end{itemize}
+  \keypoint{Each alert needs an owner and an action. An alert with no
+    action teaches people to ignore alerts.}
+\end{frame}
+
+% ------------------------------------------------------------------ views
+\begin{frame}{One dashboard for each question}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.33\textwidth}L{0.40\textwidth}@{}}
+    \toprule
+    \textbf{View} & \textbf{Question} & \textbf{Panels} \\
+    \midrule
+    All devices & Which device has a problem now? & One row for each device:
+      state, last message, active alerts \\
+    One device & Is this device healthy? & System and model metrics of the
+      last hours, with the reference band \\
+    Investigation & Why did it change, and when? & Several metrics on one
+      time axis, the log events, the model version \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Start with the question, then select the panels. A panel that
+          answers no question takes space and attention.
+    \item The lab builds the second view for one Raspberry Pi. The first
+          view needs the metrics of all devices in one place.
+  \end{itemize}
+  \source{After \emph{Machine Learning Systems}, Volume II, chapter ``ML
+    Operations at Scale'', section ``Dashboard design''.}
+\end{frame}
+
+% ------------------------------------------------------------------ layout
+\begin{frame}{The layout of a device dashboard}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize]
+    \draw[coolgray, rounded corners=2pt] (0,0) rectangle (10.2,3.55);
+    \fill[treegreen!30] (0.15,3.0) rectangle (10.05,3.4);
+    \node[anchor=west] at (0.25,3.2) {pi-07: online \quad last message
+      0.4 s \quad lost 0 \quad no alert \quad model yolo11n\_320\_int8};
+    \foreach \x/\t in {0.15/frame rate, 3.5/latency p95, 6.85/temperature} {
+      \draw[coolgray, fill=boxgray] (\x,1.6) rectangle ++(3.2,1.25);
+      \node[anchor=north west] at (\x,2.85) {\t};
+      \draw[darkcyan, thick] (\x+0.2,2.0) -- ++(0.6,0.1) -- ++(0.6,-0.08)
+        -- ++(0.6,0.12) -- ++(0.6,-0.06) -- ++(0.5,0.05);
+    }
+    \foreach \x/\t in {0.15/mean confidence, 3.5/objects in each frame,
+                       6.85/brightness} {
+      \draw[coolgray, fill=boxgray] (\x,0.15) rectangle ++(3.2,1.25);
+      \node[anchor=north west] at (\x,1.4) {\t};
+      \draw[cardinalred, dashed] (\x+0.2,0.45) -- ++(2.8,0);
+      \draw[darkcyan, thick] (\x+0.2,0.75) -- ++(0.7,0.06) -- ++(0.7,-0.05)
+        -- ++(0.7,0.04) -- ++(0.7,-0.03);
+    }
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small
+  \begin{itemize}
+    \item Top: one line of state, which a person reads in one second. Its
+          colour changes with an alert.
+    \item One row for the system, one row for the model. All panels share
+          the same time axis, so one event lines up in all panels.
+    \item Each panel shows its unit, its threshold, and the normal band.
+  \end{itemize}
+  \source{Example layout. The Python dashboard of HW-08 has a state bar and
+    six charts.}
+\end{frame}
+
+% ------------------------------------------------------------------ panels
+\begin{frame}{Panel types}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.34\textwidth}@{}}
+    \toprule
+    \textbf{Panel} & \textbf{Use} & \textbf{Example} \\
+    \midrule
+    Time series & A value over time, its trend, its noise & Latency p95 of
+      the last 6 hours \\
+    Single value & The current state, with a colour & Temperature now:
+      61\,$^\circ$C \\
+    Table & Events and their details & The last 10 alerts \\
+    Histogram & The distribution of a value & Confidence of the last hour
+      against the reference \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item A mean hides the bad cases. Show the p95 or the maximum next to
+          the mean (Day 9).
+    \item A change of a distribution can leave the mean the same. A
+          histogram against the reference shows it.
+    \item Use a fixed range of the axis for a value with known limits (a
+          confidence from 0 to 1), so that a change is visible.
+  \end{itemize}
+  \source{The temperature is an example value.}
+\end{frame}
+
+% ------------------------------------------------------------------ example
+\begin{frame}{A dashboard during a drift}
+  \begingroup\centering
+  \includegraphics[width=0.86\textwidth]{images/day13/dashboard.pdf}\par
+  \endgroup
+  \vskip 0.1em
+  \small
+  \begin{itemize}
+    \item From 6:00 the room becomes darker. After one hour, each frame has
+          one tenth of the light.
+    \item Red area: the alert ``mean confidence of 60 s below the threshold
+          for 60 s''. It starts after 390 s.
+    \item The brightness shows the cause. The PSI changes slowly.
+  \end{itemize}
+  \source{Simulation of this part (values of Part 1).}
+\end{frame}
+
+% ------------------------------------------------------------------ spec
+\begin{frame}{Thresholds from a specification}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.30\textwidth}L{0.36\textwidth}@{}}
+    \toprule
+    \textbf{Metric} & \textbf{Limit} & \textbf{From} \\
+    \midrule
+    Temperature & 80\,$^\circ$C for 30 s & Throttling starts at 80\,$^\circ$C
+      (Part 1) \\
+    Last message & Older than 15 s & Keep-alive and the last will (Day 12)
+      \\
+    Free disk & Below 10 percent & The disk must not fill (Part 2) \\
+    Queue age & Oldest message older than 5 min & Store and forward (Day
+      12) \\
+    Frame rate & Below the need of the task & The requirement of the
+      application \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Some limits come from the hardware, the protocol, or the task. They
+          need no history: the device fails at the limit.
+    \item The first two rows are rules of HW-08 for the lab
+          (\code{HighTemperature}, \code{DeviceSilent}). The other limits
+          are example values.
+    \item A model metric has no such limit. Its normal value depends on the
+          scene, so it comes from a history.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ history
+\begin{frame}{Thresholds from a history}
+  \begingroup\centering
+  \includegraphics[width=0.84\textwidth]{images/day13/threshold.pdf}\par
+  \endgroup
+  \vskip 0.1em
+  \small
+  \begin{itemize}
+    \item Record a reference period with no problem (here one hour). Take
+          the mean minus 3 standard deviations of the windows.
+    \item 10 s means: 0.769 $\pm$ 0.026, threshold 0.689. 60 s means: 0.769
+          $\pm$ 0.012, threshold 0.733.
+    \item A longer window has less noise, so its threshold can be closer to
+          the normal value. It sees a smaller drift, but later.
+    \item When the values are not normal, use a percentile (for example
+          the 0.1 percent point).
+  \end{itemize}
+  \source{Simulation of this part (reference hour).}
+\end{frame}
+
+% ------------------------------------------------------------------ false
+\begin{frame}{How many false alerts?}
+  \small
+  \[ P(\text{at least one false alert}) = 1 - (1 - \alpha)^{N} \]
+  \vskip 0.3em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    \textbf{Rule: mean $-$ 3 sd, one day} & \textbf{Checks} &
+      \textbf{False alerts} & \textbf{At least one} \\
+    \midrule
+    Check each 10 s & 8640 & 11.7 & 100\,\% \\
+    Check each minute & 1440 & 1.9 & 86\,\% \\
+    20 metrics, each minute & 28\,800 & 38.9 & \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item $\alpha$: the chance that one check of a normal value passes the
+          threshold (0.00135 for 3 sd on one side). $N$: the number of
+          checks.
+    \item Many checks make false alerts certain. After some days of false
+          alerts, people do not read them any more.
+    \item Fewer, better rules: a longer window, a duration, and a rule for
+          each cause, not for each metric.
+  \end{itemize}
+  \source{Formula: \emph{Machine Learning Systems}, Volume II, chapter ``ML
+    Operations at Scale'' (alert fatigue). Values: normal distribution,
+    independent checks.}
+\end{frame}
+
+% ------------------------------------------------------------------ duration
+\begin{frame}{Duration, hysteresis, and severity}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.20\textwidth}L{0.38\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    \textbf{Setting} & \textbf{Effect} & \textbf{Cost} \\
+    \midrule
+    Duration (\code{for}) & Fire only when the condition stays for a time &
+      Adds this time to the delay \\
+    Hysteresis & Clear only when the value is back past a second limit &
+      The alert stays longer \\
+    Severity & Warning (look today) or critical (act now) & Two thresholds
+      to keep \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item The same ideas as the decision layer of Day 12: one noisy value
+          must not switch the state.
+    \item An alert message names the device, the metric, its value, the
+          threshold, the window, and the model version. The person then
+          knows where to start.
+    \item Send the alert where a person sees it: an MQTT topic, an e-mail,
+          a message, or the LED of a device.
+  \end{itemize}
+  \source{The content of an alert message: \emph{Machine Learning
+    Systems}, Volume I, chapter ``ML Operations''.}
+\end{frame}
+
+% ------------------------------------------------------------------ rule
+\begin{frame}[fragile]{An alert rule of the lab}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+- alert: LowConfidence
+  expr: avg_over_time(edgeai_confidence[30s]) < 0.6
+  for: 10s
+  labels:
+    severity: warning
+  annotations:
+    summary: "Low confidence on {{ $labels.device }} of {{ $labels.group }}"
+\end{lstlisting}
+  \small
+  \begin{itemize}
+    \item Option A of HW-08 (Prometheus): the mean confidence of 30 s below
+          0.6, for 10 s. A second rule fires when a device sends nothing for
+          15 s.
+    \item Option B (the Python dashboard of the lab): the mean confidence of
+          the last 20 messages below 0.6. The state bar becomes red.
+    \item The value 0.6 is a first guess of HW-08. In the lab you replace it
+          with a value from your own reference period.
+  \end{itemize}
+  \source{\texttt{Labs/hardware/HW-08/grafana/alert\_rules.yml} and
+    \texttt{python\_dashboard/dashboard.py} of this course.}
+\end{frame}
+
+% ------------------------------------------------------------------ drift
+\begin{frame}{Drift detection with no labels}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth]
+    \draw[->, coolgray] (0,0) -- (10.2,0) node[below left] {time};
+    \fill[darkcyan!20] (0.2,0.1) rectangle (3.2,0.9);
+    \node[align=center] at (1.7,0.5) {reference window\\ (after the
+      installation)};
+    \fill[cardinalred!15] (7.2,0.1) rectangle (10.0,0.9);
+    \node[align=center] at (8.6,0.5) {current window\\ (last 1 to 10 min)};
+    \draw[<->, thick] (3.3,0.5) -- node[above] {compare} (7.1,0.5);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.24\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
+    \toprule
+    \textbf{Signal} & \textbf{Test} & \textbf{It sees} \\
+    \midrule
+    Confidence & Mean, or the part below 0.5 & Any change that harms the
+      model \\
+    Input statistics & Brightness, sharpness against a band & The cause:
+      light, focus, noise \\
+    Distribution & PSI or KS of a value against the reference & A change of
+      shape, also with the same mean \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  Each test compares a current window with a reference window. The labels
+  come later, if they come.
+\end{frame}
+
+% ------------------------------------------------------------------ psi
+\begin{frame}{PSI: compare two distributions}
+  \small
+  \[ \text{PSI} = \sum_{i=1}^{n} (a_i - e_i)\,\ln\frac{a_i}{e_i} \]
+  \begin{itemize}
+    \item Divide the range of the value into $n$ fixed bins (here: 10 bins
+          of the confidence, 0 to 1). $e_i$: the part of the reference in
+          bin $i$. $a_i$: the part of the current window.
+    \item A bin with no value makes the logarithm infinite. Give each empty
+          bin a small part (here 0.0001).
+    \item Common limits: below 0.1 stable, 0.1 to 0.25 a warning, above 0.25
+          a large change. They are conventions, not laws.
+    \item In the simulation, the PSI of 10 min against the reference hour
+          stayed below 0.017 in the normal hours, also with the short dark
+          event. After one hour of the gradual drift it was 1.77.
+  \end{itemize}
+  \source{Formula and limits: \emph{Machine Learning Systems}, Volume I,
+    chapter ``ML Operations''. Values: simulation of this part.}
+\end{frame}
+
+% ------------------------------------------------------------------ compare
+\begin{frame}{Seven rules on the same stream}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.12}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{@{}L{0.30\textwidth}rcrrrr@{}}
+    \toprule
+    \textbf{Rule} & \textbf{False} & \textbf{Event} & \textbf{x 0.5} &
+      \textbf{x 0.25} & \textbf{Gradual} & \textbf{Blur} \\
+    \midrule
+    Mean conf.\ 10 s & 4 & yes & missed & 10\,s & 350\,s & 10\,s \\
+    Mean conf.\ 10 s, for 60 s & 0 & no & missed & 60\,s & 940\,s & 60\,s \\
+    Mean conf.\ 60 s & 1 & yes & 40\,s & 20\,s & 230\,s & 20\,s \\
+    Mean conf.\ 60 s, for 60 s & 1 & yes & 90\,s & 70\,s & 390\,s & 70\,s \\
+    Part below 0.5, 60 s & 3 & yes & missed & 20\,s & 350\,s & 10\,s \\
+    Brightness, 60 s & 3 & yes & 10\,s & 10\,s & 250\,s & missed \\
+    PSI above 0.25, 10 min & 0 & no & missed & 480\,s & 1320\,s & 540\,s \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item ``False'': alerts in 5 normal hours (with the short event).
+          ``Event'': the dark event of 30 s started an alert.
+    \item A delay counts from the start of the drift. ``Missed'': the alert
+          was active for less than half of the last 30 minutes.
+  \end{itemize}
+  \source{Simulation of this part: thresholds mean $\pm$ 3 sd of the
+    reference hour; checks each 10 s.}
+\end{frame}
+
+% ------------------------------------------------------------------ lessons
+\begin{frame}{What the comparison shows}
+  \small
+  \begin{itemize}
+    \item \textbf{A short window is fast and noisy}: 4 false alerts in 5
+          hours, and it misses the small drift (light x 0.5).
+    \item \textbf{A duration removes the false alerts}, also the short event,
+          but it adds delay and misses the small drift.
+    \item \textbf{A longer window} sees the small drift in 40 s with 1 false
+          alert: the short event, which is a real change of 30 s.
+    \item \textbf{The brightness} sees each change of the light in 10 s,
+          and it does not see the blur. It names the cause.
+    \item \textbf{The PSI} gave no false alert. It needed 8 to 22 minutes
+          and missed the small drift: a check for a daily report.
+  \end{itemize}
+  \keypoint{Alert on one stable model rule (a longer window with a
+    duration). Show the input statistics next to it to find the cause.}
+  \source{Simulation of this part. The frames are independent; a real
+    camera gives correlated frames and more noise between windows.}
+\end{frame}
+
+% ------------------------------------------------------------------ cost
+\begin{frame}{What a drift costs}
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+      \footnotesize
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{@{}lr@{}}
+        \toprule
+        \textbf{Drift hour} & \textbf{Accuracy} \\
+        \midrule
+        No drift & 77.2\,\% \\
+        Light x 0.5 & 72.7\,\% \\
+        Light x 0.25 & 66.7\,\% \\
+        Gradual to x 0.1 & 57.5\,\% \\
+        Blur of 2 pixels & 59.4\,\% \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \small
+      The accuracy of the frames in the hour after the start of the drift.
+      Nobody on the device can measure it.
+    \end{column}
+  \end{columns}
+  \vskip 0.7em
+  \small
+  \begin{itemize}
+    \item The small drift costs 4.6 points, and four of the seven rules
+          missed it. The large changes are easy to see.
+    \item The alert does not repair the accuracy. It shortens the time with
+          wrong answers, and it starts the work that repairs it.
+  \end{itemize}
+  \source{Simulation of this part: the stored result of each image.}
+\end{frame}
+
+% ------------------------------------------------------------------ incident
+\begin{frame}{After the alert}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \small
+      \textbf{Diagnose}
+      \begin{enumerate}
+        \item Look at the device: camera, light, lens, position.
+        \item System metrics: temperature, memory, restarts.
+        \item Input statistics: which one changed?
+        \item Changes: a new model, a new program, a new place.
+        \item Compare with the same hour of an earlier day.
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \textbf{Incident report}
+      \begin{itemize}
+        \item Time of the start, of the alert, of the end
+        \item How you found it: rule, value, threshold
+        \item Effect: what was wrong, for how long
+        \item Cause and action
+        \item What changes so that it does not happen again
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.6em
+  \small
+  The lab hands in a short incident report for the drift event of Part C.
+  The report is a record of what happened, not a search for a person to
+  blame.
+\end{frame}
+
+% ------------------------------------------------------------------ loop back
+\begin{frame}{The loop back to data and training}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.6cm, minimum height=0.85cm}]
+    \node[st, fill=cardinalred!12] (m) at (0,0) {Monitor\\ and alert};
+    \node[st] (c) at (2.35,0) {Collect\\ samples};
+    \node[st] (l) at (4.7,0) {Label};
+    \node[st] (t) at (7.05,0) {Train};
+    \node[st] (v) at (7.05,-1.45) {Test: old and new data};
+    \node[st] (d) at (2.35,-1.45) {Deploy in steps (Day 14)};
+    \draw[->] (m) -- (c); \draw[->] (c) -- (l); \draw[->] (l) -- (t);
+    \draw[->] (t) -- (v); \draw[->] (v) -- (d); \draw[->] (d) -| (m);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The samples come from the prediction log of Part 2: frames with a
+          low confidence from the time of the drift.
+    \item Test the new model on the old test set and on new data. A model
+          that learns the dark scene must not forget the bright one.
+    \item Retrain on a schedule, or when a drift rule fires. A trigger acts
+          sooner after a sudden change; a schedule is simple to plan.
+  \end{itemize}
+  \source{Schedule and trigger: \emph{Machine Learning Systems}, Volume I,
+    chapter ``ML Operations''.}
+\end{frame}
+
+% ------------------------------------------------------------------ action
+\begin{frame}{Not every alert needs a new model}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.25\textwidth}L{0.33\textwidth}L{0.32\textwidth}@{}}
+    \toprule
+    \textbf{Cause} & \textbf{Signal} & \textbf{Action} \\
+    \midrule
+    Sensor fault & Failed input checks; a stuck or black frame & Repair or
+      clean; no training \\
+    Training-serving skew & Low confidence at once after a release & Fix the
+      code; roll back \\
+    Input drift ($P(x)$) & Input statistics and confidence change & New
+      data of the new scene; retrain \\
+    Prior drift ($P(y)$) & Class counts change, confidence stays & Often
+      nothing; check the thresholds \\
+    Concept drift ($P(y \mid x)$) & Only labels show it & New labels;
+      retrain \\
+    Heat, leak & System metrics & Cooling, a fix of the code \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Find which part changed before you retrain. A model trained on the
+          data of a broken sensor learns the fault.
+    \item The first two rows are the most frequent and the cheapest to fix.
+  \end{itemize}
+  \source{\emph{Machine Learning Systems}, Volume I, chapter ``ML
+    Operations'' (diagnose the drift before retraining).}
+\end{frame}
+
+% ------------------------------------------------------------------ lab
+\begin{frame}{Dashboard, drift, and alert in the lab}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{0.17\textwidth}L{0.42\textwidth}L{0.31\textwidth}@{}}
+    \toprule
+    \textbf{Part} & \textbf{Work} & \textbf{From this lecture} \\
+    \midrule
+    B Dashboard & Summaries with MQTT, the Python dashboard of HW-08, a
+      reference period & Device view, panel types \\
+    C Drift & Change the light or show a new object; find the event from
+      the confidence & Windows, input statistics \\
+    D Alert & Set a threshold from your reference; fire and clear the alert
+      & Mean $-$ 3 sd, duration \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.6em
+  \small
+  \begin{itemize}
+    \item Record the reference period before you cause the drift. Without
+          it, no threshold has a meaning.
+    \item The deliverable: the dashboard and a short incident report of the
+          drift event.
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------ exercise
+\exerciseframe{Set alert thresholds}{%
+  \small
+  A reference hour of the stream of this part gives these 60 s means of the
+  confidence, one each 5 minutes:
+  \begin{center}
+    0.782, 0.782, 0.764, 0.780, 0.762, 0.771, 0.764, 0.787, 0.780, 0.775,
+    0.767, 0.770
+  \end{center}
+  \begin{enumerate}
+    \item[A.] Calculate the mean and the standard deviation. Set a threshold
+          at the mean minus 3 standard deviations.
+    \item[B.] All 355 windows of the same hour give 0.769 $\pm$ 0.012. Which
+          threshold is better, and why?
+    \item[C.] The Raspberry Pi throttles at 80\,$^\circ$C. Set a warning and
+          a critical rule for the temperature, each with a duration.
+  \end{enumerate}}
+
+\answerframe{Set alert thresholds}{%
+  \small
+  \begin{enumerate}
+    \item[A.] Mean 0.774, standard deviation 0.0085, threshold
+          $0.774 - 3 \times 0.0085 = 0.748$.
+    \item[B.] 12 values are too few: they give a small standard deviation by
+          chance. 5 percent of the 355 windows of the reference hour are
+          below 0.748: with one check each minute, about 73 checks each day
+          fire with no problem. The threshold of all windows is
+          $0.769 - 3 \times 0.012 = 0.733$. Use a long history, and check how
+          often the threshold fires in it.
+    \item[C.] The temperature has a limit from the hardware, so it needs no
+          history. For example: a warning above 75\,$^\circ$C for 5 minutes
+          (the cooler is at full speed); a critical alert above
+          80\,$^\circ$C for 30 s (throttling, the rule of HW-08).
+  \end{enumerate}}
