@@ -207,10 +207,4 @@ Raspberry Pi answers from a local file of lab notes, with no internet.
 | Telemetry | Gesture events, the time to the first token, tokens each second. |
 | Riskiest assumption | The answer is short enough for the display and comes fast enough. First test: 10 questions, measure the time and the length (Day 10). |
 
-## Credits
 
-The levels of the rubric for measured results follow the Decision Log
-rubric, and the robustness test follows the capstone specification, of the
-instructor guide of *Machine Learning Systems* by Vijay Janapa Reddi and
-contributors (mlsysbook.ai, CC BY-NC-SA 4.0). The five requirements and the
-weights come from the syllabus of this course.
