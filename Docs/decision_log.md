@@ -19,9 +19,6 @@ and the check sheet that the instructor uses.
    Each student of the group must be able to answer.
 5. Hand in `report.md`. The instructor says on Day 1 how you hand it in.
 
-If a lab is replaced by a backup module, the check uses the check criterion
-of the module `README.md`.
-
 Days 14 and 15 are the capstone. The capstone has its own rubric: see
 `Docs/capstone.md`.
 

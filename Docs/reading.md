@@ -26,15 +26,12 @@ reading for each day. The books are free to read online.
 
 Notes:
 
-- *Machine Learning Systems* is the main textbook. Volume I is the source
-  of most lectures. Volume II covers systems at scale. Days 13 to 15 use
-  it. Volume II is a preview: its text can change.
+- *Machine Learning Systems* is the main textbook.
 - *Edge AI Engineering* is the main source of the Raspberry Pi labs.
 - Some chapters of *XIAO: Big Power, Small Board* use the XIAO ESP32C3 or
   the XIAO nRF52840. The labs of this course have the code for the XIAO
   ESP32S3.
-- `ATTRIBUTION.md` in the root of this repository lists each figure, table,
-  and code file that the course reuses.
+
 
 ## 2. Reading for each day
 
@@ -324,7 +321,4 @@ Papers and standards:
 - [MLPerf Tiny Benchmark](https://arxiv.org/abs/2106.07597), Banbury et al., 2021
 - [MCUNet: Tiny Deep Learning on IoT Devices](https://arxiv.org/abs/2007.10319), Lin et al., 2020
 
-## Credits
 
-The list comes from the frames "Further reading" of the 15 theory decks and
-from the credits of the syllabus (`Docs/SYLLABUS.md`, Section 10).
