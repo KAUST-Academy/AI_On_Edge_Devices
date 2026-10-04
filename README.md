@@ -1,8 +1,7 @@
 # AI on Edge Devices
 
 This repository holds the material of the course "AI on Edge Devices": the
-slide decks, the lab files, and the course documents. This page is the
-guide for students.
+slide decks, the lab files, and the course documents. 
 
 ## 1. The course
 
@@ -194,13 +193,12 @@ the rubric, and three examples.
 
 The instructor confirms the weights on Day 1.
 
-
 ## 6. For the instructor
 
 | File | Content |
 |---|---|
 | [`Docs/instructor_guide.md`](Docs/instructor_guide.md) | The checklist before the course and the checklist for each day |
-| [`Docs/hardware.md`](Docs/hardware.md) | The hardware of one group, of the classroom, and of each backup module |
+| [`Docs/hardware.md`](Docs/hardware.md) | The hardware of one group and of the classroom |
 | [`Labs/hardware/README.md`](Labs/hardware/README.md) | The preparation and the test steps of the boards, the router, and the microSD card |
 | `Labs/dayNN/TEST_NOTES.md` | The code status and the test checklist of each lab |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | The build script of the decks and the format of the commit messages |
@@ -218,7 +216,6 @@ This course adapts material from these sources:
   the code repositories `Mjrovai/EdgeML-with-Raspberry-Pi` (GPL-3.0) and
   `Mjrovai/XIAO-ESP32S3-Sense` (Apache-2.0).
 - The HarvardX TinyML courseware by the TinyMLx team (CC BY-NC-SA 4.0).
-
 
 Each slide deck ends with a credits frame, and each lab names its sources.
 [`ATTRIBUTION.md`](ATTRIBUTION.md) lists each reused figure, table, and

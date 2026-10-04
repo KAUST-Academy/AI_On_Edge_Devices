@@ -59,19 +59,7 @@ Each theory part has one short exercise of 5 to 10 minutes.
 Each day has two slide decks: one theory deck and one lab deck.
 Each lab has a notebook, a sketch folder, or both.
 
-### How to use the backup modules
 
-Section 6 lists the backup modules. A backup module is a short, independent unit: one slide deck, one lab, or both.
-Each module has its own deck file and its own lab folder, so you can present it alone or add it to a day.
-Each day section names the backup modules that fit that day.
-
-Use a backup module when:
-
-- A group completes the core lab early.
-- A core lab fails because of hardware, network, or cloud service problems.
-- The class needs more depth, or less depth, on a topic.
-- The class needs a recap of a machine learning or deep learning topic. Section 6.7 has one module for each topic.
-- You want to replace a lab part with a different application.
 
 ---
 
@@ -91,21 +79,6 @@ Use a backup module when:
 
 **Why the Raspberry Pi 5 with 8 GB:** it runs YOLO at a usable frame rate, it can encode an RTSP stream and run inference at the same time, and it can run a small language model.
 
-### Hardware for backup modules
-
-| Item | Used by |
-|---|---|
-| Arduino Nano 33 BLE Sense Rev2 with a micro-USB data cable | Modules NB-1 to NB-12 |
-| OV7675 camera module (part of the Arduino Tiny Machine Learning Kit) | Modules NB-6 and NB-7 |
-| USB power meter | Day 9 energy measurement, modules MC-9 and NB-11 |
-| DHT22 sensor, BMP280 sensor, three LEDs, one push button, resistors, breadboard, jumper wires | Modules PI-7, GA-8, and SY-9 |
-| USB microphone and small speaker | Module GA-7 |
-| Small LiPo battery for the XIAO | Module MC-9 |
-| Grove Vision AI V2 module with a camera | Module MC-11 |
-| Smartphone | Module PI-8 |
-
-Buy one set for each group if you plan to use a module as a class lab. One set is enough for an instructor demonstration.
-
 ### Hardware for the classroom
 
 - One dedicated Wi-Fi router. Days 11 to 13 need direct traffic between devices.
@@ -116,25 +89,21 @@ Buy one set for each group if you plan to use a module as a class lab. One set i
 
 | Area | Tools |
 |---|---|
-| Microcontroller development | Arduino IDE 2, "esp32" core by Espressif. For the Nano 33 modules: "Arduino Mbed OS Nano Boards" core and the Harvard_TinyMLx library. |
+| Microcontroller development | Arduino IDE 2, "esp32" core by Espressif. |
 | MicroPython | MicroPython firmware for the ESP32-S3, `mpremote` or Thonny |
 | Training | Python 3.10 or later, PyTorch, Keras with the LiteRT converter, Ultralytics |
 | Conversion and runtimes | ONNX, ONNX Runtime, LiteRT (TensorFlow Lite), TensorFlow Lite Micro, NCNN, ExecuTorch (optional), Netron |
 | Data collection | Edge Impulse Studio account and Edge Impulse CLI |
-| Generative AI | Ollama and the Ollama Python library. llama.cpp and LiteRT-LM for backup modules. |
+| Generative AI | Ollama and the Ollama Python library. |
 | Networking | Mosquitto, `paho-mqtt`, PubSubClient, MediaMTX, FFmpeg, OpenCV, `iperf3` |
 | Monitoring | Grafana with Prometheus. Fallback: a Python dashboard. |
 | Optional simulation labs | `marimo` and `mlsysim` (interactive labs from the book) |
-
-Fix the exact software versions during the Day 1 pilot. Use the same versions for the full course.
 
 Training labs use small models. They run on a laptop CPU or on the free tier of Google Colab.
 
 ---
 
 ## 4. Course overview
-
-Material status: **Adapt** means that a source covers the topic. **New** means that you must write the material. **Mixed** means both.
 
 ### Week 1: Foundations and TinyML on the XIAOML Kit
 
@@ -200,16 +169,9 @@ Material status: **Adapt** means that a source covers the topic. **New** means t
 - *Deliverable:* the completed table and a Decision Log.
 - *Check:* all five sensor tests pass, and the table gives a reason for each "fits" or "does not fit".
 
-**Preparation notes**
 
-- Install the software on the lab computers before the course. Test the USB driver for the XIAO.
-- Label each kit and each cable with the group number.
-- Do not install the heat sink on the XIAO. The heat sink does not fit under the expansion board.
-- Prepare the keyword spotting demonstration on one kit.
 
-**Backup modules:** MC-1 (Arduino basics), MC-10 (Cortex-M and CMSIS-NN), SIM-1 (Iron Law simulation), NB-1 (Nano 33 setup).
 
-**Recap modules:** TH-2 (PyTorch basics), TH-3 (ML workflow), TH-4 (cost of neural network computation), TH-7 (linear algebra and tensors), TH-9 (machine learning paradigm), TH-13 (neurons, layers, and the forward pass), TH-14 (activation functions), TH-20 (depth and skip connections), TH-23 (convolution), TH-24 (CNN architectures), TH-33 (computer architecture essentials).
 
 ---
 
@@ -242,16 +204,8 @@ Material status: **Adapt** means that a source covers the topic. **New** means t
 - *Deliverable:* the dataset and a short data card (classes, duration, sampling rate, split).
 - *Check:* the sampling rate is constant, and no recording session is in both the training set and the test set.
 
-**Preparation notes**
 
-- Write and test a MicroPython driver for the kit IMU (LSM6DS3TR-C) before the course. The sources give Arduino code only.
-- MicroPython replaces the Arduino firmware. Show students how to upload an Arduino sketch again for Day 3.
-- Keep the Arduino data collection sketch from the kit lab as the fallback for Part B.
-- Prepare a fallback dataset for groups that do not finish.
 
-**Backup modules:** MC-1 (Arduino basics), MC-2 (SD card data logger), NB-10 (MicroPython on the Nano 33), NB-12 (embedded hardware and software).
-
-**Recap modules:** TH-6 (data selection), TH-10 (datasets and generalization), TH-26 (signals in time and frequency).
 
 ---
 
@@ -284,14 +238,9 @@ Material status: **Adapt** means that a source covers the topic. **New** means t
 - *Deliverable:* a live demonstration and a comparison table.
 - *Check:* the board classifies four motions correctly, and the table has measured numbers for both paths.
 
-**Preparation notes**
 
-- Select and test one TensorFlow Lite Micro library for the ESP32-S3 on the pilot.
-- Give students a sketch template with the sensor code. Students write the inference part.
 
-**Backup modules:** MC-3 (spectral features), MC-4 (anomaly detection), MC-10 (Cortex-M and CMSIS-NN), NB-2 (TensorFlow Lite Micro hello world), NB-3 (motion classification on the Nano 33), NB-4 (magic wand).
 
-**Recap modules:** TH-10 (datasets and generalization), TH-11 (evaluation metrics), TH-12 (unsupervised learning and anomaly detection), TH-15 (loss functions), TH-16 (backpropagation), TH-17 (optimizers and the learning rate), TH-18 (training loop), TH-26 (signals in time and frequency), TH-35 (ML frameworks).
 
 ---
 
@@ -325,13 +274,9 @@ Material status: **Adapt** means that a source covers the topic. **New** means t
 - *Deliverable:* the comparison table and a Decision Log.
 - *Check:* the table has float and int8 rows for size, accuracy, and latency, and the Decision Log explains the accuracy change.
 
-**Preparation notes**
 
-- Prepare a trained float model so that students start from the same baseline.
 
-**Backup modules:** SIM-2 (compression simulation), PI-2 (int8 calibration with ExecuTorch, after Day 7), NB-8 (float and int8 on a Cortex-M4).
 
-**Recap modules:** TH-14 (activation functions), TH-16 (backpropagation), TH-21 (normalization layers), TH-32 (number formats).
 
 ---
 
@@ -364,16 +309,8 @@ Material status: **Adapt** means that a source covers the topic. **New** means t
 - *Deliverable:* two live demonstrations and the measurement table.
 - *Check:* the keyword model gives no false activation in 30 seconds of normal speech, and the image model classifies three test objects.
 
-**Preparation notes**
 
-- This day has two applications. Give the image dataset to the students. They do not collect images in the core lab.
-- The room is noisy when many groups record. Plan the recording in turns or in a second room.
-- Each student needs an Edge Impulse account before the lab.
-- If the class needs more time, move Part B to the start of Day 6. Day 6 uses no board.
 
-**Backup modules:** MC-5 (KWS features in Python), MC-6 (FOMO object detection), MC-7 (SenseCraft AI), MC-8 (custom image dataset), MC-2 (audio recording to the SD card), NB-5 (keyword spotting on the Nano 33), NB-6 (person detection), NB-7 (two models on one microcontroller), MC-11 (Grove Vision AI V2).
-
-**Recap modules:** TH-11 (evaluation metrics), TH-19 (regularization), TH-22 (transfer learning), TH-23 (convolution), TH-25 (computer vision tasks), TH-26 (signals in time and frequency).
 
 ---
 
@@ -408,14 +345,9 @@ Material status: **Adapt** means that a source covers the topic. **New** means t
 - *Deliverable:* the plot and a Decision Log.
 - *Check:* the plot has at least six models, and the selection states the constraint that decides.
 
-**Preparation notes**
 
-- This day uses no board. Use spare time to complete Week 1 hardware labs.
-- Prepare a trained baseline model. Training from the start takes too long on a CPU.
 
-**Backup modules:** GA-9 (distillation from MNIST to language models), SIM-2 (compression simulation).
 
-**Recap modules:** TH-6 (data selection), TH-8 (probability and information theory), TH-15 (loss functions), TH-17 (optimizers and the learning rate), TH-19 (regularization), TH-20 (depth and skip connections), TH-24 (CNN architectures), TH-36 (cost of training).
 
 ---
 
@@ -451,14 +383,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* the latency table and a Decision Log.
 - *Check:* the table has at least two runtimes, two thread counts, and two precisions.
 
-**Preparation notes**
 
-- Flash all microSD cards before the day. Set a unique host name for each Raspberry Pi.
-- Test SSH on the lab router.
 
-**Backup modules:** PI-1 (custom image classification), PI-2 (ExecuTorch), PI-5 (hardware accelerators), SIM-3 (kernel fusion simulation), SIM-4 (Roofline simulation), PI-10 (train and convert a CNN).
 
-**Recap modules:** TH-7 (linear algebra and tensors), TH-21 (normalization layers), TH-33 (computer architecture essentials), TH-34 (performance laws), TH-35 (ML frameworks).
 
 ---
 
@@ -491,14 +418,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* a live demonstration and the frame-rate table.
 - *Check:* the custom model detects both classes in the live image, and the table has four measured rows.
 
-**Preparation notes**
 
-- The repository has trained weights for the box and wheel dataset. Use them for groups that have no time to train.
-- The template notebook downloads its dataset from Roboflow. Prepare a local copy if you use it.
 
-**Backup modules:** PI-3 (SSD, EfficientDet, and FOMO comparison), PI-4 (object counting), PI-8 (YOLO in a mobile browser), MC-6 (FOMO on the XIAOML Kit), PI-9 (instance segmentation).
 
-**Recap modules:** TH-11 (evaluation metrics), TH-18 (training loop), TH-22 (transfer learning), TH-25 (computer vision tasks).
 
 ---
 
@@ -531,13 +453,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* the benchmark report.
 - *Check:* each number has a method (repetitions, warm-up, input), and the report compares the same task on both boards.
 
-**Preparation notes**
 
-- A USB power meter gives real energy numbers. Without the meter, students estimate energy from data sheet values.
 
-**Backup modules:** PI-6 (thermal throttling), MC-9 (low power), SY-3 (tail latency), SIM-5 (benchmark simulation), NB-8 (float and int8 on a Cortex-M4), NB-11 (power of an always-on device).
 
-**Recap modules:** TH-33 (computer architecture essentials), TH-34 (performance laws), TH-37 (D·A·M taxonomy).
 
 ---
 
@@ -570,15 +488,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* the benchmark table, the application, and a Decision Log.
 - *Check:* the table has two models with measured numbers, and the application gives valid structured output for five test prompts.
 
-**Preparation notes**
 
-- Download the models to each Raspberry Pi before the lab. The files are large.
-- Select the models on the pilot. Model names change quickly. The guide has a section on model selection.
-- Make sure that each Raspberry Pi has the active cooler.
 
-**Backup modules:** GA-1 (retrieval-augmented generation), GA-2 (Florence-2), GA-3 (agents), GA-4 (llama.cpp), GA-5 (LiteRT-LM), GA-6 (multi-token prediction), GA-7 (voice pipeline), GA-8 (IoT control), GA-9 (distillation), GA-10 (text generation with an RNN), GA-11 (fine-tune a vision-language model), GA-12 (agentic RAG).
 
-**Recap modules:** TH-5 (transformers from a cost view), TH-27 (recurrent networks), TH-28 (tokenization and embeddings), TH-29 (attention mechanism), TH-30 (transformer architecture), TH-31 (text generation).
 
 ---
 
@@ -615,14 +527,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* a live demonstration and the latency measurements.
 - *Check:* the detector runs on the network stream, and the report gives the latency for two settings.
 
-**Preparation notes**
 
-- Use the dedicated router. A campus network can block traffic between devices.
-- Download MediaMTX for the Raspberry Pi before the lab.
-- Check the firewall of the lab computers.
-- The companion book chapter targets the XIAO ESP32C3. Test the code on the ESP32S3.
 
-**Backup modules:** SY-1 (Wi-Fi and HTTP on the XIAO), MC-8 (camera web server), SY-11 (model as a local web service).
+
 
 ---
 
@@ -655,13 +562,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* a live demonstration with the link connected and disconnected.
 - *Check:* the local action works without the internet, and no message is lost after the link returns.
 
-**Preparation notes**
 
-- The instructor laptop runs the "cloud" broker.
-- Give each group a unique topic prefix.
-- The companion book chapter targets the XIAO ESP32C3 and a public broker. Change the code for the ESP32S3 and the local broker.
 
-**Backup modules:** SY-2 (MQTT security), PI-7 (physical computing), GA-8 (language model for IoT control), NB-9 (Bluetooth gateway for the Nano 33), SY-12 (Bluetooth from the XIAO).
+
 
 ---
 
@@ -694,14 +597,9 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* the dashboard and a short incident report for the drift event.
 - *Check:* the dashboard shows live system and model metrics, and the alert fires during the drift event.
 
-**Preparation notes**
 
-- Select the dashboard tool during the build of this day. Grafana with Prometheus is the default. A Python dashboard is the fallback.
-- Install the monitoring software before the lab.
 
-**Backup modules:** SY-9 (Jupyter widget dashboard), SY-3 (tail latency), SIM-6 (operations simulation), SIM-8 (fleet monitoring simulation), SY-10 (robust AI).
 
-**Recap modules:** TH-8 (probability and information theory).
 
 ---
 
@@ -732,16 +630,8 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Part C (40 min): Design review.* Present the proposal to the instructor.
 - *Part D (40 min): Build.* Start the build.
 - *Deliverable:* the approved proposal.
-- *Check:* the proposal meets the five capstone requirements in Section 7.
+- *Check:* the proposal meets the five capstone requirements in Section 6.
 
-**Preparation notes**
-
-- Prepare three or four example projects for teams that have no idea.
-- Vol II of the book is a preview. Check the content before you use it.
-
-**Backup modules:** SY-4 (on-device and federated learning), SY-5 (security and privacy), SY-6 (responsible and sustainable AI), SY-7 (over-the-air update), SY-8 (containers), SY-10 (robust AI).
-
-**Recap modules:** TH-3 (ML workflow), TH-36 (cost of training), TH-37 (D·A·M taxonomy).
 
 ---
 
@@ -766,360 +656,11 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Part B (70 min): Demonstrations.* Each team gives a 10-minute demonstration.
 - *Part C (30 min): Close.* Submit the report. Give course feedback.
 - *Deliverable:* the demonstration and the report.
-- *Check:* the capstone rubric in Section 7.
-
-**Preparation notes**
-
-- Publish the demonstration schedule on Day 14.
-- Keep spare boards ready.
-
-**Backup modules:** any module from Section 6 can be a capstone component.
+- *Check:* the capstone rubric in Section 6.
 
 ---
 
-## 6. Backup modules
-
-Each backup module is independent of the other backup modules, unless its description names another module. The column "After day" gives the core day that a module needs.
-
-Type: **T** is a theory deck. **L** is a lab with a short lab deck. **T+L** is both.
-
-Each module has the same parts, so that you can present it alone:
-
-- One slide deck that compiles alone. The deck has a title frame, the learning outcomes, the content, and the credits frame.
-- One lab folder with the files and a README. The README gives the goal, the hardware, the duration, the steps, and the check criterion.
-- No reference to a slide number or a file of another day.
-
-### 6.1 Microcontroller modules (XIAOML Kit)
-
-| ID | Module | Type | Time | After day | Extra hardware |
-|---|---|---|---|---|---|
-| MC-1 | Arduino basics for Python users | L | 60 min | 1 | None |
-| MC-2 | Sensor data logger on the SD card | L | 45 min | 2 | None |
-| MC-3 | Spectral features for motion data | T+L | 90 min | 2 | None |
-| MC-4 | Anomaly detection on motion data | L | 60 min | 3 | None |
-| MC-5 | Keyword spotting features and training in Python | T+L | 90 min | 4 | None |
-| MC-6 | FOMO object detection on the XIAOML Kit | L | 120 min | 5 | None |
-| MC-7 | No-code deployment with SenseCraft AI | L | 45 min | 1 | None |
-| MC-8 | Custom image dataset with the camera web server | L | 60 min | 1 | None |
-| MC-9 | Low power: sleep modes and battery life | T+L | 90 min | 5 | USB power meter, LiPo battery |
-| MC-10 | Arm Cortex-M and CMSIS-NN | T | 30 min | 1 | None |
-| MC-11 | Grove Vision AI V2: vision with a neural processing unit | T+L | 120 min | 5 | Grove Vision AI V2 |
-
-- **MC-1.** Program structure, digital output, button input, serial monitor, and the display. The source code uses a different expansion board. Change the pin numbers for the XIAOML Kit.
-- **MC-2.** Record audio and store it on the microSD card without a computer.
-- **MC-3.** Time-domain statistics, FFT, and spectral power as model inputs.
-- **MC-4.** Detect motions that are not in the training set.
-- **MC-5.** Compute MFCC features and train the keyword classifier in a notebook, without Edge Impulse training.
-- **MC-6.** Collect and label images, train a FOMO model, and deploy it.
-- **MC-7.** Deploy a trained model from the browser with no code. Use this module when the Arduino build fails.
-- **MC-8.** Collect an image dataset with the XIAO camera.
-- **MC-9.** Measure current in active mode and in deep sleep. Calculate battery life for a duty cycle.
-- **MC-10.** The Cortex-M processor family, memory sizes, and the CMSIS-NN kernels. This module replaces the hands-on work with a Cortex-M board.
-- **MC-11.** Deploy vision models on a microcontroller that has a neural processing unit, and compare the speed with the XIAO. The module gives a hardware example for Day 7.
-
-### 6.2 Raspberry Pi modules
-
-| ID | Module | Type | Time | After day | Extra hardware |
-|---|---|---|---|---|---|
-| PI-1 | Custom image classification project | L | 120 min | 7 | None |
-| PI-2 | ExecuTorch with XNNPACK | T+L | 120 min | 7 | None |
-| PI-3 | SSD, EfficientDet, and FOMO comparison | L | 90 min | 8 | None |
-| PI-4 | Object counting application | L | 90 min | 8 | None |
-| PI-5 | Hardware accelerators for the Raspberry Pi | T | 45 min | 7 | Accelerator module for a demonstration only |
-| PI-6 | Thermal throttling experiment | L | 45 min | 9 | None |
-| PI-7 | Physical computing: GPIO, sensors, actuators | L | 90 min | 7 | Sensor and LED parts |
-| PI-8 | YOLO inference in a mobile browser | T+L | 90 min | 8 | Smartphone |
-| PI-9 | Instance segmentation with YOLO | L | 120 min | 8 | None |
-| PI-10 | Train a CNN and convert it to LiteRT | L | 90 min | 7 | None |
-
-- **PI-1.** Collect images with the Raspberry Pi camera, train in Edge Impulse Studio, and deploy the model.
-- **PI-2.** Export a PyTorch model to ExecuTorch, apply int8 quantization with a calibration set, and compare with LiteRT. This module fits students who use PyTorch.
-- **PI-3.** Run three detector types on the same images and compare accuracy and speed.
-- **PI-4.** Count objects in an image with a custom YOLO model and store the counts in a database.
-- **PI-5.** How an M.2 accelerator compiles and runs a model. The lab part needs a MemryX MX3 module, so the module is theory with an optional instructor demonstration.
-- **PI-6.** Run a long inference job with and without the active cooler. Plot temperature, clock speed, and latency.
-- **PI-7.** Read a temperature sensor and a pressure sensor, control LEDs, and read a button with GPIO Zero.
-- **PI-8.** Run a YOLO model in the browser of a smartphone as a web application. The module shows the mobile paradigm of Day 1.
-- **PI-9.** Train a YOLO segmentation model for fire and smoke, and run it on the Raspberry Pi. The notebook is ready in the template.
-- **PI-10.** Train a small CNN on CIFAR-10, convert it to LiteRT, and run it on the Raspberry Pi.
-
-### 6.3 Generative AI modules (Raspberry Pi 5, 8 GB)
-
-All modules in this group need Day 10, except GA-9 and GA-10. These two modules run on a laptop and need Day 6 only.
-
-| ID | Module | Type | Time | Extra hardware |
-|---|---|---|---|---|
-| GA-1 | Retrieval-augmented generation at the edge | T+L | 120 min | None |
-| GA-2 | Vision-language models with Florence-2 | T+L | 120 min | None |
-| GA-3 | Agents and function calling | L | 120 min | None |
-| GA-4 | llama.cpp from source and multimodal inference | L | 120 min | None |
-| GA-5 | LiteRT-LM | L | 90 min | None |
-| GA-6 | Multi-token prediction and model selection | T+L | 90 min | None |
-| GA-7 | Voice pipeline: speech, language model, speech | L | 120 min | USB microphone, speaker |
-| GA-8 | Language model for IoT control | L | 120 min | Sensor and LED parts (needs PI-7) |
-| GA-9 | Knowledge distillation from MNIST to language models | T+L | 90 min | None |
-| GA-10 | Text generation with a small RNN | T+L | 90 min | None |
-| GA-11 | Fine-tune a vision-language model | L | 120 min | None (training needs a Colab GPU) |
-| GA-12 | Agentic retrieval-augmented generation | L | 120 min | None (needs GA-1 and GA-3) |
-
-- **GA-1.** Build a persistent vector database, query it, and optimize the query.
-- **GA-2.** Caption images, detect objects, and read text with one model. Measure the latency of each task.
-- **GA-3.** Show the limits of a small language model, then add tools: a calculator, a search, and response validation.
-- **GA-4.** Build llama.cpp, start the server, and use it from Python with text and images.
-- **GA-5.** Install LiteRT-LM, run a model, and compare it with Ollama.
-- **GA-6.** Compare two models with and without multi-token prediction. Use the same measurement method for both models.
-- **GA-7.** Record speech, transcribe it, send it to a language model, and speak the answer.
-- **GA-8.** A language model reads sensor values and controls LEDs. The module connects Day 10 to Day 12 (local decisions) and Day 13 (logging).
-- **GA-9.** Train a teacher and a student on MNIST, then connect the method to small language models. The notebook runs on a CPU.
-- **GA-10.** Train a character-level RNN that writes text, then compare it with a transformer. The module is a short introduction to language models before Day 10.
-- **GA-11.** Fine-tune Florence-2 on a small detection dataset and run the result on the Raspberry Pi.
-- **GA-12.** Combine a vector database, tools, and response validation in one agent.
-
-### 6.4 Systems modules
-
-| ID | Module | Type | Time | After day | Extra hardware |
-|---|---|---|---|---|---|
-| SY-1 | Wi-Fi and HTTP on the XIAO | T+L | 90 min | 1 | None |
-| SY-2 | MQTT security: authentication and TLS | T+L | 60 min | 12 | None |
-| SY-3 | Model serving and tail latency | T | 50 min | 9 | None |
-| SY-4 | On-device learning and federated learning | T | 50 min | 6 | None |
-| SY-5 | Security and privacy of edge AI | T | 50 min | 12 | None |
-| SY-6 | Responsible and sustainable edge AI | T | 50 min | 1 | None |
-| SY-7 | Over-the-air update of the XIAO | L | 60 min | 11 | None |
-| SY-8 | Containers on the Raspberry Pi | T+L | 90 min | 7 | None |
-| SY-9 | Jupyter widget dashboard | L | 45 min | 7 | Sensor and LED parts (optional) |
-| SY-10 | Robust AI: faults, drift, and attacks | T | 50 min | 9 | None |
-| SY-11 | Model inference as a local web service | T+L | 90 min | 7 | None |
-| SY-12 | Bluetooth Low Energy from the XIAO to the Raspberry Pi | T+L | 90 min | 7 | None |
-
-- **SY-1.** Connect to Wi-Fi, use `ping`, and send HTTP GET and POST requests.
-- **SY-2.** Add user names, passwords, and TLS to the Day 12 broker.
-- **SY-3.** Queues, tail latency, and batch size.
-- **SY-4.** Model adaptation on the device and federated learning.
-- **SY-5.** Threat analysis, model attacks, hardware attacks, and defences.
-- **SY-6.** Fairness, accountability, energy, and carbon cost.
-- **SY-7.** Send a new firmware and a new model to the XIAO over Wi-Fi.
-- **SY-8.** Package the Day 8 application in a container and start it on a second Raspberry Pi.
-- **SY-9.** Show sensor values and control outputs from a notebook with widgets.
-- **SY-10.** Hardware faults, distribution shift, and adversarial inputs, with detection and mitigation.
-- **SY-11.** Put a model behind an HTTP interface on the Raspberry Pi and call it from a second device. The inference part is new.
-- **SY-12.** Send inference results from the XIAO to the Raspberry Pi with Bluetooth Low Energy, and compare with Wi-Fi and MQTT.
-
-### 6.5 Simulation warm-ups
-
-These modules are interactive notebooks from the book. They need no hardware. Each one takes 20 to 30 minutes. Students predict a result first and then test the prediction. They need `marimo` and `mlsysim`.
-
-| ID | Simulation | Fits day | Source |
-|---|---|---|---|
-| SIM-1 | The Iron Law | 1 | [lab_02_ml_systems.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_02_ml_systems.py) |
-| SIM-2 | The Compression Frontier | 4, 6 | [lab_10_model_compress.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_10_model_compress.py) |
-| SIM-3 | The Kernel Fusion Dividend | 7 | [lab_07_ml_frameworks.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_07_ml_frameworks.py) |
-| SIM-4 | The Roofline | 7 | [lab_11_hw_accel.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_11_hw_accel.py) |
-| SIM-5 | The Speedup Ceiling | 9 | [lab_12_perf_bench.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_12_perf_bench.py) |
-| SIM-6 | The Silent Degradation Problem | 13 | [lab_14_ml_ops.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_14_ml_ops.py) |
-| SIM-7 | The Tail Latency Trap | 9, 13 | [lab_13_model_serving.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol1/lab_13_model_serving.py) |
-| SIM-8 | The Silent Fleet | 13, 14 | [lab_12_ops_scale.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol2/lab_12_ops_scale.py) |
-| SIM-9 | The Edge Thermodynamics Lab | 9, 14 | [lab_11_edge_intelligence.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol2/lab_11_edge_intelligence.py) |
-| SIM-10 | The Price of Privacy | 14 | [lab_13_security_privacy.py](https://github.com/harvard-edge/cs249r_book/blob/330d4eaeadd5e0e2d9cd055aa78094d1ca660bd2/labs/vol2/lab_13_security_privacy.py) |
-
-### 6.6 Arduino Nano 33 BLE Sense modules
-
-These modules add a second microcontroller class to the course: an Arm Cortex-M4 with 256 KB of RAM and 1 MB of flash.
-Use them as a replacement for a XIAOML Kit lab, as an addition to a day, or together as one full day.
-
-The modules use the Nano 33 BLE Sense Rev2. Modules NB-2, NB-3, NB-4, NB-8, and NB-9 need the IMU only, so they also run on the Nano 33 BLE without sensors.
-
-| ID | Module | Type | Time | Fits day | Extra hardware |
-|---|---|---|---|---|---|
-| NB-1 | Board setup and sensor tests | L | 60 min | 1 | None |
-| NB-2 | TensorFlow Lite Micro "hello world" and the tensor arena | L | 60 min | 3 | None |
-| NB-3 | Motion classification on the Nano 33 | L | 120 min | 3 | None |
-| NB-4 | Magic wand: gesture recognition with the IMU | L | 90 min | 3 | None |
-| NB-5 | Keyword spotting on the Nano 33 | L | 120 min | 5 | None |
-| NB-6 | Person detection with a camera | L | 90 min | 5 | OV7675 camera module |
-| NB-7 | Two models on one microcontroller | T+L | 90 min | 5 | OV7675 camera module |
-| NB-8 | The 256 KB budget: float and int8 on a Cortex-M4 | L | 60 min | 4, 9 | None |
-| NB-9 | Bluetooth Low Energy gateway to MQTT | T+L | 90 min | 12 | None |
-| NB-10 | MicroPython on the Nano 33 | L | 60 min | 2 | None |
-| NB-11 | Power of an always-on device | L | 60 min | 9 | USB power meter |
-| NB-12 | Embedded hardware and software for TinyML | T | 50 min | 2, 3 | None |
-
-- **NB-1.** Install the board core and the library. Test the IMU, the microphone, and the camera.
-- **NB-2.** Run a small model that predicts a sine value. Read the interpreter code, change the arena size, and find the smallest size that works.
-- **NB-3.** Collect motion data with the IMU, train a classifier, and deploy it. This module can replace the Day 3 lab.
-- **NB-4.** Recognize gestures that you draw in the air.
-- **NB-5.** Deploy a trained keyword spotting model, then train and deploy your own keywords. This module can replace Day 5 Part A.
-- **NB-6.** Detect a person in a 96 by 96 pixel image. The model uses almost all the RAM of the board.
-- **NB-7.** Run keyword spotting and person detection in one program. The module shows how two models share one tensor arena.
-- **NB-8.** Deploy the Day 3 and Day 4 models on the Nano 33. Compare flash, arena size, and latency with the XIAO. Find the largest model that fits. The module gives a third device for the Day 9 benchmark.
-- **NB-9.** The Nano 33 has no Wi-Fi. Send inference results with Bluetooth Low Energy to the Raspberry Pi, and publish them to the Day 12 broker.
-- **NB-10.** Read the IMU with MicroPython and log the data. Test this module on the board before use.
-- **NB-11.** Measure the current of the board during keyword spotting and calculate the battery life.
-- **NB-12.** Embedded systems, microcontroller hardware, input and output, embedded software, and the internals of TensorFlow Lite Micro.
-
-**One full day with the Nano 33:** NB-12 and MC-10 for the theory, then NB-1, NB-2, and NB-5 for the lab.
-
-### 6.7 Recap and theory modules
-
-These modules need no hardware. Use them when the class needs a recap of a machine learning or deep learning topic, or more theory depth.
-
-This section has 36 modules. Each module has one topic only, so that you can add one module to a day and not a full lecture.
-
-- A module of type T is one deck of 25 or 50 minutes, with one exercise that the students do by hand.
-- A module does not need another module of this section, unless its description names that module.
-- The column "Fits day" gives the core days that use the topic. Each day section in Section 5 has a line "Recap modules".
-- A recap module explains the topic. The core days explain the cost of the topic on an edge device.
-
-**Mathematics**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-7 | Linear algebra and tensors | T | 50 min | 1, 7 |
-| TH-8 | Probability and information theory | T | 50 min | 6, 13 |
-
-- **TH-7.** Vectors, matrices, and tensors. Shapes and memory layout. The dot product as a measure of similarity. Matrix multiplication as the main operation of a network. Broadcasting. *Exercise:* calculate the output shape and the number of multiplications of three matrix products.
-- **TH-8.** Distributions and the long tail. Entropy, cross-entropy, and KL divergence. Measures of the drift between two distributions. Logits and the numerical stability of the softmax. *Exercise:* calculate the entropy of two small distributions and the KL divergence between them.
-
-**Machine learning foundations**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-9 | The machine learning paradigm | T | 50 min | 1 |
-| TH-10 | Datasets and generalization | T | 50 min | 2, 3 |
-| TH-11 | Evaluation metrics for classifiers | T | 50 min | 3, 5, 8 |
-| TH-12 | Unsupervised learning and anomaly detection | T | 50 min | 3 |
-
-- **TH-9.** Rules that a programmer writes and rules that a model learns from data. Features, labels, model, and loss. Regression and classification. Training and inference. *Exercise:* for three problems, decide if written rules or a learned model is the correct tool.
-- **TH-10.** Training, validation, and test sets. Overfitting and underfitting. The generalization gap. How to read loss curves. Class balance. *Exercise:* read three pairs of loss curves and name the problem of each pair.
-- **TH-11.** Accuracy and its limits. The confusion matrix, precision, recall, and F1. The decision threshold. False accepts and false rejects. Calibration of the confidence values. *Exercise:* calculate precision, recall, and F1 from a confusion matrix.
-- **TH-12.** Learning with no labels. K-means clustering. The autoencoder and its reconstruction error. How to select the anomaly threshold. *Exercise:* run two K-means steps by hand on six points. Module MC-4 is the lab for this topic.
-
-**Neural network foundations**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-13 | Neurons, layers, and the forward pass | T | 50 min | 1 |
-| TH-14 | Activation functions | T | 25 min | 1, 4 |
-| TH-15 | Loss functions | T | 25 min | 3, 6 |
-| TH-16 | Backpropagation and automatic differentiation | T | 50 min | 3, 4 |
-
-- **TH-13.** The weighted sum of a neuron, the bias, and the activation. Layers and connections. The multilayer perceptron. The forward pass as a sequence of matrix multiplications. The parameter count of a network. *Exercise:* calculate the output of a network with two layers by hand.
-- **TH-14.** Why a network needs a nonlinear function. Sigmoid, tanh, ReLU, and softmax. Saturation and the range of the output. The cost of each function on small hardware. *Exercise:* calculate the output of four activation functions for five inputs.
-- **TH-15.** Mean squared error and cross-entropy. Logits, softmax, and probabilities. The loss of one batch. Numerical stability. *Exercise:* calculate the cross-entropy loss of three predictions.
-- **TH-16.** The chain rule. The computational graph. The forward pass and the backward pass. Reverse-mode automatic differentiation. Why training needs more memory than inference. Day 4 uses this topic for the straight-through estimator. *Exercise:* calculate the gradients of a graph with three nodes by hand.
-
-**Training**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-17 | Optimizers and the learning rate | T | 50 min | 3, 6 |
-| TH-18 | The training loop in practice | T | 50 min | 3, 8 |
-| TH-19 | Regularization | T | 50 min | 5, 6 |
-| TH-20 | Depth: initialization, vanishing gradients, and skip connections | T | 50 min | 1, 6 |
-| TH-21 | Normalization layers | T | 25 min | 4, 7 |
-| TH-22 | Transfer learning and fine-tuning | T | 50 min | 5, 8 |
-| TH-2 | PyTorch basics | L | 90 min | 1 |
-
-- **TH-17.** Gradient descent and mini-batch stochastic gradient descent. Momentum, Adam, and AdamW. The learning rate, its schedule, and the batch size. The memory that an optimizer needs. *Exercise:* calculate three update steps with momentum and with no momentum.
-- **TH-18.** Epochs, batches, and the data loader. The steps of the loop for one batch. Loss curves and metrics during training. Hyperparameters. Checkpoints and early stopping. *Exercise:* find the two errors in a given training loop. Module TH-2 is the practice for this topic.
-- **TH-19.** Dropout, weight decay, data augmentation, and early stopping. The problem that each method solves. *Exercise:* select a method for three training problems.
-- **TH-20.** Why a deep network is hard to train. Weight initialization. Vanishing and exploding gradients. The residual connection and the flow of the gradient. *Exercise:* calculate how a gradient changes through 20 layers with a skip connection and with no skip connection.
-- **TH-21.** Batch normalization and layer normalization. The statistics during training and the fixed values during inference. When to use each layer. Days 4 and 7 fold a batch normalization layer into the convolution before it. *Exercise:* calculate the output of a batch normalization layer for one channel.
-- **TH-22.** A pre-trained model as a feature extractor. Frozen layers and a new classifier. Fine-tuning. The quantity of data that each method needs. Common errors. *Exercise:* select the layers to freeze for three cases.
-- **TH-2.** Tensors, automatic differentiation, a model, and a training loop in PyTorch. The template has this notebook.
-
-**Vision models and signals**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-23 | The convolution operation | T | 50 min | 1, 5 |
-| TH-24 | CNN architectures from LeNet to MobileNet | T | 50 min | 1, 6 |
-| TH-25 | Computer vision tasks | T | 25 min | 5, 8 |
-| TH-26 | Signals in time and frequency | T | 50 min | 2, 3, 5 |
-
-- **TH-23.** Kernel, stride, padding, and channels. The output size and the parameter count. Pooling. The receptive field. Why a convolution fits image data. *Exercise:* calculate the output of a 3 x 3 kernel on a 5 x 5 image by hand, for stride 1 and for stride 2.
-- **TH-24.** LeNet, AlexNet, VGG, ResNet, MobileNet, and EfficientNet. The idea that each architecture added, and its cost in parameters and operations. *Exercise:* match six architectures to their main idea and order them by parameter count.
-- **TH-25.** Image classification, object detection, instance segmentation, and pose estimation. The output of each task and its cost. *Exercise:* select the task for four applications.
-- **TH-26.** Sampling and aliasing. The Fourier transform and the FFT. Windows. The spectrogram and the Mel scale. Modules MC-3 and MC-5 continue from the spectrogram to the features of a model. *Exercise:* read a spectrogram and find the sampling rate, the window length, and the highest frequency.
-
-**Sequence and language models**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-27 | Recurrent networks | T | 25 min | 10 |
-| TH-28 | Tokenization and embeddings | T | 50 min | 10 |
-| TH-29 | The attention mechanism | T | 50 min | 10 |
-| TH-30 | The transformer architecture | T | 50 min | 10 |
-| TH-5 | Attention and transformers from a cost view | T | 50 min | 10 |
-| TH-31 | Text generation: sampling, context, and the KV cache | T | 50 min | 10 |
-
-- **TH-27.** Sequence data and the hidden state. The simple RNN and its memory problem. The gates of LSTM and GRU. Module GA-10 is the lab for this topic. *Exercise:* calculate two steps of a simple RNN by hand.
-- **TH-28.** Characters, words, and subword tokens. Byte-pair encoding and the vocabulary. The embedding table. Positional encoding. *Exercise:* run three merge steps of byte-pair encoding by hand.
-- **TH-29.** Query, key, and value. Scaled dot-product attention. Self-attention and multi-head attention. The causal mask. *Exercise:* calculate the attention weights of three tokens by hand.
-- **TH-30.** The transformer block: attention, feed-forward layer, residual connection, and layer normalization. How a stack of blocks makes a GPT model. The parameter count. This module needs TH-29. *Exercise:* count the parameters of one transformer block.
-- **TH-5.** The compute and the memory of attention when the sequence grows. The cost of training and the cost of decoding. Use TH-29 first if the students do not know attention.
-- **TH-31.** Next-token prediction and the autoregressive loop. Temperature and sampling. The context window. The KV cache and its memory. *Exercise:* calculate the token probabilities of a small vocabulary at two temperatures.
-
-**Computer systems foundations**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-32 | Number formats: floating point and integers | T | 25 min | 4 |
-| TH-33 | Computer architecture essentials | T | 50 min | 1, 7, 9 |
-| TH-34 | Performance laws: Amdahl, Gustafson, and Little | T | 50 min | 7, 9 |
-
-- **TH-32.** The bits of a floating-point number: sign, exponent, and mantissa. FP32, FP16, and BF16. Integers and INT8. Range, precision, and rounding. *Exercise:* give the largest value and the smallest step of three formats.
-- **TH-33.** Processor, cache, RAM, and storage. The memory hierarchy. The latency and energy numbers to know. Bandwidth and latency. *Exercise:* estimate the time to read a model of 10 MB from three levels of the memory hierarchy.
-- **TH-34.** Amdahl's Law and Gustafson's Law: the limit of a speedup. Little's Law: queues and waiting time. Dimensional analysis as a check of a calculation. The Roofline model is not in this module: Day 7 and SIM-4 have it. *Exercise:* calculate the speedup of a pipeline when only the model becomes four times faster.
-
-**Machine learning systems**
-
-| ID | Module | Type | Time | Fits day |
-|---|---|---|---|---|
-| TH-3 | ML workflow and life cycle | T | 50 min | 1, 14 |
-| TH-4 | Cost of neural network computation | T | 50 min | 1 |
-| TH-35 | ML frameworks: graphs and execution | T | 50 min | 3, 7 |
-| TH-36 | The cost of training | T | 50 min | 6, 14 |
-| TH-6 | Data selection: less data for the same accuracy | T | 50 min | 2, 6 |
-| TH-37 | The D·A·M taxonomy: find the bottleneck | T | 25 min | 9, 14 |
-
-- **TH-3.** The stages of an ML project from the problem definition to monitoring, and the feedback between the stages.
-- **TH-4.** Parameters, operations, and memory of a network, with a digit classifier as the example.
-- **TH-35.** The computational graph. Eager execution, graph execution, and just-in-time compilation. Tensors and modules. Why a deployment format needs a static graph. *Exercise:* draw the computational graph of a function with five operations.
-- **TH-36.** Why training costs more than inference: stored activations, gradients, and optimizer state. The memory of one training step. Mixed precision. The limits of training on an edge device. *Exercise:* estimate the training memory of a small CNN for two batch sizes.
-- **TH-6.** Coresets, active learning, and data augmentation: methods that reach the same accuracy with less data.
-- **TH-37.** Data, Algorithm, and Machine: the three places of a bottleneck. A method to find the bottleneck before you optimize. *Exercise:* name the bottleneck in three cases.
-
-**Recap paths.** A path is a sequence of modules for one need. Present the modules in this order.
-
-| Need | Modules | Time | Notes |
-|---|---|---|---|
-| Deep learning from the start | TH-9, TH-13, TH-14, TH-15, TH-16, TH-17, TH-18 | 300 min | Before Day 1, or as homework. TH-2 gives the practice. |
-| Convolutional networks | TH-23, TH-24, TH-21, TH-22 | 175 min | Before Day 1 or Day 5. This path replaces the CNN recap deck that the template had. |
-| Training of a model | TH-10, TH-17, TH-18, TH-19, TH-11 | 250 min | Before Day 3 or Day 6. |
-| Language models | TH-28, TH-29, TH-30, TH-31, TH-5 | 250 min | Before Day 10. Add TH-27 if the class uses GA-10. |
-| Mathematics | TH-7, TH-8 | 100 min | Before Day 1 and Day 6. |
-| Computer systems | TH-33, TH-32, TH-34 | 125 min | Before Day 4, Day 7, and Day 9. |
-
-The ID TH-1 was the CNN recap deck of the template. That deck was an example of the deck structure. It is not part of the course, and the ID is not used again.
-
-### 6.8 Recommended replacements
-
-| Problem | Replacement |
-|---|---|
-| Edge Impulse Studio is not available | MC-5 for keyword spotting. The notebook path of Day 3 for motion. |
-| The Arduino build fails for many groups | MC-7 (SenseCraft AI) |
-| The lab network fails on Days 11 to 13 | PI-7 and SY-9 (local sensors and a local dashboard), or GA-8 |
-| Language model downloads fail on Day 10 | GA-9, GA-10, PI-2, or PI-3 |
-| A group completes Week 1 labs early | MC-4, MC-6 |
-| A group completes Week 2 labs early | PI-2, PI-4, GA-1, GA-3 |
-| The class wants more generative AI | Replace Day 6 Part A with GA-9. Use GA-1, GA-2, and GA-8 as capstone components. |
-| The class wants hands-on work with a Cortex-M board | NB-3 in place of the Day 3 lab, NB-5 in place of Day 5 Part A, NB-8 on Day 9 |
-| Students need a recap of machine learning or deep learning | A recap path of Section 6.7. Example: the path "Deep learning from the start" and TH-2, before Day 1 or as homework. |
-
----
-
-## 7. Assessment
+## 6. Assessment
 
 This section is a proposal. Align the weights with the KAUST Academy rules.
 
@@ -1153,7 +694,7 @@ This section is a proposal. Align the weights with the KAUST Academy rules.
 | Report and presentation | 20% |
 
 
-## 10. Sources and references
+## 7. Sources and references
 
 This course adapts material from the sources below.
 
@@ -1166,13 +707,12 @@ Used for: theory decks, kit labs, simulation labs, assessment method.
 
 **TinyTorch.** Vijay Janapa Reddi and the TinyTorch contributors, Harvard University.
 TinyTorch is the companion of the textbook. It is in the folder `tinytorch` of the textbook repository. Licence: MIT.
-Used for: recap modules of Section 6.7 (tensors, activations, layers, losses, automatic differentiation, optimizers, the training loop, convolutions, tokenization, embeddings, attention, transformers, the KV cache).
 
 ### Companion books
 
 **Edge AI Engineering: Raspberry Pi.** Marcelo Rovai (UNIFEI, TinyML4D).
 Book: https://mjrovai.github.io/EdgeML_Made_Ease_ebook/. Book repository: https://github.com/Mjrovai/EdgeML_Made_Ease_ebook. Code: https://github.com/Mjrovai/EdgeML-with-Raspberry-Pi. Code licence: GPL-3.0.
-Used for: Raspberry Pi labs (Days 6 to 10 and Day 13), generative AI modules, physical computing modules, lab check criteria.
+Used for: Raspberry Pi labs (Days 6 to 10 and Day 13), lab check criteria.
 
 **TinyML Made Easy: XIAO ESP32S3.** Marcelo Rovai (UNIFEI, TinyML4D).
 Book: https://mjrovai.github.io/TinyML_Made_Easy_XIAO_ESP32S3_ebook/. Code: https://github.com/Mjrovai/XIAO-ESP32S3-Sense. Code licence: Apache-2.0.
@@ -1186,27 +726,22 @@ Used for: Arduino basics, Wi-Fi and HTTP (Day 11), MQTT (Day 12).
 
 **HarvardX Professional Certificate in Tiny Machine Learning (TinyMLx).** Vijay Janapa Reddi, Laurence Moroney, Pete Warden, Lara Suzuki, and the TinyMLx team (Harvard University and Google).
 Courseware: https://github.com/tinyMLx/courseware. Arduino library: https://github.com/tinyMLx/arduino-library. Licence: CC BY-NC-SA 4.0.
-Used for: Nano 33 modules NB-1 to NB-12, and recap modules of Section 6.7.
 
 **TensorFlow Lite Micro Arduino examples.** The TensorFlow Authors.
 Repository: https://github.com/tensorflow/tflite-micro-arduino-examples. Licence: Apache-2.0.
-Used for: module NB-2.
 
 ### Other references
 
 - MIT 6.5940 "TinyML and Efficient Deep Learning Computing" (efficientml.ai): more depth for Days 4 and 6.
 - Tool documentation: MicroPython, Edge Impulse, Ollama, Mosquitto, MediaMTX, Grafana, Prometheus.
+
 ---
 
-## 12. Layout of the material in this repository
+## 8. Layout of the material in this repository
 
 | Material | Location |
 |---|---|
 | Theory deck of a day | `LaTeX/DayNN_Theory.tex` with sections in `LaTeX/sections/dayNN/` |
 | Lab deck of a day | `LaTeX/DayNN_Lab.tex` with sections in `LaTeX/sections/dayNN_lab/` |
 | Lab files of a day | `Labs/dayNN/` |
-| Backup module deck | `LaTeX/Module_<ID>.tex` with sections in `LaTeX/sections/modules/<ID>/` |
-| Backup module lab files | `Labs/modules/<ID>/` with a `README.md` |
 | Credits frame | `LaTeX/sections/credits.tex` |
-
-Each backup module deck compiles alone. To add a module to a day, add its section files to the day deck with `\input` lines.

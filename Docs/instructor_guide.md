@@ -21,7 +21,7 @@ each day. The checklists come from the preparation notes of the syllabus
 | Decision Log, rubric, and lab check sheet | `Docs/decision_log.md` |
 | Capstone brief and rubric | `Docs/capstone.md` |
 | Reading list for the students | `Docs/reading.md` |
-| Syllabus, with the catalogue of the backup modules | `Docs/SYLLABUS.md` |
+| Syllabus | `Docs/SYLLABUS.md` |
 | Credits of each reused item | `ATTRIBUTION.md` |
 
 To build a deck again after a change, run this command in the root of the
@@ -75,20 +75,6 @@ bash build.sh --file Day01_Theory.tex
 | 13 | Monitoring, logging, and visualization | Raspberry Pi 5 | 73 | 18 | A 40, B 45, C 40, D 25 |
 | 14 | Production edge AI design and capstone start | both | 67 | 18 | A 20, B 50, C 40, D 40 |
 | 15 | Capstone build and demonstrations | both | 28 | 14 | A 80, B 70, C 30 |
-
-### Backup modules
-
-The syllabus names the backup modules that fit each day, and its Section 6
-describes each module. A backup module has its own deck
-(`Lectures/Module_<ID>.pdf`) and its own lab folder (`Labs/modules/<ID>/`).
-Check that the files of a module are in the repository before you plan it.
-
-Use a backup module when:
-
-- a group completes the core lab early,
-- a core lab fails because of the hardware, the network, or a cloud service,
-- the class needs more depth or less depth on a topic,
-- the class needs a recap of a machine learning topic (modules `TH-n`).
 
 ## 3. Before the course
 
@@ -177,8 +163,6 @@ of each day tells the students when to use them.
 - [ ] Print the two quizzes without the section "Answers".
 - [ ] Print the lab check sheet of `Docs/decision_log.md`: one sheet for
       each group and each day.
-- [ ] Select the backup modules that you plan to use, and check their
-      hardware in `Docs/hardware.md`.
 
 ## 4. Checklist for each day
 
@@ -208,10 +192,7 @@ Lab:
 - The camera test needs the build option "OPI PSRAM".
 - Part C needs no board. A group with a kit that does not work can do it.
 
-Backup modules: MC-1, MC-10, SIM-1, NB-1.
 
-Recap modules: TH-2, TH-3, TH-4, TH-7, TH-9, TH-13, TH-14, TH-20, TH-23,
-TH-24, TH-33.
 
 ### Day 2: Embedded systems, MicroPython, and sensor data collection
 
@@ -240,9 +221,7 @@ Fallback:
 - No dataset at the end: `host/make_fallback_dataset.py` makes a simulated
   dataset. After your hardware test, replace it with your real dataset.
 
-Backup modules: MC-1, MC-2, NB-10, NB-12.
 
-Recap modules: TH-6, TH-10, TH-26.
 
 ### Day 3: From trained model to microcontroller
 
@@ -270,10 +249,7 @@ Fallback:
 - Edge Impulse Studio is not available: the group completes only the column
   of its own sketch.
 
-Backup modules: MC-3, MC-4, MC-10, NB-2, NB-3, NB-4.
 
-Recap modules: TH-10, TH-11, TH-12, TH-15, TH-16, TH-17, TH-18, TH-26,
-TH-35.
 
 ### Day 4: Quantization
 
@@ -296,9 +272,7 @@ Fallback:
   `sketches/motion_quant/`.
 - No kit: Parts A, B, and C, with "no board" in the table of Part D.
 
-Backup modules: SIM-2, PI-2 (after Day 7), NB-8.
 
-Recap modules: TH-14, TH-16, TH-21, TH-32.
 
 ### Day 5: Audio and vision on microcontrollers
 
@@ -328,9 +302,7 @@ Fallback:
 - The library does not build with the core 3.3.12: the core 2.0.17.
 - Tasks A1 and A2 are not complete: `solutions/sketches/kws_stream/postprocess.h`.
 
-Backup modules: MC-5, MC-6, MC-7, MC-8, MC-2, NB-5, NB-6, NB-7, MC-11.
 
-Recap modules: TH-11, TH-19, TH-22, TH-23, TH-25, TH-26.
 
 ### Day 6: Pruning, distillation, and efficient design
 
@@ -357,9 +329,7 @@ Fallback:
 - The experiments are slow: two groups on one laptop, or the tables of the
   solution notebook.
 
-Backup modules: GA-9, SIM-2.
 
-Recap modules: TH-6, TH-8, TH-15, TH-17, TH-19, TH-20, TH-24, TH-36.
 
 ### Day 7: Hardware acceleration and inference runtimes
 
@@ -385,9 +355,7 @@ Fallback:
 - The environment for the notebook does not install: the solution notebook
   and the exported files.
 
-Backup modules: PI-1, PI-2, PI-5, SIM-3, SIM-4, PI-10.
 
-Recap modules: TH-7, TH-21, TH-33, TH-34, TH-35.
 
 ### Day 8: Object detection at the edge
 
@@ -415,9 +383,7 @@ Fallback:
   files of the shared folder.
 - The laptop has Windows with no WSL: Colab, or two groups on one laptop.
 
-Backup modules: PI-3, PI-4, PI-8, MC-6, PI-9.
 
-Recap modules: TH-11, TH-18, TH-22, TH-25.
 
 ### Day 9: Benchmarking and profiling
 
@@ -441,9 +407,7 @@ Fallback:
 - A task is not complete: the file of `solutions/`.
 - No Raspberry Pi: `pi/bench.py --suite tiny` on the laptop.
 
-Backup modules: PI-6, MC-9, SY-3, SIM-5, NB-8, NB-11.
 
-Recap modules: TH-33, TH-34, TH-37.
 
 ### Day 10: Generative AI at the edge
 
@@ -468,10 +432,7 @@ Fallback:
 - No Raspberry Pi: a laptop with Ollama. The rates then say nothing about
   the board.
 
-Backup modules: GA-1, GA-2, GA-3, GA-4, GA-5, GA-6, GA-7, GA-8, GA-9, GA-10,
-GA-11, GA-12.
 
-Recap modules: TH-5, TH-27, TH-28, TH-29, TH-30, TH-31.
 
 ### Day 11: Networking fundamentals and RTSP streaming
 
@@ -500,9 +461,7 @@ Fallback:
 - The laptop has no Day 8 environment: the detector runs on the Raspberry
   Pi.
 
-Backup modules: SY-1, MC-8, SY-11.
 
-Recap modules: none.
 
 ### Day 12: Local decision-making and MQTT
 
@@ -537,9 +496,7 @@ Fallback:
   is the cloud.
 - `pi/link.sh` reports an error: stop the cloud broker for 3 minutes.
 
-Backup modules: SY-2, PI-7, GA-8, NB-9, SY-12.
 
-Recap modules: none.
 
 ### Day 13: Monitoring, logging, and visualization
 
@@ -565,9 +522,7 @@ Fallback:
 - The camera does not work: image files with `--source`.
 - The Day 8 model is not on the card: the pre-trained model `yolo11n.pt`.
 
-Backup modules: SY-9, SY-3, SIM-6, SIM-8, SY-10.
 
-Recap modules: TH-8.
 
 ### Day 14: Production edge AI design and capstone start
 
@@ -590,9 +545,7 @@ Lab:
   first test for its riskiest assumption.
 - Give the order of the reviews at the start of Part C.
 
-Backup modules: SY-4, SY-5, SY-6, SY-7, SY-8, SY-10.
 
-Recap modules: TH-3, TH-36, TH-37.
 
 ### Day 15: Capstone build and demonstrations
 
@@ -614,11 +567,6 @@ Lab:
 - Part C: each team hands in `report.md`, and each student fills
   `Labs/day15/feedback.md`.
 
-Backup modules: each module of Section 6 of the syllabus can be a part of a
-capstone.
-
-Recap modules: none.
-
 ## 5. Open decisions
 
 The material uses one option for each of these points. Decide before the
@@ -631,6 +579,5 @@ course if you keep it.
 | Models of Day 9, Part B | The four reference models of MLPerf Tiny | The Edge Impulse models of the students from Day 5 |
 | Quiz answers | The answers are in `Docs/quiz1.md` and `Docs/quiz2.md` of this public repository | Move the answers to a private place, or write new questions each year |
 | Points of a lab check | 10 points: 4 for the check criteria, 6 for the Decision Log | Your own split |
-| Weights of the grade | Daily labs 40, quizzes 20, capstone 40 percent | The rules of KAUST Academy |
 
 
