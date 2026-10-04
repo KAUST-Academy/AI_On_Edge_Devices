@@ -50,7 +50,7 @@
           \item You work on the hardware in two to four parts: Part A,
                 Part B, and so on.
           \item You predict a number before you measure it.
-          \item At the end you show the result to the instructor.
+          \item At the end you document and analyze the results.
           \item You write a Decision Log.
         \end{itemize}
       \end{block}
@@ -120,7 +120,7 @@
     \node[box, dashed] (c2) at (8.7,-2.1) {Cloud\\(optional)};
     \draw[->] (s2) -- node[lab]{raw\\data} (m2);
     \draw[->] (m2) -- node[lab]{result} (a2);
-    \draw[->, dashed] (a2) -- node[lab]{result\\only} (c2);
+    \draw[->, dashed] (a2) -- node[lab]{events or\\metrics} (c2);
   \end{tikzpicture}
   \vskip 0.5em
   \raggedright
@@ -128,6 +128,8 @@
     \item Training needs much computation. It stays on large computers.
     \item Inference can move to the device. Then the device needs no
           permanent connection.
+    \item The device sends only events or metrics to the cloud. Raw data
+          stays on the device.
     \item The cloud path has three problems: raw data uses bandwidth, each
           transmission uses power, and the sensor must stay connected.
   \end{itemize}
@@ -165,7 +167,8 @@
       \[
         t_{\min} = \frac{2 \times \text{distance}}{c_{\text{fiber}}}
       \]
-      California to Virginia: 3600 km.
+      Light in fiber travels at about 200\,000 km/s, two thirds of its speed
+      in a vacuum. California to Virginia: 3600 km.
       \[
         t_{\min} \approx \frac{2 \times 3600\ \text{km}}{200\,000\ \text{km/s}}
                  = 36\ \text{ms}
@@ -457,8 +460,7 @@
       \end{itemize}
     \end{column}
   \end{columns}
-  \source{Figure: \emph{Machine Learning Systems}, Volume I, chapter 2
-    (CC BY-NC-SA 4.0).}
+  \source{Figure: \emph{Machine Learning Systems}, Volume I, chapter 2.}
 \end{frame}
 
 \begin{frame}{Mobile ML: a battery and no fan}
@@ -586,8 +588,7 @@
       \end{itemize}
     \end{column}
   \end{columns}
-  \source{Photographs and data: kit pages of \emph{Machine Learning Systems}
-    (CC BY-NC-SA 4.0).}
+  \source{Photographs and data: kit pages of \emph{Machine Learning Systems}.}
 \end{frame}
 
 \begin{frame}{Four devices, four budgets}
