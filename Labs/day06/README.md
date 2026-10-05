@@ -1,6 +1,5 @@
 # Day 6 lab: pruning, distillation, and model selection
 
-Hardware status: no board is necessary. The notebook ran on the work computer of the course (prepared on 2026-10-02)
 
 **Goal.** Your group has a trade-off curve for one task, and a model
 selection for the two boards of the course.
