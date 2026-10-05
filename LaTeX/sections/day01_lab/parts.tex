@@ -132,7 +132,7 @@ Global variables use 21824 bytes (6%) of dynamic memory,
     \end{column}
   \end{columns}
   \source{Figure and expected values: XIAOML Kit setup chapter of
-    \emph{Machine Learning Systems} (CC BY-NC-SA 4.0).}
+    \emph{Machine Learning Systems}.}
 \end{frame}
 
 \begin{frame}{Part B: microphone and camera}
@@ -195,7 +195,7 @@ Nr | SSID          | RSSI | CH | Encryption
   RSSI is the signal strength in dBm. A value nearer to 0 is a stronger
   signal.
   \source{Photograph: XIAOML Kit setup chapter of \emph{Machine Learning
-    Systems} (CC BY-NC-SA 4.0).}
+    Systems}.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part C
@@ -225,9 +225,7 @@ Free PSRAM                                ... bytes    ... KB    <- record
   \end{itemize}
   \keypoint{You measure the budget. The 8 MB of the data sheet is not the
     free memory.}
-  \source{Form of the output of \texttt{memory\_report}. The marks
-    ``\texttt{<- record}'' are not in the output. Nobody measured the values
-    on a board.}
+  \source{Form of the output of \texttt{memory\_report}.}
 \end{frame}
 
 \begin{frame}[fragile]{Part C: the notebook (35 min)}
@@ -262,8 +260,7 @@ standard, stride 2: correct
 ...
 Task 1: complete
 \end{lstlisting}
-  The four numbers are: output height, output width, parameters, MACs. The
-  complete notebook runs in less than one minute on a laptop CPU.
+  The four numbers are: output height, output width, parameters, MACs.
 \end{frame}
 
 \begin{frame}{Part C: predict, then profile}
@@ -345,6 +342,5 @@ Task 1: complete
   \textbf{You record:} six rows (three models in \code{float32} and in
   \code{int8}) for four devices. Each ``does not fit'' has a reason: flash,
   RAM, or flash and RAM.
-  \source{Device budgets of the notebook \texttt{model\_budgets.ipynb}. The
-    column ``RAM'' is the RAM for the tensors. 1 KB = 1024 bytes.}
+  \source{Device budgets of the notebook \texttt{model\_budgets.ipynb}.}
 \end{frame}
