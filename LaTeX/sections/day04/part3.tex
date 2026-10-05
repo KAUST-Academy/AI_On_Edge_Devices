@@ -5,7 +5,7 @@
 % short overview of binary and ternary networks. Exercise: read a per-layer
 % error report and name the layer to keep in float.
 %
-% The error report of the exercise has example values. The frame says so.
+% The error report of the exercise has example values.
 
 \theorypart{Quantization-aware training and debugging}%
   {read a per-layer error report and name the layer to keep in float}
@@ -332,7 +332,6 @@ def fake_quant(x, S, Z):
           it. Look for the layer where the error grows suddenly: layer 3
           in the figure.
   \end{itemize}
-  \source{The error values of the figure are examples, in percent.}
 \end{frame}
 
 \begin{frame}{Find the layer: quantize one layer at a time}
@@ -359,7 +358,6 @@ def fake_quant(x, S, Z):
     \item One layer usually causes most of the loss. The sum of the single
           losses is near the total loss.
   \end{itemize}
-  \source{The values of the table are examples, in percent.}
 \end{frame}
 
 \begin{frame}{Layers that are often sensitive}
@@ -541,7 +539,6 @@ def fake_quant(x, S, Z):
     \item How many bytes of flash does your decision cost?
     \item Name one repair that you try before you keep the layer in float.
   \end{enumerate}
-  Work with your neighbour for 8 minutes. The values are examples.
 }
 
 \answerframe{read a per-layer error report}{%

@@ -15,7 +15,7 @@
 %    the frame. The stream does not leave the computer: no value is a value
 %    of a board or of a network.
 % 2. Values of Part 2 and of Day 8, and published values of the sources.
-% 3. Example values for the calculations. The frame says so.
+% 3. Example values for the calculations.
 
 \theorypart{Stream architectures}%
   {select the inference location for three camera systems}
@@ -132,8 +132,7 @@
   \end{itemize}
   \keypoint{Each camera that sends video uses the shared channel. A camera
     that sends results uses almost nothing.}
-  \source{Bit rates: Part 2 (moving camera). The size of the JSON message
-    is an example.}
+  \source{Bit rates: Part 2 (moving camera).}
 \end{frame}
 
 % ------------------------------------------------------------------ compare
@@ -204,7 +203,6 @@
     \item The XIAO can be such a filter: a small image model of Day 5 on the
           kit, and a frame to the Raspberry Pi only for an event.
   \end{itemize}
-  \source{The share of 5 percent is an example.}
 \end{frame}
 
 % ------------------------------------------------------------------ delay parts
@@ -471,8 +469,7 @@
     \item Report two numbers: the frames each second that the model takes,
           and the age of those frames.
   \end{itemize}
-  \source{MediaMTX documentation, ``Raspberry Pi Cameras'' (MIT). The
-    walking speed is an example.}
+  \source{MediaMTX documentation, ``Raspberry Pi Cameras''.}
 \end{frame}
 
 % ------------------------------------------------------------------ buffers everywhere
@@ -505,7 +502,7 @@
           queue drops packets instead.
   \end{itemize}
   \source{\texttt{esp\_camera.h} of the esp32-camera driver (esp32 core
-    3.3.12). MediaMTX documentation,\\ ``Decrease packet loss'' (MIT).}
+    3.3.12). MediaMTX documentation,\\ ``Decrease packet loss''.}
 \end{frame}
 
 % ------------------------------------------------------------------ privacy
@@ -563,7 +560,7 @@
           Use it only on a closed network.
   \end{itemize}
   \source{MediaMTX documentation, ``RTSP-specific features'' (section
-    ``Encryption'') and ``Authentication'' (MIT).}
+    ``Encryption'') and ``Authentication''.}
 \end{frame}
 
 % ------------------------------------------------------------------ privacy by design
@@ -652,8 +649,6 @@
   \end{enumerate}
   Use the bit rates of Part 2 (2.62 Mbit/s for H.264) and the frame ages of
   this part.
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{select the inference location}{%

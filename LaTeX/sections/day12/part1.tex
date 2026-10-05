@@ -263,8 +263,6 @@ def decide(scores):                   # scores: {"person": 0.62, ...}
     \item With one threshold, the fan switches 25 times in 600 s:
           each switch wears the relay and the motor.
   \end{itemize}
-  \source{Simulation of this course (synthetic signal, seed 0). One point
-    each 4 s is shown.}
 \end{frame}
 
 % ------------------------------------------------------------------ hysteresis
@@ -317,7 +315,6 @@ def decide(scores):                   # scores: {"person": 0.62, ...}
           after the true crossing. One threshold switched on 17 s
           before it, because of the noise.
   \end{itemize}
-  \source{Simulation of this course (synthetic signal, seed 0).}
 \end{frame}
 
 % ------------------------------------------------------------------ scores sim
@@ -390,8 +387,6 @@ def decide(scores):                   # scores: {"person": 0.62, ...}
           window says it 15 times in this run, 8 times
           with no person.
   \end{itemize}
-  \source{Simulation of this course (synthetic scores, seed 0). The line
-    shows one window each 0.4 s; the bars use all windows.}
 \end{frame}
 
 % ------------------------------------------------------------------ rules table
@@ -426,7 +421,6 @@ def decide(scores):                   # scores: {"person": 0.62, ...}
   \end{itemize}
   \keypoint{Filter the scores in time, and use two thresholds. A delay of
     some windows is the price.}
-  \source{Simulation of this course (synthetic scores).}
 \end{frame}
 
 % ------------------------------------------------------------------ state machine
@@ -630,8 +624,6 @@ def step(person, now):                  # called for each new window
   Write the states, the events, and the transitions as a table. Give the
   action of each state. Which input needs a filter in time, and which
   one?
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \begin{frame}{Answer: a state machine for a door}

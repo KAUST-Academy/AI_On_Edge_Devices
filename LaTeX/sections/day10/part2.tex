@@ -91,7 +91,7 @@ llama-server -m llama3.2-3b-q4_k_m.gguf -c 4096 -t 4 --port 8080
   \small
   \code{-c}: the context. \code{-t}: the threads. Give the context
   yourself: its default 0 means ``the context of the model file''.
-  \source{llama.cpp documentation: README and \code{tools/server} (MIT).
+  \source{llama.cpp documentation: README and \code{tools/server}.
     Build time: guide\\ ``SLMs at the Edge'', section 5.2.}
 \end{frame}
 
@@ -118,7 +118,7 @@ ollama ps                                       # loaded models, RAM
   \end{itemize}
   \keypoint{Ollama is the shortest way from an empty board to a model that
     answers. The lab uses it.}
-  \source{Ollama documentation: README, API, and FAQ (MIT). Guide ``SLMs at
+  \source{Ollama documentation: README, API, and FAQ. Guide ``SLMs at
     the Edge'', section 3.}
 \end{frame}
 
@@ -146,7 +146,7 @@ litert-lm run --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
     \item The same runtime runs on phones, in the browser, and on the
           board. Fewer models than Ollama: about 20.
   \end{itemize}
-  \source{LiteRT-LM README (Apache-2.0). Chapter ``LiteRT-LM'' of
+  \source{LiteRT-LM README. Chapter ``LiteRT-LM'' of
     \emph{Edge AI Engineering}.}
 \end{frame}
 
@@ -254,7 +254,7 @@ curl http://localhost:11434/api/generate -d '{
   Generation rate = \code{eval\_count} / \code{eval\_duration} $\times
   10^9$. The prompt rate is the same calculation with the two prompt
   fields.
-  \source{Ollama API documentation (MIT).}
+  \source{Ollama API documentation.}
 \end{frame}
 
 % ------------------------------------------------------------------ cold
@@ -321,8 +321,8 @@ curl http://localhost:11434/api/generate -d '{
     \item Temperature 0 and a fixed seed give the same answer for the same
           prompt: use them for a benchmark.
   \end{itemize}
-  \source{Ollama documentation: FAQ, Modelfile, and API (MIT).\\ llama.cpp
-    documentation of the CLI and the server (MIT).}
+  \source{Ollama documentation: FAQ, Modelfile, and API.\\ llama.cpp
+    documentation of the CLI and the server.}
 \end{frame}
 
 % ------------------------------------------------------------------ context
@@ -605,8 +605,6 @@ curl http://localhost:11434/api/generate -d '{
   \end{enumerate}
   For application 2, calculate the KV cache of Llama 3.2 3B for a context
   of 8192 tokens (Part 1: 114\,688 bytes for each token).
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{select a model for three applications}{%

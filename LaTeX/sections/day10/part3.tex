@@ -74,7 +74,7 @@ r = ollama.generate(model="llama3.2:1b", prompt=text, format=schema,
     \item \code{format="json"} is weaker: valid JSON, but any keys.
   \end{itemize}
   \source{Ollama API documentation: structured outputs. llama.cpp
-    documentation: GBNF grammars (MIT).}
+    documentation: GBNF grammars.}
 \end{frame}
 
 \begin{frame}{Measured: valid JSON and correct JSON}
@@ -549,8 +549,6 @@ calls = r.message.tool_calls     # name and arguments, or empty
           on a small battery.
   \end{enumerate}
   For task 3, write the JSON schema of the ticket with three fields.
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{a classifier, a rule, or a language model?}{%

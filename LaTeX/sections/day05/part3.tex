@@ -6,7 +6,6 @@
 % cascade for a voice-controlled camera.
 %
 % The probability curves and the power values of the cascade are examples.
-% Each frame with such a value says so.
 
 \theorypart{Streaming inference and detection}%
   {design the cascade for a voice-controlled camera}
@@ -132,7 +131,6 @@
     \item With a threshold of 0.6 on each window, this stream gives four
           events: one false accept, and three events for one word.
   \end{itemize}
-  \source{The values are an example. They are not a measurement.}
 \end{frame}
 
 \begin{frame}{Smoothing: the mean of the last windows}
@@ -291,7 +289,6 @@
     \item At 3 frames each second, the answer comes one second after the
           object. For a slow scene, this delay is no problem.
   \end{itemize}
-  \source{The classes are an example.}
 \end{frame}
 
 % -------------------------------------------------------------------- cascade
@@ -549,9 +546,8 @@
     \item The method shows a general idea: change the question until the
           model fits.
   \end{itemize}
-  \source{Kit lab ``Object Detection'' of \emph{Machine Learning Systems}.
-    Its author measured the latency. Nobody measured it on the kit of this
-    course.}
+  \source{Kit lab ``Object Detection'' of \emph{Machine Learning Systems}. Its
+    author measured the latency.}
 \end{frame}
 
 \begin{frame}{Which model for which question}
@@ -610,7 +606,6 @@
           parameter do you change? What does the change cost?
     \item What does the image model do with a false accept of stage 1?
   \end{enumerate}
-  Work with your neighbour for 10 minutes.
 }
 
 \answerframe{design a cascade}{%

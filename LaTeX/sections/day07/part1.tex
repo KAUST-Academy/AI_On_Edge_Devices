@@ -768,8 +768,6 @@ for (int oc = 0; oc < C_out; oc++)
   \begin{itemize}
     \item The same calculation for the work computer gives 80 GFLOP/s (2
           units, 8 values, 2 operations, 2.5 GHz). The measurement: 82.8.
-    \item Nobody measured the memory bandwidth of the board for this
-          course. So its ridge point is not known.
   \end{itemize}
   \keypoint{On this board, acceleration is: NEON kernels, 4 threads, and
     fewer bytes. The runtime gives the first two. Parts 2 and 3 show how.}
@@ -809,7 +807,6 @@ for (int oc = 0; oc < C_out; oc++)
     \item The model changes to \code{int8}: each layer moves one quarter of
           the bytes. Which layer changes its regime?
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{place three workloads on a Roofline plot}{%

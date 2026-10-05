@@ -144,7 +144,7 @@
     \item The IP and TCP headers are $40 / 1500 = 2.7$ percent of a full
           packet. The headers of many small messages cost much more.
   \end{itemize}
-  \source{RFC 791, 9293, 768, and 894. The image is an example.}
+  \source{RFC 791, 9293, 768, and 894.}
 \end{frame}
 
 % ------------------------------------------------------------------ IPv4
@@ -235,7 +235,7 @@
   \vskip 0.4em
   \keypoint{The lab reserves \code{192.168.8.107} for pi-07. Your code can
     then use this address for the full course.}
-  \source{RFC 2131 (DHCP). The address \texttt{.163} is an example.}
+  \source{RFC 2131 (DHCP).}
 \end{frame}
 
 % ------------------------------------------------------------------ names
@@ -455,7 +455,7 @@
     \item If the lab has a switch, connect the Raspberry Pi with a cable.
           Its video stream then does not use the Wi-Fi channel twice.
   \end{itemize}
-  \source{Raspberry Pi documentation (CC BY-SA 4.0).\\ ESP32-S3 data sheet,
+  \source{Raspberry Pi documentation.\\ ESP32-S3 data sheet,
     version 2.2.}
 \end{frame}
 
@@ -589,7 +589,7 @@
           that sends more than the link carries fills it.
   \end{itemize}
   \source{Light barrier: \emph{Machine Learning Systems}, Volume I, chapter
-    ``ML Systems''.\\ The image size and the distance are examples.}
+    ``ML Systems''.}
 \end{frame}
 
 % ------------------------------------------------------------------ measured
@@ -654,8 +654,7 @@ $ ip neigh
     \item \code{ip neigh}: the devices that this computer reached recently,
           with their MAC addresses.
   \end{itemize}
-  \source{Example output of pi-07 in the format of iproute2. Nobody
-    measured these values.}
+  \source{Example output of pi-07 in the format of iproute2.}
 \end{frame}
 
 % ------------------------------------------------------------------ ss
@@ -682,8 +681,7 @@ ESTAB  0      412360   192.168.8.107:8554   192.168.8.163:51388
           confirm yet. A large value that grows means: the network or the
           reader is too slow for the stream.
   \end{itemize}
-  \source{Example output of pi-07 in the format of iproute2. Nobody
-    measured these values.}
+  \source{Example output of pi-07 in the format of iproute2.}
 \end{frame}
 
 % ------------------------------------------------------------------ ping
@@ -720,8 +718,7 @@ rtt min/avg/max/mdev = 2.910/15.983/41.200/17.835 ms
     100\% loss, no message & The device is off, or it blocks \code{ping} \\
     \bottomrule
   \end{tabular}
-  \source{Example output in the format of iputils. Nobody measured these
-    values.}
+  \source{Example output in the format of iputils.}
 \end{frame}
 
 % ------------------------------------------------------------------ iperf3
@@ -810,10 +807,8 @@ LISTEN 0      4096       127.0.0.1:8554       0.0.0.0:*
   \begin{exerciseblock}
     \small
     For each output, say which step of the method passes. Then find the
-    fault and give the change that corrects it. Work with your neighbour
-    for 6 minutes.
+    fault and give the change that corrects it.
   \end{exerciseblock}
-  \source{Example outputs. Nobody measured these values.}
 \end{frame}
 
 \begin{frame}{Answer: find the fault}

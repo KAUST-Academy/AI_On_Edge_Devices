@@ -373,8 +373,8 @@ void setup() {
 }
 \end{lstlisting}
   \source{The code follows the sketch \texttt{tflm\_hello}, which adapts the
-    example \texttt{hello\_world} of the library Chirale\_TensorFlowLite
-    (Apache-2.0). The frame leaves out the error checks.}
+    example \texttt{hello\_world} of the library Chirale\_TensorFlowLite.
+    The frame leaves out the error checks.}
 \end{frame}
 
 \begin{frame}[fragile]{Pre-process, infer, post-process: in \code{loop()}}
@@ -434,7 +434,6 @@ for (int k = 1; k < 4; k++) {
           must read the sensor.
   \end{itemize}
   \keypoint{The latency of the model is one part of a time budget.}
-  \source{The length of the red bars is an example, not a measured value.}
 \end{frame}
 
 \begin{frame}{Post-processing: from probabilities to a decision}
@@ -470,7 +469,6 @@ for (int k = 1; k < 4; k++) {
   \vskip 0.6em
   \keypoint{The model gives numbers. The post-processing makes the
     decision. Its settings are part of the system design.}
-  \source{The probabilities and the limits are examples.}
 \end{frame}
 
 % ---------------------------------------------------------- optimized kernels
@@ -565,7 +563,6 @@ for (int k = 1; k < 4; k++) {
     \item Model B has 1316 parameters. Model A has 6274. Which model needs
           more flash? Which model needs more RAM?
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{estimate the arena size}{%

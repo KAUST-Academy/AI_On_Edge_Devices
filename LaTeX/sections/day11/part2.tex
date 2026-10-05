@@ -203,7 +203,7 @@
           from it, until the next keyframe.
   \end{itemize}
   \source{Raspberry Pi documentation, ``Camera software'', section
-    ``Streaming'' (CC BY-SA 4.0).}
+    ``Streaming''.}
 \end{frame}
 
 % ------------------------------------------------------------------ measured codecs
@@ -241,7 +241,7 @@
           times for H.264.
   \end{itemize}
   \source{Experiment of this course: FFmpeg 4.4, x86 work computer.\\
-    Video of the repository XIAO-ESP32S3-Sense (Apache-2.0).}
+    Video of the repository XIAO-ESP32S3-Sense.}
 \end{frame}
 
 % ------------------------------------------------------------------ I and P
@@ -376,8 +376,8 @@
   \end{itemize}
   \keypoint{On the Raspberry Pi 5, the encoder and the detector share the
     CPU. Measure the detector with the stream active.}
-  \source{Raspberry Pi documentation, ``rpicam-vid'' (CC BY-SA 4.0).\\
-    MediaMTX documentation, ``Raspberry Pi Cameras'' (MIT).}
+  \source{Raspberry Pi documentation, ``rpicam-vid''.\\
+    MediaMTX documentation, ``Raspberry Pi Cameras''.}
 \end{frame}
 
 % ------------------------------------------------------------------ RTP header
@@ -571,7 +571,7 @@ Transport: RTP/AVP/TCP;unicast;interleaved=0-1;ssrc=9E9DC1FB
     \item The lab uses TCP first. Part C of the lab tries UDP and compares
           the delay.
   \end{itemize}
-  \source{MediaMTX documentation (MIT): ``RTSP-specific features'',\\
+  \source{MediaMTX documentation: ``RTSP-specific features'',\\
     ``Decrease packet loss''.}
 \end{frame}
 
@@ -599,8 +599,7 @@ Content-Type: image/jpeg
     \item One TCP connection for each viewer. Each viewer costs the full bit
           rate on the Wi-Fi of the XIAO.
   \end{itemize}
-  \source{Stream sketch \texttt{Streeming\_Video.ino} of XIAO-ESP32S3-Sense.\\
-    The value of \texttt{Content-Length} is an example.}
+  \source{Stream sketch \texttt{Streeming\_Video.ino} of XIAO-ESP32S3-Sense.}
 \end{frame}
 
 % ------------------------------------------------------------------ compare
@@ -633,7 +632,7 @@ Content-Type: image/jpeg
     \item The lab: MJPEG over HTTP from the XIAO, and RTSP from the
           Raspberry Pi to a Python reader.
   \end{itemize}
-  \source{MediaMTX README and documentation, ``Read streams'' (MIT).}
+  \source{MediaMTX README and documentation, ``Read streams''.}
 \end{frame}
 
 % -------------------------------------------------------------------- exercise
@@ -657,7 +656,6 @@ Content-Type: image/jpeg
           carries 30 Mbit/s?
     \item[d.] the time of one keyframe on a link of 2.4 Mbit/s.
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{bit rate of two streams}{%

@@ -256,7 +256,7 @@
     \item Day 6 used one scale for each tensor or for each channel. A small
           block gives a better fit to the weights, for some more bytes.
   \end{itemize}
-  \source{Block definitions in \code{ggml-common.h} of llama.cpp (MIT).}
+  \source{Block definitions in \code{ggml-common.h} of llama.cpp.}
 \end{frame}
 
 % ------------------------------------------------------------- k-quants
@@ -286,7 +286,7 @@
     \item The scales themselves are quantized: 6 bits, not 16. So the cost
           of 8 scales stays small.
   \end{itemize}
-  \source{Block definitions in \code{ggml-common.h} of llama.cpp (MIT).}
+  \source{Block definitions in \code{ggml-common.h} of llama.cpp.}
 \end{frame}
 
 % ------------------------------------------------------------- names
@@ -694,7 +694,7 @@ tokenizer.ggml.tokens  128256 strings
           Why?
     \item Give two changes that make the larger context fit.
   \end{enumerate}
-  Work with your neighbour for 8 minutes. Use GB = $10^9$ bytes.
+  Use GB = $10^9$ bytes.
 }
 
 \answerframe{the RAM of a 4-bit 3B model}{%

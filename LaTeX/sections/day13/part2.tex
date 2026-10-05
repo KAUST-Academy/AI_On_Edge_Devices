@@ -243,7 +243,6 @@ log.debug("boxes", extra={"fields": {"boxes": [[12, 40, 200, 300]]}})
           values. One row for each value (time, name, value) needs 30.9
           bytes for each value.
   \end{itemize}
-  \source{Experiment of this part: synthetic records; 1 MB = 1024 KB.}
 \end{frame}
 
 % ------------------------------------------------------------------ rotation
@@ -319,8 +318,8 @@ log.debug("boxes", extra={"fields": {"boxes": [[12, 40, 200, 300]]}})
           The textbook gives the same rule for a data centre: all errors,
           1 percent of the successful requests.
   \end{itemize}
-  \source{Experiment of this part: synthetic hour, seed 0. Rule: \emph{Machine
-    Learning Systems}, Volume I, chapter ``ML Operations''.}
+  \source{Rule: \emph{Machine Learning Systems}, Volume I, chapter ``ML
+    Operations''.}
 \end{frame}
 
 % ------------------------------------------------------------------ summary
@@ -365,8 +364,7 @@ edgeai_cpu_temp_celsius{device="pi-07"}              60.9   at 14:00:00
     \item A log record can hold any field. A metric holds only numbers with
           a fixed set of labels, so it is small and fast to query.
   \end{itemize}
-  \source{Notation of Prometheus; metric names of HW-08. Example labels and
-    values.}
+  \source{Notation of Prometheus; metric names of HW-08.}
 \end{frame}
 
 % ------------------------------------------------------------------ storage
@@ -553,7 +551,6 @@ rows = con.execute("SELECT avg(latency_ms), max(latency_ms) FROM frames "
     \draw[->] (a) -- (b); \draw[->] (b) -- node[above] {yes} (c);
     \draw[->] (c) -- node[above] {yes} (d);
   \end{tikzpicture}\par\endgroup
-  \source{The threshold 0.4 and the quota are example values.}
 \end{frame}
 
 % ------------------------------------------------------------------ lab

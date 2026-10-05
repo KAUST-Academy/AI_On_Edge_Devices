@@ -192,7 +192,6 @@ tflite_model = converter.convert()
   \vskip 0.2em
   \keypoint{The calibration is a measurement of the model with your data.
     It trains nothing and changes no weight.}
-  \source{The values in the red boxes are examples.}
 \end{frame}
 
 \begin{frame}{The representative dataset}
@@ -289,7 +288,6 @@ tflite_model = converter.convert()
           clipping error. You measure which range gives the better
           accuracy.
   \end{itemize}
-  \source{The values are an example for the calculation.}
 \end{frame}
 
 % ---------------------------------------------------------------- per channel
@@ -320,7 +318,6 @@ tflite_model = converter.convert()
   \vskip 0.2em
   \keypoint{With one scale for the tensor, a filter with small weights
     has a large relative error.}
-  \source{The three ranges are an example.}
 \end{frame}
 
 \begin{frame}{Per-channel quantization}
@@ -584,8 +581,6 @@ print(correct / len(x_test))
     \item The conversion gives no error. How can the team find the
           problem?
   \end{enumerate}
-  Work with your neighbour for 8 minutes. The value ranges come from the
-  fallback dataset of Day 2, which has simulated signals.
 }
 
 \answerframe{a calibration set with one class}{%
