@@ -111,6 +111,7 @@
 \begin{frame}{System benchmark: the metrics}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.27\textwidth}L{0.15\textwidth}L{0.50\textwidth}@{}}
     \toprule
     \textbf{Metric} & \textbf{Unit} & \textbf{Question} \\
@@ -130,7 +131,7 @@
     Temperature          & $^\circ$C
         & Is the result the same after ten minutes? \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item Each metric is a limit of the device from Day 1: time, memory,
@@ -249,6 +250,7 @@
 \begin{frame}{Which statistic for which product}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.34\textwidth}L{0.38\textwidth}@{}}
     \toprule
     \textbf{Statistic} & \textbf{It tells you} & \textbf{Use it for} \\
@@ -266,7 +268,7 @@
         & The total time divided by the number of inferences
         & The throughput and the energy of a long run \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item MLPerf Inference reports the 90th percentile for queries of one
@@ -378,6 +380,7 @@
 \begin{frame}{Model benchmark: test the file that you deploy}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.36\textwidth}L{0.32\textwidth}r@{}}
     \toprule
     \textbf{MobileNetV2 in LiteRT} & \textbf{Calibration}
@@ -388,7 +391,7 @@
     Full \code{int8}        & 100 images            & 75.2 percent \\
     Full \code{int8}        & 100 images of noise   & 12.8 percent \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item You know these rows from Day 7. The last two files have the same
@@ -454,6 +457,7 @@
 \begin{frame}{Data benchmark: the test data and the product}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.16\textwidth}L{0.36\textwidth}L{0.40\textwidth}@{}}
     \toprule
     \textbf{Question} & \textbf{Check} & \textbf{In this course} \\
@@ -473,7 +477,7 @@
         & The test data come from the sensor of the device
         & A photo on a screen is not the scene in front of the camera \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   \begin{itemize}
@@ -591,6 +595,7 @@
 \begin{frame}{MLPerf Tiny: four benchmarks}
   \footnotesize
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.21\textwidth}L{0.30\textwidth}L{0.23\textwidth}L{0.13\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Dataset and input} & \textbf{Model and file}
@@ -605,7 +610,7 @@
     Anomaly detection & ToyADMOS, $5 \times 128$
         & Autoencoder, 270 KB   & AUC 0.85 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -741,6 +746,7 @@
 \begin{frame}{MLPerf Inference: the Edge category}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.16\textwidth}L{0.44\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Scenario} & \textbf{How the queries arrive}
@@ -757,7 +763,7 @@
         & All samples are there at the start.
         & The throughput in samples each second \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}
@@ -778,6 +784,7 @@
 \begin{frame}{What a standard benchmark does not tell you}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.44\textwidth}L{0.48\textwidth}@{}}
     \toprule
     \textbf{The suite uses} & \textbf{Your product has} \\
@@ -790,7 +797,7 @@
     The best software of the submitter & Your runtime and your settings \\
     A laboratory                      & A closed box, in the sun \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item Use a published result to select a chip or a runtime.

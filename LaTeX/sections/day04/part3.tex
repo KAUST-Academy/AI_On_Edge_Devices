@@ -248,6 +248,7 @@ def fake_quant(x, S, Z):
 \begin{frame}{Compare the two methods}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.35\textwidth}L{0.35\textwidth}@{}}
     \toprule
     & \textbf{Post-training (PTQ)} & \textbf{Quantization-aware (QAT)} \\
@@ -261,7 +262,7 @@ def fake_quant(x, S, Z):
     Use it    & Always first & When PTQ misses the target, or below 8
                                bits \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The two methods give the same type of file: an \code{int8}
@@ -423,6 +424,7 @@ def fake_quant(x, S, Z):
 \begin{frame}{Binary and ternary networks}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.22\textwidth}L{0.24\textwidth}L{0.18\textwidth}@{}}
     \toprule
     & \textbf{INT8} & \textbf{Ternary} & \textbf{Binary} \\
@@ -434,7 +436,7 @@ def fake_quant(x, S, Z):
                        & XNOR gate \\
     Training           & PTQ or QAT & QAT & QAT \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The loss of accuracy is large. ResNet-50 on ImageNet: 76.2
@@ -484,6 +486,7 @@ def fake_quant(x, S, Z):
 \begin{frame}{The lab of today}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.08\textwidth}L{0.12\textwidth}L{0.70\textwidth}@{}}
     \toprule
     \textbf{Part} & \textbf{Time} & \textbf{Work} \\
@@ -497,7 +500,7 @@ def fake_quant(x, S, Z):
     D & 30 min & Put the float model and the \code{int8} model of Day 3 on
                  the board. Compare flash, arena, latency, and accuracy. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The deliverable is a comparison table with one float row and one

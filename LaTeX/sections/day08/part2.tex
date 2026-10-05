@@ -575,6 +575,7 @@ names: ['box', 'wheel']
 \begin{frame}{Labelling rules: write them first}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.34\textwidth}L{0.58\textwidth}@{}}
     \toprule
     \textbf{Question} & \textbf{Example of a rule} \\
@@ -592,7 +593,7 @@ names: ['box', 'wheel']
     Two classes that look similar
         & One sentence and two example images for each class. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   The rules are examples. Your product decides each rule. The same rules
   apply to the training set and to the test set.

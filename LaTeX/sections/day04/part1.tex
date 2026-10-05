@@ -406,6 +406,7 @@
 \begin{frame}{Symmetric and asymmetric ranges}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.36\textwidth}L{0.37\textwidth}@{}}
     \toprule
     & \textbf{Symmetric} & \textbf{Asymmetric} \\
@@ -419,7 +420,7 @@
                  & After a ReLU, all values are positive. A symmetric
                    range uses only half of the integers. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.7em
   \textbf{Example:} an activation after a ReLU with the range $[0, 6]$.
   \begin{itemize}

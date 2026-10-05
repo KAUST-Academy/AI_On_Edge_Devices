@@ -4,6 +4,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
     \toprule
     \textbf{Problem} & \textbf{Fix} \\
@@ -28,7 +29,7 @@
     The notebook prints \code{No module named 'torch'}
       & Start Jupyter with \code{.venv/bin/jupyter lab}. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   The README of the lab has the complete list.

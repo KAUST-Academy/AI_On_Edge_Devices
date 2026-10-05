@@ -365,6 +365,7 @@
 \begin{frame}{The clock}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.33\textwidth}L{0.17\textwidth}L{0.40\textwidth}@{}}
     \toprule
     \textbf{Clock} & \textbf{Use it?} & \textbf{Reason} \\
@@ -383,7 +384,7 @@
         & No
         & A step of 1 ms: an inference of 3.4 ms shows 3 or 4 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}
@@ -497,6 +498,7 @@ pipeline_ms.append((t3 - t0) / 1e6)
 \begin{frame}{Fix the input}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Model type} & \textbf{Does the time depend on the input?}
@@ -512,7 +514,7 @@ pipeline_ms.append((t3 - t0) / 1e6)
         & Yes: the time grows with the number of tokens
         & Fixed prompts and a fixed output length \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}
@@ -559,6 +561,7 @@ Serial.printf("median %lu us\n", percentileUs(times_us, kTimedRuns, 50));
 \begin{frame}{Describe the system}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.31\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Item} & \textbf{XIAOML Kit} & \textbf{Raspberry Pi 5} \\
@@ -576,7 +579,7 @@ Serial.printf("median %lu us\n", percentileUs(times_us, kTimedRuns, 50));
     State during the run & Radio on or off, chip temperature
                         & Other programs, temperature, throttle state \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}

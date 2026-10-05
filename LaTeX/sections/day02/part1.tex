@@ -121,6 +121,7 @@
 \begin{frame}{Three types of memory}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.22\textwidth}L{0.24\textwidth}L{0.25\textwidth}@{}}
     \toprule
     & \textbf{Flash} & \textbf{RAM} & \textbf{PSRAM} \\
@@ -133,7 +134,7 @@
     Write & Slow, in blocks & Fast & Slower than RAM \\
     On the XIAO & 8 MB & 512 KB & 8 MB \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \begin{itemize}
     \item A model uses two memories. The weights are constants in flash.
@@ -390,6 +391,7 @@ print(button.value())   # 0 = pressed
   \small
   \renewcommand{\arraystretch}{1.3}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.10\textwidth}L{0.20\textwidth}L{0.20\textwidth}L{0.19\textwidth}L{0.20\textwidth}@{}}
     \toprule
     & \textbf{Signal wires} & \textbf{Devices} & \textbf{Speed}
@@ -404,7 +406,7 @@ print(button.value())   # 0 = pressed
     I2S  & 2 or 3: clocks, data & 1 audio device
          & Fixed by the audio rate & Microphone \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \begin{itemize}
     \item ``Serial'' means that the bits go one after the other on one
@@ -703,6 +705,7 @@ button.irq(trigger=Pin.IRQ_FALLING,
 \begin{frame}{Power modes}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.33\textwidth}L{0.24\textwidth}r@{}}
     \toprule
     \textbf{Mode} & \textbf{State} & \textbf{After wake-up}
@@ -718,7 +721,7 @@ button.irq(trigger=Pin.IRQ_FALLING,
                   content.
         & The program starts again & 14 $\mu$A \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item A timer or a pin wakes the board. In MicroPython:
@@ -774,6 +777,7 @@ button.irq(trigger=Pin.IRQ_FALLING,
   An extract from the data sheet of a different TinyML board:
   \vskip 0.3em
   {\footnotesize
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
     \toprule
     Microcontroller & nRF52840: Cortex-M4F, 64 MHz, 1 MB of flash, 256 KB
@@ -784,7 +788,7 @@ button.irq(trigger=Pin.IRQ_FALLING,
     Humidity        & HS3003 (temperature and humidity), I2C \\
     Light, gesture  & APDS-9960, I2C \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}\par\endgroup}
   \vskip 0.3em
   \begin{enumerate}
     \item How much flash and how much RAM does the board have?

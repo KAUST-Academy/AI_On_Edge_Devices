@@ -207,6 +207,7 @@ ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.36\textwidth}L{0.31\textwidth}@{}}
     \toprule
     \textbf{Trigger} & \textbf{Signal} & \textbf{Who acts} \\
@@ -220,7 +221,7 @@ ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
     Model metrics & Confidence, class counts against the old version & A
       person, hours \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -347,6 +348,7 @@ ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.24\textwidth}L{0.22\textwidth}L{0.22\textwidth}@{}}
     \toprule
     \textbf{Device class} & \textbf{Artifact} & \textbf{Update} &
@@ -359,7 +361,7 @@ ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
     Older Raspberry Pi & A smaller model, a smaller image size & The same &
       Its own latency budget \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -380,6 +382,7 @@ ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.34\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{What changes} & \textbf{Cost on the device} & \textbf{Example} \\
@@ -392,7 +395,7 @@ ln -sfn 1.3.0 current.new && mv -T current.new current     # roll back
     Selected layers & Activations and gradients in memory, much energy &
       Large devices only \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}

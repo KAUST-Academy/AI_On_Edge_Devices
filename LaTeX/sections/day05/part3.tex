@@ -200,6 +200,7 @@
 \begin{frame}{What the smoothing costs}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.29\textwidth}L{0.31\textwidth}@{}}
     \toprule
     & \textbf{Small $N$, low threshold} & \textbf{Large $N$, high
@@ -210,7 +211,7 @@
                                       $N$ windows \\
     Delay of the event     & Short  & Longer: about $N$ strides \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{itemize}
     \item Part 1: a false accept rate of 0.1 percent for each window gives
@@ -227,6 +228,7 @@
 \begin{frame}{Tune the post-processing with a test}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Test} & \textbf{What you do} & \textbf{What you count} \\
@@ -238,7 +240,7 @@
     Delay         & Say the keyword and look at the display
                   & The time to the event \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item Change one parameter, and repeat the three tests. Write each
@@ -353,6 +355,7 @@
 \begin{frame}{Rules for the design of a cascade}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.35\textwidth}@{}}
     \toprule
     & \textbf{Stage 1} & \textbf{Stage 2} \\
@@ -364,7 +367,7 @@
     Tune it for  & Few false rejects. Some false accepts are permitted.
                  & Few false accepts \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item Stage 2 can check stage 1 again. So stage 1 can use a lower
@@ -380,6 +383,7 @@
 \begin{frame}{From classification to detection}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.34\textwidth}L{0.36\textwidth}@{}}
     \toprule
     & \textbf{Classification} & \textbf{Object detection} \\
@@ -392,7 +396,7 @@
              & Not fixed: it depends on the image \\
     Typical models & MobileNet & SSD, YOLO \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item A detector looks at many positions and many sizes. For each of
@@ -407,6 +411,7 @@
 \begin{frame}{Why SSD and YOLO do not fit}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.32\textwidth}@{}}
     \toprule
     \textbf{Property} & \textbf{A detector for a phone or a Raspberry Pi}
@@ -420,7 +425,7 @@
     Outputs    & Thousands of boxes, then a filter step
                & Little time and little RAM for it \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item The peak values are a calculation for MobileNetV2 at
@@ -553,6 +558,7 @@
 \begin{frame}{Which model for which question}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.26\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{The product must know} & \textbf{Model} & \textbf{Smallest
@@ -567,7 +573,7 @@
     A description of the scene in words & Vision-language model
         & Raspberry Pi with 8 GB (Day 10) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item The table has the form of a cascade also: a classifier on a

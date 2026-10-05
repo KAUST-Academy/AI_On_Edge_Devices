@@ -105,6 +105,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.0cm}L{3.3cm}L{4.6cm}@{}}
     \toprule
     \textbf{Type} & \textbf{Example} & \textbf{Use} \\
@@ -118,7 +119,7 @@
     Sample & a few images when the model is not sure & a check by a person,
       new training data \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -265,6 +266,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.4cm}L{3.6cm}L{4.0cm}@{}}
     \toprule
     \textbf{Choice} & \textbf{When} & \textbf{Example} \\
@@ -276,7 +278,7 @@
     Store and forward & each message matters & counts, events, the data of
       a trend \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -435,6 +437,7 @@ persistence true
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.6cm}L{2.6cm}r@{}}
     \toprule
     \textbf{Device} & \textbf{Rate and cut} & \textbf{Buffer} \\
@@ -443,7 +446,7 @@ persistence true
     Raspberry Pi, detections & 10 each s, 1 day & 864\,000 $\times$ 100 B
       = 86.4 MB \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.1em
   {\scriptsize Example values of this course. 1 kB = 1000 bytes.\par}
   \vskip 0.4em
@@ -463,6 +466,7 @@ persistence true
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.5cm}L{2.7cm}L{4.8cm}@{}}
     \toprule
     \textbf{Clock} & \textbf{Example} & \textbf{Property} \\
@@ -474,7 +478,7 @@ persistence true
     Arrival time & the clock of the server & adds the network delay and the
       time in a buffer \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -636,6 +640,7 @@ pattern readwrite edgeai/%u/#
 \begin{frame}{Answer: the data of one camera for a day}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.0cm}L{4.4cm}r@{}}
     \toprule
     \textbf{Design} & \textbf{Calculation} & \textbf{One day} \\
@@ -644,7 +649,7 @@ pattern readwrite edgeai/%u/#
     2. A result each frame & 10 $\times$ 150 $\times$ 86\,400 & 129.6 MB \\
     3. Only the changes & 200 $\times$ 150 & 30 kB \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}

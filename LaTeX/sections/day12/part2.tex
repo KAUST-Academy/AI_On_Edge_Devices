@@ -64,6 +64,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.6cm}L{1.1cm}rL{5.0cm}@{}}
     \toprule
     \textbf{Packet} & \textbf{From} & \textbf{Bytes} & \textbf{Content} \\
@@ -81,7 +82,7 @@
       PUBREL, PUBCOMP \\
     DISCONNECT & client & 2 & normal end: no last will \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -190,6 +191,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.2cm}L{3.6cm}L{3.5cm}@{}}
     \toprule
     \textbf{Filter} & \textbf{Matches} & \textbf{Does not match} \\
@@ -204,7 +206,7 @@
       \texttt{edgeai/g07} & \texttt{edgeai/g08/xiao/imu} \\
     \texttt{\#} & each topic & \texttt{\$SYS/...} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -239,6 +241,7 @@
   \vskip 0.3em
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.7cm}L{4.0cm}@{}}
     \toprule
     \textbf{Program} & \textbf{Filter} \\
@@ -248,7 +251,7 @@
     Dashboard of group 7 & \texttt{edgeai/g07/\#} \\
     Instructor laptop & \texttt{edgeai/+/+/status} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 % ------------------------------------------------------------------ qos flows
@@ -548,6 +551,7 @@
 \begin{frame}{Measured: when the last will arrives}
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{4.6cm}L{2.5cm}L{2.4cm}@{}}
     \toprule
     \textbf{End of the connection} & \textbf{Last will after} &
@@ -559,7 +563,7 @@
     Process ends, no DISCONNECT & 0.6 ms & \\
     Normal DISCONNECT & no last will & \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.1em
   {\scriptsize Three runs for each keep-alive. ``Link lost'': the proxy
   stopped all traffic and kept the TCP connection open.\par}
@@ -614,6 +618,7 @@ c.loop_forever()                     # reconnects after a lost link
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.5cm}lcL{2.0cm}L{3.7cm}@{}}
     \toprule
     \textbf{Message} & \textbf{Way} & \textbf{QoS} & \textbf{Retained} &
@@ -626,7 +631,7 @@ c.loop_forever()                     # reconnects after a lost link
     Command & down & 1 & no & \texttt{led=1} \\
     Reply & up & 1 & no & \texttt{"id":17,"ok":true} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.1em
   {\scriptsize Up: from the device to the server. Down: from the server to
   the device.\par}
@@ -706,6 +711,7 @@ c.loop_forever()                     # reconnects after a lost link
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.5cm}L{1.7cm}L{2.0cm}L{3.5cm}@{}}
     \toprule
     \textbf{Software} & \textbf{Role} & \textbf{QoS} & \textbf{Limits} \\
@@ -720,7 +726,7 @@ c.loop_forever()                     # reconnects after a lost link
     \texttt{umqtt.simple} & MicroPython client & 0, 1 & keep-alive off by
       default; no reconnection \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}

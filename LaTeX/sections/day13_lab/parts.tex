@@ -7,6 +7,7 @@
 \begin{frame}[fragile]{Part A: Tasks A1 and A2 (20 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -14,7 +15,7 @@
     1 & Copy the lab folder, check the Day 8 folder and its model & 5 min \\
     2 & Tasks A1 and A2 in \code{pi/monitor.py} & 15 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 scp -r day13 edge@pi-07.local:edgeai/                           # laptop
 ls ~/edgeai/day08/pi/detector.py ~/edgeai/day08/models/cupbottle_320_ncnn_model
@@ -150,6 +151,7 @@ Command: python alert.py --group g07 --metric confidence --threshold ...
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.38\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Event} & \textbf{What you do} & \textbf{Watch} \\
@@ -159,7 +161,7 @@ Command: python alert.py --group g07 --metric confidence --threshold ...
     Unknown object & Put your unknown object in place of the cup & Mean top
       score, part below 0.5, objects \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}

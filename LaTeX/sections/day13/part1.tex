@@ -60,6 +60,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.36\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Failure} & \textbf{Cause on the device} & \textbf{What the user
@@ -78,7 +79,7 @@
     Storage, clock, network & Full disk, wrong time, lost link & Lost logs,
       wrong time stamps, lost messages \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -230,6 +231,7 @@ print(label, probs.max())         # black image: matchstick 0.026
   \vskip 0.5em
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.40\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Form} & \textbf{Example for a camera} & \textbf{Response} \\
@@ -242,7 +244,7 @@ print(label, probs.max())         # black image: matchstick 0.026
     Short event & A person stands in front of the lens & Ignore it, unless
       it repeats \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   The form tells you the time window of the check: minutes for a sudden
@@ -363,6 +365,7 @@ print(label, probs.max())         # black image: matchstick 0.026
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.42\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Fault} & \textbf{Check on the device} & \textbf{Example} \\
@@ -381,7 +384,7 @@ print(label, probs.max())         # black image: matchstick 0.026
     Camera & Black, frozen, or not sharp & Brightness below 5; the same
       frame twice; low sharpness \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -510,6 +513,7 @@ vcgencmd get_throttled                       # throttled=0x0 when all is well
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.38\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Failure} & \textbf{Effect} & \textbf{Signal} \\
@@ -526,7 +530,7 @@ vcgencmd get_throttled                       # throttled=0x0 when all is well
     microSD card wear & Read errors, a damaged file system & Errors in the
       kernel log \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -541,6 +545,7 @@ vcgencmd get_throttled                       # throttled=0x0 when all is well
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.36\textwidth}L{0.32\textwidth}@{}}
     \toprule
     \textbf{Metric} & \textbf{Where to read it} & \textbf{It shows} \\
@@ -557,7 +562,7 @@ vcgencmd get_throttled                       # throttled=0x0 when all is well
     Free disk & \code{shutil.disk\_usage("/")} & Logs with no limit \\
     Uptime, restarts & Start time of the program & Crashes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -572,6 +577,7 @@ vcgencmd get_throttled                       # throttled=0x0 when all is well
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.36\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Metric} & \textbf{How} & \textbf{It shows} \\
@@ -586,7 +592,7 @@ vcgencmd get_throttled                       # throttled=0x0 when all is well
       sensor faults \\
     Rejected inputs & Count of failed input checks & Sensor faults \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}

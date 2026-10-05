@@ -31,13 +31,14 @@
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
     Lab files & \code{Labs/day12/} on the laptop, and a copy in
                 \code{\textasciitilde/edgeai/} on the Raspberry Pi. \\
     Names     & \code{gNN} is your group: \code{pi-NN},
                 \code{X.(100+NN)}. The examples use \code{g07} and \code{X}
                 = \code{192.168.8}. \\
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{The setup}
@@ -82,6 +83,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.6cm}L{1.6cm}L{3.2cm}L{1.3cm}@{}}
     \toprule
     \textbf{Topic} & \textbf{From} & \textbf{Payload} & \textbf{QoS,
@@ -103,7 +105,7 @@
     \texttt{edgeai/g07/pi/status} & Raspberry Pi & \texttt{online}, will
       \texttt{offline} & 1, yes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   The forwarder sends \code{pi/decision}, \code{pi/summary}, and

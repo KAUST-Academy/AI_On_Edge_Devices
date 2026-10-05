@@ -4,6 +4,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
     \toprule
     \textbf{Problem} & \textbf{Fix or fallback} \\
@@ -27,7 +28,7 @@
     A spoken word gives no event
       & Use fewer windows, a lower threshold, or a smaller stride. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   The README of the lab has the complete list.

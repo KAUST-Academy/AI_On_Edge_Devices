@@ -51,6 +51,7 @@
 \begin{frame}{Power, energy, and a battery}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.16\textwidth}L{0.30\textwidth}L{0.44\textwidth}@{}}
     \toprule
     \textbf{Quantity} & \textbf{Formula and unit} & \textbf{It tells you} \\
@@ -62,7 +63,7 @@
     Capacity & mAh
              & The charge of a battery. With its voltage: the energy. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item 1 J = 1 W for 1 s. 1 mW for 1 ms is 1 $\mu$J. 1 Wh = 3600 J.
@@ -269,6 +270,7 @@
 \begin{frame}{Four ways to get a power value}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Method} & \textbf{It gives} & \textbf{Limit} \\
@@ -287,7 +289,7 @@
         & The voltage and the current of each supply rail
         & An estimate. Compare it with a meter one time. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}
@@ -584,6 +586,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \end{lstlisting}
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.36\textwidth}lL{0.30\textwidth}@{}}
     \toprule
     \textbf{Value} & \textbf{Now} & \textbf{Value} & \textbf{Since the start} \\
@@ -597,7 +600,7 @@ vcgencmd get_throttled                      # throttled=0x0
     \code{0x8} & The soft temperature limit is active
         & \code{0x80000} & The soft limit was active \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   \begin{itemize}
@@ -657,6 +660,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \begin{frame}{A short run and a long run}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.32\textwidth}@{}}
     \toprule
     & \textbf{Short run} & \textbf{Long run} \\
@@ -668,7 +672,7 @@ vcgencmd get_throttled                      # throttled=0x0
     Use it for      & A comparison of two models
                     & A product decision \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item A run of MLPerf Inference has 600 seconds or more.
@@ -717,6 +721,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \begin{frame}{In the lab: one report for two boards}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.50\textwidth}L{0.24\textwidth}@{}}
     \toprule
     \textbf{Part} & \textbf{You do} & \textbf{From the lecture} \\
@@ -729,7 +734,7 @@ vcgencmd get_throttled                      # throttled=0x0
     D & Energy for one inference, a battery estimate, and the report
                                                             & Part 3 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The power of the kit: a USB power meter, or the data sheet values

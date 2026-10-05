@@ -329,6 +329,7 @@
   \small
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.29\textwidth}rrL{0.20\textwidth}@{}}
     \toprule
     \textbf{Format} & \textbf{Files} & \textbf{Size} & \textbf{Export}
@@ -345,7 +346,7 @@
     LiteRT, \code{int8} & \code{yolo11n\_int8.tflite} & 2.94 MB & 136 s
             & LiteRT \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The PyTorch file stores the weights in \code{float16}. The three
@@ -497,6 +498,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
   \small
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.34\textwidth}L{0.22\textwidth}rr@{}}
     \toprule
     \textbf{Model} & \textbf{Board} & \textbf{PyTorch} & \textbf{NCNN} \\
@@ -506,7 +508,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
     YOLO11n for COCO, 640 pixels          & Raspberry Pi Zero 2 W
         & 4672 ms & 2748 ms \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The times are for the network alone.
@@ -611,6 +613,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
 \begin{frame}{What limits the frame rate}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
     \toprule
     \textbf{Limit} & \textbf{What happens} \\
@@ -626,7 +629,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
     The heat       & At full load, the processor can reduce its clock
                      after some minutes (Day 9). \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{itemize}
     \item Read the camera in a separate thread, and keep only the newest
@@ -641,6 +644,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
 \begin{frame}{How to reach a target frame rate}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}rL{0.34\textwidth}L{0.52\textwidth}@{}}
     \toprule
     & \textbf{Action} & \textbf{Cost} \\
@@ -659,7 +663,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
     6 & Run the network on each second frame
       & A moving object is found later. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item After each action, measure the frame rate of the pipeline on the
@@ -672,6 +676,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
 \begin{frame}{In the lab}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.24\textwidth}L{0.56\textwidth}@{}}
     \toprule
     \textbf{Part} & \textbf{Topic} & \textbf{Work} \\
@@ -689,7 +694,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
       & The frame rate for two image sizes and two precisions. The
         accuracy loss of the \code{int8} model. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The check: the model detects the two classes in the live image,

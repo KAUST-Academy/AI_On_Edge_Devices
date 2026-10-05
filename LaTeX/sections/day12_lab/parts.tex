@@ -7,6 +7,7 @@
 \begin{frame}[fragile]{Part A: the broker (30 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -15,7 +16,7 @@
     2 & Publish and subscribe, wildcards & 10 min \\
     3 & QoS, retained message, last will & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 scp -r ../day12 ../hardware/HW-07 edge@pi-07.local:edgeai/   # laptop
 sudo cp ~/edgeai/HW-07/mosquitto_lab.conf /etc/mosquitto/conf.d/lab.conf

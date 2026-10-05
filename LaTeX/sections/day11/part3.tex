@@ -139,6 +139,7 @@
 \begin{frame}{Compare the two places}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.35\textwidth}L{0.37\textwidth}@{}}
     \toprule
     & \textbf{A. Model on the camera node} & \textbf{B. Model on a central
@@ -157,7 +158,7 @@
     Privacy      & Images can stay on the camera & Images leave the camera
                    \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -445,6 +446,7 @@
 \begin{frame}{Drop frames on purpose}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.32\textwidth}L{0.60\textwidth}@{}}
     \toprule
     \textbf{Method} & \textbf{Effect} \\
@@ -458,7 +460,7 @@
     Skip a fixed number of frames & Simple, but the queue still grows when
       the model time changes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -477,6 +479,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.33\textwidth}L{0.35\textwidth}@{}}
     \toprule
     \textbf{Place} & \textbf{Setting} & \textbf{Effect} \\
@@ -491,7 +494,7 @@
     OpenCV reader & Decoder threads & One frame for each thread \\
     Your program & A queue or the newest frame & Grows with a slow model \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -535,6 +538,7 @@
 \begin{frame}{Protect a stream}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.32\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Risk} & \textbf{The lab setup} & \textbf{A product} \\
@@ -548,7 +552,7 @@
       request \\
     Old recordings & None & A fixed time, then delete \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -601,6 +605,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.17\textwidth}L{0.24\textwidth}L{0.23\textwidth}@{}}
     \toprule
     \textbf{System} & \textbf{Place} & \textbf{Network} & \textbf{Day} \\
@@ -614,7 +619,7 @@
     XIAO camera to a Raspberry Pi or a laptop & Central node & MJPEG over
       HTTP & Day 11, Part D \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}

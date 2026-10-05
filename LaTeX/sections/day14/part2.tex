@@ -67,6 +67,7 @@
   \vskip 0.4em
   \footnotesize
   \renewcommand{\arraystretch}{1.1}
+  \begingroup\centering
   \begin{tabular}{@{}rL{0.38\textwidth}rL{0.44\textwidth}@{}}
     1 & A false input: a sound, a photo, a light & 5 & The SD card: the
       queue, the logs, the model files \\
@@ -75,7 +76,7 @@
     3 & The radio: read or send messages & 7 & The USB and debug port, the
       update channel \\
     4 & The broker: any client can connect & & \\
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   The attack surface is each point where an attacker can read, change, or
@@ -87,6 +88,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.36\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Threat} & \textbf{Example} & \textbf{It harms} \\
@@ -105,7 +107,7 @@
       \\
     Denial of service & Flood the broker, jam the Wi-Fi & Availability \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   Select the defenses by risk: how likely is the threat, and how bad is the
@@ -323,6 +325,7 @@ interp.allocate_tensors()
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.60\textwidth}@{}}
     \toprule
     \textbf{Attack} & \textbf{Defense} \\
@@ -337,7 +340,7 @@ interp.allocate_tensors()
     Take the device away & A key for each device that the server can revoke
       \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -377,6 +380,7 @@ interp.allocate_tensors()
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.66\textwidth}@{}}
     \toprule
     \textbf{Rule} & \textbf{In the course systems} \\
@@ -388,7 +392,7 @@ interp.allocate_tensors()
     Limit the time & Rotation, a retention for each folder (Day 13) \\
     Protect the link & Passwords, access rules, TLS (this part) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -427,6 +431,7 @@ RestartSec=1
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.38\textwidth}L{0.29\textwidth}@{}}
     \toprule
     \textbf{Failure} & \textbf{Reduced operation} & \textbf{Report} \\
@@ -443,7 +448,7 @@ RestartSec=1
     Clock not set & Mark the times as not trusted & A flag in each message
       \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -459,6 +464,7 @@ RestartSec=1
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.30\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Topic} & \textbf{The labs} & \textbf{A product} \\
@@ -471,7 +477,7 @@ RestartSec=1
     Restart & By hand & Watchdog, reduced modes \\
     Data & Logs on the card & Minimized, rotated, retention \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   The labs keep the setup short. Your capstone design names which rows of
