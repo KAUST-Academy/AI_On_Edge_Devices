@@ -82,7 +82,6 @@ Task A1: not complete
       \end{tikzpicture}
     \end{column}
   \end{columns}
-  \source{Nobody measured the two times on a board.}
 \end{frame}
 
 \begin{frame}[fragile]{Part A: the YOLO model}
@@ -114,7 +113,6 @@ Detections: ...
     \item \textbf{You record:} the time of each step, the detections, and
           the result for the photo of your desk with each model.
   \end{itemize}
-  \source{Nobody measured the times on a board.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part B
@@ -408,7 +406,6 @@ Open http://<name of this board>:5000 in a browser. Stop with Ctrl+C.
           each command, the objects that the model finds, the objects that
           it misses, and the wrong detections.
   \end{itemize}
-  \source{Nobody measured the values on a board.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part D
@@ -443,7 +440,6 @@ cupbottle_640_int8.tflite    LiteRT  int8      640 |     ...     ...       ...  
           The check is the example of the lecture: 325 ms for one frame
           give 3.1 frames in each second.
   \end{itemize}
-  \source{Nobody measured the values on a board.}
 \end{frame}
 
 \begin{frame}{Part D: predict, measure, compare}
@@ -467,8 +463,7 @@ cupbottle_640_int8.tflite    LiteRT  int8      640 |     ...     ...       ...  
           the two temperatures, and the ratios: 320 against 640 pixels,
           \code{int8} against \code{float32}, NCNN against LiteRT.
     \item The lecture measured on an x86 processor: \code{int8} was slower
-          than \code{float32}, and NCNN was slower than LiteRT. Nobody
-          measured these rows on a Raspberry Pi 5 for this course. What do
+          than \code{float32}, and NCNN was slower than LiteRT. What do
           you measure?
   \end{itemize}
 \end{frame}
