@@ -21,19 +21,11 @@ limitations under the License.
 // Model:     model.h, the "hello world" sine model (int8, 2488 bytes).
 //            Replace model.h with your model (see Labs/hardware/HW-02).
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board with PSRAM disabled and with OPI PSRAM.
-//
 // What the sketch does:
 //   1. It reserves the arena in the internal RAM or in the PSRAM.
 //   2. It prints the free memory before and after.
 //   3. It prints how many bytes of the arena the model uses.
 //   4. It prints the latency of the model.
-//
-// Credits: the interpreter code adapts the example "hello_world" of the
-// library Chirale_TensorFlowLite 2.0.0
-// (github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0).
-// The memory report and the arena on the heap are new.
 
 #include <Chirale_TensorFlowLite.h>
 

@@ -1,6 +1,5 @@
 # Day 15 lab: capstone build and demonstrations
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your team completes the capstone system, measures it, shows it
 in a demonstration of 10 minutes, and submits the report.
@@ -139,5 +138,3 @@ This lab adapts material from these sources:
   (`instructors/assessment.qmd`): the structure of the design report
   (problem, approach, results, trade-offs) and the robustness test, through
   `Docs/capstone.md`.
-- The labs of Days 1 to 14 of this course. `schedule.py` is new code of
-  this course.

@@ -8,6 +8,7 @@
 \begin{frame}{Part A: the protocol (20 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -19,7 +20,7 @@
     3 & Write a prediction with a reason for each question of the
         prediction table & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item Decide the warm-up runs and the timed runs. The sketch has 3 and
@@ -42,6 +43,7 @@
 \begin{frame}{Part B: the microcontroller (45 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -54,7 +56,7 @@
     4 & The clock: \code{CPU\_MHZ} 80, then 240 again & 10 min \\
     5 & Compare with the published results and with Day 5 & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item Board \code{XIAO\_ESP32S3}, and \code{Tools > PSRAM > OPI PSRAM}.
@@ -106,6 +108,7 @@ CSV,kit,kws,int8,53936,...
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.36\textwidth}rr@{}}
     \toprule
     \textbf{Board} & \textbf{Processor} & \textbf{Keywords}
@@ -116,7 +119,7 @@ CSV,kit,kws,int8,53936,...
     NUCLEO-H7A3ZI-Q & Cortex-M7 at 280 MHz  & 11.3 ms & 40.8 ms \\
     Your XIAO ESP32S3 & Xtensa LX7 at 240 MHz & ... & ... \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}
@@ -134,6 +137,7 @@ CSV,kit,kws,int8,53936,...
 \begin{frame}[fragile]{Part C: the Raspberry Pi (50 min)}
   \small
   \renewcommand{\arraystretch}{1.02}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -148,7 +152,7 @@ CSV,kit,kws,int8,53936,...
     6 & A sustained run of 180 seconds & 10 min \\
     7 & Copy the results to the laptop & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 scp -r day09 edge@pi-NN.local:~/edgeai/      # on the laptop, in Labs/
 ssh edge@pi-NN.local                         # then on the board
@@ -178,6 +182,7 @@ python pi/bench.py --suite detection         # your detector of Day 8
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.1}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
     \toprule
     \textbf{Column} & \textbf{Content} \\
@@ -190,7 +195,7 @@ python pi/bench.py --suite detection         # your detector of Day 8
                                  temperature, estimated power \\
     check                      & \code{tiny}: \code{same as the kit sketch} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   \begin{itemize}
@@ -232,6 +237,7 @@ Median latency: ... ms in the first window, ... ms in the last window (...).
 \begin{frame}{Part D: the report (35 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -241,7 +247,7 @@ Median latency: ... ms in the first window, ... ms in the last window (...).
     3 & Run \code{python3 pi/make\_report.py} on the laptop & 5 min \\
     4 & The accuracy table, the answers, and the Decision Log & 15 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item \textbf{Power meter:} read the board with no load and during a
@@ -266,6 +272,7 @@ Median latency: ... ms in the first window, ... ms in the last window (...).
   \vskip 0.3em
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.33\textwidth}L{0.15\textwidth}L{0.42\textwidth}@{}}
     \toprule
     \textbf{Model} & \textbf{Accuracy} & \textbf{Test set and source} \\
@@ -283,7 +290,7 @@ Median latency: ... ms in the first window, ... ms in the last window (...).
     Your detector                        & your values
         & Your notebook of Day 8 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}

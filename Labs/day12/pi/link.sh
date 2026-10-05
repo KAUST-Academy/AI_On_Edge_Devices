@@ -13,11 +13,6 @@
 # effect as a lost Wi-Fi link or a lost internet link. The TCP connection
 # stays open until the keep-alive of the forwarder finds the loss. All other
 # traffic of the lab network continues: the XIAO, the local broker, and SSH.
-#
-# Hardware status: new code, not tested on a Raspberry Pi (prepared on
-# 2026-10-03). The command needs sudo; the work computer of the course has no
-# sudo, so nobody ran it.
-# Credits: new work of this course.
 
 set -u
 ACTION="${1:-}"

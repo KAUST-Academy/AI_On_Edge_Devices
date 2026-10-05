@@ -13,8 +13,6 @@ interval. This program subscribes to edgeai/<group>/+/metrics and shows the
 newest value of each field at /metrics. Prometheus then stores the values,
 and Grafana draws them.
 
-Hardware status: tested on a Linux laptop with Prometheus 3.15.0.
-Not tested on a Raspberry Pi (prepared on 2026-10-01).
 """
 
 import argparse

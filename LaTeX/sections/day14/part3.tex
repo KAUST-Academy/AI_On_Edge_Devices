@@ -116,6 +116,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.40\textwidth}L{0.33\textwidth}@{}}
     \toprule
     \textbf{Vague} & \textbf{With a number} & \textbf{Test} \\
@@ -131,7 +132,7 @@
     Robust & Local alarm with no network for 24 h & Cut the link \\
     Cheap & Hardware below a fixed price for each site & Cost budget \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   A requirement with no number cannot fail a test, so nobody can check it.
@@ -158,8 +159,6 @@
     \item R2, R3, and R7 decide where the computation runs.
     \item R6 is a wish that has a cost: the next frames calculate it.
   \end{itemize}
-  \source{An example of this course. The values are not from a real
-    workshop.}
 \end{frame}
 
 % ------------------------------------------------------------------ paradigm
@@ -196,6 +195,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.33\textwidth}L{0.37\textwidth}@{}}
     \toprule
     & \textbf{XIAOML Kit} & \textbf{Raspberry Pi 5 (8 GB)} \\
@@ -209,7 +209,7 @@
       language models, Python (Days 7 to 13) \\
     Price & about \$40 & about \$80 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -227,6 +227,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.14\textwidth}L{0.32\textwidth}L{0.34\textwidth}L{0.08\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Model} & \textbf{Value} & \textbf{Board} \\
@@ -242,7 +243,7 @@
     Language & \code{llama3.2:1b}, \code{Q8\_0} & 1.32 GB, 8.99 tokens/s &
       Pi 5 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -361,8 +362,7 @@
     \item 30 days need 17.4 Wh: a battery of about 4700 mAh. Or change R6:
           a cable from a USB supply at the machine.
   \end{itemize}
-  \source{Day 9 values (ESP32-S3 data sheet 2.2; Seeed board values).
-    50 ms and 3 s each hour are example values.}
+  \source{Day 9 values (ESP32-S3 data sheet 2.2; Seeed board values).}
 \end{frame}
 
 % ------------------------------------------------------------------ mains
@@ -392,7 +392,7 @@
           warm machine needs the active cooler and air flow.
   \end{itemize}
   \source{5 to 7 W at a moderate load: \emph{Edge AI Engineering}, chapter
-    ``Setup''. 0.10 USD for each kWh is an example value.}
+    ``Setup''.}
 \end{frame}
 
 % ------------------------------------------------------------------ cost hw
@@ -425,7 +425,7 @@
           day of the order.
   \end{itemize}
   \source{Kit pages of the textbook (2025); raspberrypi.com, ``Camera Module
-    3'' (2026-10-03). Other parts and spares: example values.}
+    3'' (2026-10-03).}
 \end{frame}
 
 % ------------------------------------------------------------------ cost run
@@ -493,6 +493,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.32\textwidth}L{0.28\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Assumption} & \textbf{First test} & \textbf{Plan B} \\
@@ -506,7 +507,7 @@
     The battery lasts & Measure the mean current (Day 9) & A larger
       battery; a cable \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -542,6 +543,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.31\textwidth}L{0.50\textwidth}r@{}}
     \toprule
     \textbf{Weak point} & \textbf{What the course measured} & \textbf{Day}
@@ -557,7 +559,7 @@
     Dark images & 38.4 percent in place of 77.4 percent & 13 \\
     A list that grows & 65.6 MB each hour & 13 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   A reviewer who knows these numbers asks the right questions. Use them in

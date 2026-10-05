@@ -12,14 +12,6 @@ The model gets two tools: read_sensor and set_heater. For each request of
 part_b/tool_prompts.txt, the model selects a tool and its arguments. The
 function check_call (Task B2) checks the arguments before the code runs the
 tool. The sensor values are simulated: this lab has no sensor.
-
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with Ollama 0.32.6.
-
-Credits: the tool-calling loop follows the chapter "SLM: Basic Optimization
-Techniques" of "Edge AI Engineering" and the notebook
-20-Ollama_Function_Calling_Pydantic.ipynb of "EdgeML with Raspberry Pi"
-(Marcelo Rovai, GPL-3.0). The tools and the guard are new.
 """
 
 import argparse

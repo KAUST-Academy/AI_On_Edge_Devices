@@ -3,16 +3,6 @@
 The scripts pi/live_detect.py and pi/bench_detect.py import this file. It
 has three parts: the source of the frames (the camera or image files), the
 model, and the temperature of the processor.
-
-Hardware status: not tested on hardware (prepared on 2026-10-02). The file
-source ran on the work computer of the course. The camera source ran there
-with a replacement for the package picamera2.
-
-Credits: the camera settings follow the script object_detection_app.py of
-"EdgeML with Raspberry Pi" by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0). The package
-ultralytics has the licence AGPL-3.0. All other code is new code of this
-course.
 """
 import glob
 import os

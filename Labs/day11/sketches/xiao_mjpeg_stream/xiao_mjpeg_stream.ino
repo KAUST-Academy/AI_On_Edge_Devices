@@ -7,29 +7,11 @@
 // Libraries: none
 // Build:     Tools > PSRAM > OPI PSRAM. The frame buffer is in the PSRAM.
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-03). The
-// sketch compiles for the board.
-//
 // Use: set the Wi-Fi password below, upload, open the Serial Monitor at
 // 115200 baud. The sketch prints the address of the stream, for example
 // http://192.168.8.163/. Open it in a browser, or read it with
 // mjpeg_rate.py and stream_detect.py of the lab. Each 5 seconds the sketch
 // prints the frames that it sent and the mean size of a JPEG image.
-//
-// Credits: this sketch is the sketch Streeming_Video.ino of "XIAO ESP32S3
-// Sense" by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense,
-// Apache-2.0), which is based on the ESP32-CAM project of Rui Santos
-// (RandomNerdTutorials.com). Its notice: "Permission is hereby granted, free
-// of charge, to any person obtaining a copy of this software and associated
-// documentation files. The above copyright notice and this permission notice
-// shall be included in all copies or substantial portions of the Software."
-// Pin numbers: camera_pins.h of the example CameraWebServer of the esp32
-// core, model CAMERA_MODEL_XIAO_ESP32S3.
-// Changes of this course (each one is in TEST_NOTES.md): the Wi-Fi name of
-// the lab, the frame size VGA in place of UXGA, no endless wait for the
-// Serial Monitor, the pins in this file, the new names of the two SCCB pins,
-// the boundary before each part (the order of the example CameraWebServer),
-// and the status line each 5 seconds.
 
 #include <atomic>
 #include "esp_camera.h"

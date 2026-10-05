@@ -5,16 +5,8 @@
 //            the core, from version 3.0)
 // Libraries: none
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // Use: open Tools > Serial Plotter at 115200 baud. Speak or clap. The sketch
 // starts only when a serial program is open.
-//
-// Credits: XIAOML_Kit_code/XIAOML_Kit_Mic_Test/XIAOML_Kit_Mic_Test.ino of the
-// repository XIAO-ESP32S3-Sense by Marcelo Rovai
-// (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
-// Change: this comment. The code has no change.
 
 /*
   XIAO ESP32S3 Simple Mic Test

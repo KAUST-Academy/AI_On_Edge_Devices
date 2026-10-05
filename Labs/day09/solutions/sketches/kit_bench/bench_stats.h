@@ -2,14 +2,6 @@
 //
 // Solution of the Day 9 lab (Task B1 is complete). Copy this file into the
 // folder sketches/kit_bench/ to use it.
-//
-// Credits: new code of this course. The percentile follows the nearest-rank
-// rule of Parts 1 and 2 of the Day 9 lecture, and the measurement rules
-// (warm-up, repetitions, percentiles) follow chapter 12 "Benchmarking" of
-// "Machine Learning Systems" by Vijay Janapa Reddi and contributors
-// (mlsysbook.ai, CC BY-NC-SA 4.0).
-#ifndef BENCH_STATS_H_
-#define BENCH_STATS_H_
 
 #include <stdint.h>
 

@@ -93,8 +93,7 @@ Found 2 device(s)
   \begin{itemize}
     \item \textbf{You record:} the two addresses.
   \end{itemize}
-  \source{The two outputs show the form that the scripts print. Nobody
-    measured them on the kit.}
+  \source{The two outputs show the form that the scripts print.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part B
@@ -148,8 +147,7 @@ RESULT: ...
     \item A script with the name \code{main.py} starts at each power-on.
     \item \textbf{You record:} the mean rate and the result.
   \end{itemize}
-  \source{The output shows the form of the lines. Nobody measured the rate
-    on the kit.}
+  \source{The output shows the form of the lines.}
 \end{frame}
 
 \begin{frame}[fragile]{Part B: task B1, a deadline for each sample}
@@ -225,6 +223,7 @@ python3 host/check_rate.py --udp 5005 --seconds 20     # second terminal
   \code{TODO (student)}.
   \vskip 0.3em
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.10\textwidth}L{0.22\textwidth}L{0.58\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Function} & \textbf{Example} \\
@@ -234,7 +233,7 @@ python3 host/check_rate.py --udp 5005 --seconds 20     # second terminal
     C2 & \code{count\_lost} & the sample numbers 4, 5, 6, 9, 10 give 2 lost
          samples \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   Test the two functions with no board:
 \begin{lstlisting}[style=shell]
@@ -287,13 +286,13 @@ Recording 1 of 4, class 'lift'. Start the motion now.
 \end{lstlisting}
   Look at each plot. If a plot does not agree with its label, delete the
   file and record again.
-  \source{The output shows the form of the lines. Nobody recorded with the
-    kit.}
+  \source{The output shows the form of the lines.}
 \end{frame}
 
 \begin{frame}{Part C: the notebook has five tasks}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.09\textwidth}L{0.36\textwidth}L{0.45\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
@@ -309,7 +308,7 @@ Recording 1 of 4, class 'lift'. Start the motion now.
     5 & The data card in \code{report.md}
       & Not checked. The instructor reads it. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item Start the notebook with \code{jupyter lab dataset.ipynb}.
@@ -324,6 +323,7 @@ Recording 1 of 4, class 'lift'. Start the motion now.
 \begin{frame}[fragile]{Part C: the leakage experiment}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.10\textwidth}L{0.40\textwidth}L{0.40\textwidth}@{}}
     \toprule
     & \textbf{Procedure A (wrong)} & \textbf{Procedure B (correct)} \\
@@ -335,7 +335,7 @@ Recording 1 of 4, class 'lift'. Start the motion now.
     Step 3 & Mix the windows: 80 percent training, 20 percent test
            & Normalize with the statistics of the training set \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{exerciseblock}
     \textbf{Prediction (task 4).} Which procedure gives the higher test

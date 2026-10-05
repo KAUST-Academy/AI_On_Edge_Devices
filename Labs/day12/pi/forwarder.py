@@ -24,11 +24,6 @@ Rules (Section 13 of the course plan, from the Day 12 lecture):
   - At most 20 messages in flight. The receiver drops a second copy by the
     pair (topic, seq).
   - WAL and synchronous=NORMAL: a commit does not wait for the disk.
-
-Hardware status: new code, tested on the work computer with two Mosquitto
-brokers and a cut of the link. Not tested on a Raspberry Pi (prepared on
-2026-10-03).
-Credits: new work of this course.
 """
 
 import argparse

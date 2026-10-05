@@ -15,11 +15,6 @@ the folder keywords/:
 
 Each clip has 1 s at 16 kHz with 16 bits. The name of a clip starts with
 its class, so Edge Impulse Studio reads the label from the name.
-
-Credits: the dataset is the "keyword spotting pre-built dataset" of Edge
-Impulse (docs.edgeimpulse.com). Its words come from the dataset "Speech
-Commands" by Pete Warden (Google, CC BY 4.0). The kit lab "Keyword Spotting
-(KWS)" of "Machine Learning Systems" uses the same file.
 """
 
 import argparse

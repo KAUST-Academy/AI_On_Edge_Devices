@@ -113,6 +113,7 @@
   \vskip 0.5em
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.66\textwidth}@{}}
     \toprule
     \textbf{Item} & \textbf{The protocol of the lab} \\
@@ -128,7 +129,7 @@
     Sessions         & A minimum of three sessions for each class \\
     File name        & label, session, number: \code{lift.s2.07.csv} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \source{Classes, rate, recording length, and quantity:
     \emph{Machine Learning Systems}, XIAOML Kit, ``Motion Classification and
     Anomaly Detection''.}
@@ -242,7 +243,6 @@
     \item Delete a wrong recording and record it again. This costs
           10 seconds now. It costs hours after the training.
   \end{itemize}
-  \source{The curves are drawings of the expected form, not recordings.}
 \end{frame}
 
 % --------------------------------------------------------------- class balance
@@ -285,7 +285,6 @@
     \item Report the result for each class, not only the total accuracy.
           Day 3 uses a confusion matrix.
   \end{itemize}
-  \source{The numbers are an example for the calculation.}
 \end{frame}
 
 % ----------------------------------------------------------------------- split
@@ -303,6 +302,7 @@
   \vskip 0.5em
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.16\textwidth}L{0.38\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Set} & \textbf{Use} & \textbf{Rule} \\
@@ -314,7 +314,7 @@
     Test       & You estimate the accuracy on new data.
                & Used one time, at the end \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \keypoint{The test set must be independent of the training set. If it is
     not, the test accuracy says nothing about the device in use.}
@@ -330,6 +330,7 @@
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
     \toprule
     \textbf{Type} & \textbf{How it occurs} \\
@@ -343,7 +344,7 @@
                           normalization come from all data. \\
     Copies              & The same file is in the dataset two times. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \keypoint{Leakage gives no error. The only sign is a test accuracy that
     is much better than the accuracy on the device.}
@@ -489,6 +490,7 @@
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
     \toprule
     \textbf{Field} & \textbf{Example} \\
@@ -503,13 +505,13 @@
     Checks           & Mean rate, lost samples, clipped samples \\
     Known limits     & Two persons only. The kit was always in the hand. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The field ``known limits'' says where the model can fail.
   \end{itemize}
   \source{The idea of a document for each dataset: Gebru et al.,
-    ``Datasheets for Datasets'', 2021. The values are an example.}
+    ``Datasheets for Datasets'', 2021.}
 \end{frame}
 
 % --------------------------------------------------------------------- quality
@@ -553,6 +555,7 @@
 \begin{frame}{The same settings for training and for the device}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.33\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Setting} & \textbf{Data collection (Day 2)}
@@ -567,7 +570,7 @@
     Normalization & Statistics of the training set
                   & Different numbers, or none \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item A difference between the training data and the device data has
@@ -632,8 +635,6 @@
           window is also in a training window?
     \item Write a correct procedure with the same recordings.
   \end{enumerate}
-  Work with your neighbour for 8 minutes. The scenario and its numbers are
-  an example.
 }
 
 \answerframe{find the leakage error}{%

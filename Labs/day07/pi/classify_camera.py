@@ -7,16 +7,6 @@ Use:    python pi/classify_camera.py
         python pi/classify_camera.py --count 5 --interval 2
         python pi/classify_camera.py --model models/mnv2.tflite
 
-Hardware status: not tested on a Raspberry Pi (prepared on 2026-10-02). The
-logic was tested on the work computer with a replacement for picamera2.
-
-Credits: the camera code (still configuration of 640 x 480, a wait of 2 s,
-capture_file) is the script capture_image.py of the repository
-EdgeML-with-Raspberry-Pi by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0). New in this course:
-the camera stays open for more than one photo, and each photo goes to the
-classifier of pi/classify_image.py.
-
 The script saves each photo as capture_N.jpg in the current folder. Copy a
 photo to the laptop to look at it:
     scp edge@pi-NN.local:~/edgeai/day07/capture_1.jpg .

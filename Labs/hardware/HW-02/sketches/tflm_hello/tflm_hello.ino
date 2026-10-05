@@ -19,20 +19,6 @@ limitations under the License.
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: Chirale_TensorFlowLite 2.0.0
 // Model:     model.h, the "hello world" sine model (int8, 2488 bytes)
-//
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
-// Credits: this sketch adapts the example "hello_world" of the library
-// Chirale_TensorFlowLite 2.0.0 (github.com/spaziochirale/Chirale_TensorFlowLite,
-// Apache-2.0), which comes from the TensorFlow Lite Micro example of the
-// TensorFlow Authors.
-//
-// Changes from the example:
-//   - The sketch makes its own input values. It does not read the serial port.
-//   - It registers one operator only, not all operators.
-//   - It prints the arena use and the latency of each inference.
-//   - The serial speed is 115200.
 
 #include <Chirale_TensorFlowLite.h>
 

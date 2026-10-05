@@ -6,17 +6,10 @@
 # Run:     mpremote connect PORT run board/imu_wifi.py
 # Laptop:  python3 host/logger.py --udp 5005 --label test --session wifi
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-02).
-#
 # The board sends the same CSV lines as imu_stream.py. One UDP packet holds
 # the lines of 5 samples, so the board sends 10 packets each second. UDP has
 # no repeat: a packet that the network loses does not arrive. The sample
 # number n shows each lost sample.
-#
-# Credits: the sampling method (a deadline for each sample, 50 Hz) follows
-# the data collection sketch of the motion classification chapter of
-# "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0). The Wi-Fi
-# connection follows Labs/hardware/HW-07/micropython/mqtt_imu.py.
 
 import socket
 import time

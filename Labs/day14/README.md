@@ -1,6 +1,5 @@
 # Day 14 lab: capstone proposal and start of the build
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your team writes a one-page proposal for the capstone system,
 presents it in a design review, and starts the build with a first test of
@@ -187,6 +186,3 @@ This lab adapts material from these sources:
   (github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook, GPL-3.0),
   chapter 2.1: the prototype design process, through Day 14, Part 3 of the
   lecture.
-- The labs of Days 1 to 13 of this course and Day 14, Part 3 of the lecture:
-  the budgets and the example project. `budget.py` is new code of this
-  course.

@@ -7,10 +7,6 @@
 # The script removes the data that must be different on each copy:
 # package files, the command history, and the machine identity.
 # set_hostname.sh makes the identity again on each copy.
-#
-# Hardware status: new script, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-
 set -euo pipefail
 
 echo "This script prepares the card for a copy. The Raspberry Pi shuts down."

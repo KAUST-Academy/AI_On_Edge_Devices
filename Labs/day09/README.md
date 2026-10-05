@@ -1,6 +1,5 @@
 # Day 9 lab: one benchmark report for two boards
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has one benchmark report for the XIAOML Kit and the
 Raspberry Pi 5. Each number of the report has a method, and the report

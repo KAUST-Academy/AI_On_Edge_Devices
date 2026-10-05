@@ -31,12 +31,13 @@
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
     Lab files & \code{Labs/day13/} on the laptop, and a copy in
                 \code{\textasciitilde/edgeai/day13/} on the Raspberry Pi. \\
     Names     & \code{gNN} is your group and \code{pi-NN} its board. The
                 examples use \code{g07}. \\
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{The setup}
@@ -86,6 +87,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
     \toprule
     \textbf{Field} & \textbf{Content} \\
@@ -105,7 +107,7 @@
     \texttt{rss\_mb}, \texttt{ram\_used\_mb}, \texttt{disk\_free\_pct} &
       Memory of the detector, of the board; free disk \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   The model runs with the score threshold 0.05, so that the top score is

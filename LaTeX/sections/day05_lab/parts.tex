@@ -8,6 +8,7 @@
 \begin{frame}{Part A: keyword spotting (80 min)}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -21,7 +22,7 @@
     5 & Tasks A1 and A2: the post-processing & 10 min \\
     6 & Tune: three tests, and at least three rounds & 15 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The four classes: \code{yes}, \code{no}, \code{unknown}, and
@@ -35,6 +36,7 @@
 \begin{frame}{Part A: the settings in the Studio}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.66\textwidth}@{}}
     \toprule
     \textbf{Page} & \textbf{Setting} \\
@@ -49,7 +51,7 @@
         and 16 filters. 100 training cycles, learning rate 0.005. \\
     \code{Model testing} & Classify all test clips. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item \textbf{You record:} the number of frames and coefficients, the
@@ -94,6 +96,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
   The two tasks are in the tab \code{postprocess.h} of the sketch.
   \vskip 0.3em
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.09\textwidth}L{0.20\textwidth}L{0.61\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Function} & \textbf{You write} \\
@@ -105,7 +108,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
          Use \code{pp.had\_event}, \code{pp.last\_event\_ms}, and
          \code{now\_ms}. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item Then set the flags \code{kTaskA1Complete} and
@@ -122,6 +125,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
 \begin{frame}{Part A: tune with three tests}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.42\textwidth}L{0.28\textwidth}@{}}
     \toprule
     \textbf{Test} & \textbf{What you do} & \textbf{What you count} \\
@@ -133,7 +137,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
     Delay         & Say \code{yes} and look at the display
                   & The time to the event \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The four settings at the start of the sketch:
@@ -156,6 +160,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
   \vskip 0.2em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -168,7 +173,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
     4 & Deploy: build the library, upload the sketch & 15 min \\
     5 & Test with the nine photos of \code{test\_images/} & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \source{Three of the 81 photos of the dataset, with the classes
     \texttt{background}, \texttt{periquito}, and \texttt{robot}. Photos:
     repository EdgeML-with-Raspberry-Pi by Marcelo Rovai.}
@@ -177,6 +182,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
 \begin{frame}{Part B: the settings in the Studio}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.66\textwidth}@{}}
     \toprule
     \textbf{Page} & \textbf{Setting} \\
@@ -191,7 +197,7 @@ stride_ms,dsp_ms,classification_ms,no,noise,unknown,yes,event
         learning rate 0.0005, data augmentation. \\
     \code{Model testing} & Classify all test images. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item \textbf{You record:} the accuracy, and the estimates of the
@@ -224,14 +230,14 @@ Best: ... (... %), display: ...
     \item \textbf{You record:} the class of the display for each photo,
           with the two settings.
   \end{itemize}
-  \source{The output shows the form of the lines. Nobody measured the
-    values on the kit.}
+  \source{The output shows the form of the lines.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part C
 \begin{frame}{Part C: measure (15 min)}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.32\textwidth}L{0.32\textwidth}@{}}
     \toprule
     \textbf{Number} & \textbf{Keyword sketch} & \textbf{Image sketch} \\
@@ -246,7 +252,7 @@ Best: ... (... %), display: ...
                     & \code{free internal heap}, and the peak RAM of the
                       Studio \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \vskip 0.3em
   Write the median of 10 lines for each time. Compare each measured time

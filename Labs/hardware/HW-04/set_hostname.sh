@@ -6,10 +6,6 @@
 #
 # The script sets the host name pi-NN, makes new SSH host keys, makes a new
 # machine identity, and starts the Raspberry Pi again.
-#
-# Hardware status: new script, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-
 set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then

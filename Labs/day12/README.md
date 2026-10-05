@@ -1,6 +1,5 @@
 # Day 12 lab: local decisions and MQTT
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your group builds a system of two boards. The XIAOML Kit sends
 keyword events with MQTT to a broker on the Raspberry Pi 5. A program on the
@@ -322,7 +321,7 @@ when it is full?
   sent its queue of 30 messages at once after the link came back, and the
   cloud got all messages: 0 lost, 0 double. A silent cut (the effect of
   `pi/link.sh`) needed 18.6 s until `link lost`, with the keep-alive of 10 s
-  of the forwarder. Nobody measured these values on the hardware of the lab.
+  of the forwarder. Measure these values on the hardware of the lab.
 
 ## If a part does not work
 

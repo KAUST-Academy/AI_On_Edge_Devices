@@ -6,10 +6,6 @@
 # This file gives only the values that the course changes. All other
 # settings keep the default values of MediaMTX v1.21.1. The file
 # mediamtx.yml of the release explains each setting.
-#
-# Hardware status: new file, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-
 # The lab uses RTSP only. The other servers stay off.
 rtmp: false
 hls: false

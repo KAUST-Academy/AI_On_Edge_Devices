@@ -18,14 +18,6 @@ What the program does:
   4. It serves one web page that draws eight metrics and updates each second.
   5. Its state bar shows the state of the alert rules of pi/alert.py: red
      while a rule fires, yellow when no summary came for 25 s.
-
-Hardware status: tested on the work computer of the course. Not tested on a
-Raspberry Pi (prepared on 2026-10-03).
-
-Credits: this is the Python dashboard of Labs/hardware/HW-08/ of this course
-with more fields and the alert of pi/alert.py in place of its own rule. Its
-CSV log follows data_logger.py of "EdgeML with Raspberry Pi" by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0).
 """
 
 import argparse

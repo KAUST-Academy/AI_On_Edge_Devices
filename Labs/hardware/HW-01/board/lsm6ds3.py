@@ -4,14 +4,6 @@
 # Board:   XIAOML Kit (XIAO ESP32S3 Sense with the expansion board)
 # Runs on: MicroPython v1.29.0 for SEEED_XIAO_ESP32S3
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-#
-# Credits: the register addresses, the bit values, and the scale factors come
-# from the Arduino library "Seeed Arduino LSM6DS3" 2.0.7 (files LSM6DS3.h and
-# LSM6DS3.cpp, github.com/Seeed-Studio/Seeed_Arduino_LSM6DS3, MIT licence).
-# The I2C address comes from the sketch imu_test.ino of "XIAO ESP32S3 Sense"
-# by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
-#
 # The driver needs only an I2C object with the methods readfrom_mem,
 # readfrom_mem_into, and writeto_mem. It does not import "machine".
 

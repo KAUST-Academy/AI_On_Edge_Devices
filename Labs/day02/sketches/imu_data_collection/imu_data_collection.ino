@@ -11,26 +11,11 @@
 // Library:   Seeed Arduino LSM6DS3 2.0.7
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles.
-//
 // Output: one CSV line for each sample.
 //   n      sample number, starts at 0
 //   t_us   time since the start, in microseconds
 //   ax..az acceleration in g
 //   gx..gz angular rate in degrees per second
-//
-// Credits: the sketch adapts the data collection code of the chapter
-// "Motion Classification and Anomaly Detection" of the XIAOML Kit in
-// "Machine Learning Systems" by Vijay Janapa Reddi and contributors,
-// written by Marcelo Rovai (mlsysbook.ai, CC BY-NC-SA 4.0).
-// Changes from the source:
-//   - The source prints three acceleration axes in m/s^2 with a tab between
-//     them. This sketch prints six axes in g and in degrees per second, with
-//     a sample number and a time stamp, and with a comma between them.
-//   - The source compares millis() with an interval of 19 ms. This sketch
-//     uses a deadline in microseconds for each sample.
-//   - The source waits 5 s in setup(). This sketch does not wait.
 
 #include <LSM6DS3.h>
 #include <Wire.h>

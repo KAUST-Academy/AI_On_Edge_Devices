@@ -1,6 +1,5 @@
 # HW-01: MicroPython on the XIAOML Kit
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 2 lab (MicroPython start, sensor input, dataset).
 

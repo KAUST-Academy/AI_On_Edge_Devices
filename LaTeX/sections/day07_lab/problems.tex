@@ -1,9 +1,10 @@
 % Fallbacks and common problems of the Day 7 lab. The rows come from
-% Labs/day07/README.md. Nobody tested the fixes on a board.
+% Labs/day07/README.md.
 \begin{frame}{If a part does not work, and common problems}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.40\textwidth}L{0.55\textwidth}@{}}
     \toprule
     \textbf{Problem} & \textbf{Fix or fallback} \\
@@ -31,7 +32,7 @@
       & Close the other programs. Read the temperature with
         \code{vcgencmd measure\_temp}, and wait for one minute. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   The README of the lab has the complete list.

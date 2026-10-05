@@ -1,6 +1,5 @@
 # HW-03: Memory budget on the XIAO ESP32S3
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 1 lab (model budgets), the Day 3 lab (measure), and the
 Day 4 lab (float and int8 on the board).
@@ -121,8 +120,7 @@ are not measured on a board.
   it at run time.
 
 The free heap, the largest block, the arena use, and the latency are **not**
-in this file. Nobody measured them. The instructor measures them in the test
-below.
+in this file. The instructor measures them in the test below.
 
 ## Code status
 

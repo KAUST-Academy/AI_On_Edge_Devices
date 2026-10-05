@@ -8,10 +8,6 @@
 # github.com/bluenviron/mediamtx and checks its SHA-256. The checksums come
 # from the file checksums.sha256 of that release (read on 2026-10-01).
 # The script needs no administrator right.
-#
-# Hardware status: tested on a Linux laptop (x86_64). Not tested on a
-# Raspberry Pi (prepared on 2026-10-01).
-
 set -euo pipefail
 
 VERSION="v1.21.1"

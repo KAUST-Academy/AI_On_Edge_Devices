@@ -37,20 +37,6 @@ The suites use the model files of the earlier labs:
                                         LiteRT, float32 and int8
     tiny             models/            the four models of the kit sketch,
                                         with the test input of the sketch
-
-Hardware status: tested on the work computer (x86). Not tested on a
-Raspberry Pi (prepared on 2026-10-02). The functions that read the
-temperature, the clock, the throttle state, and the power need a Raspberry
-Pi. On a different computer they give no value.
-
-Credits: the run rules (warm-up, repetitions, percentiles, one window, the
-system description) follow Parts 1 and 2 of the Day 9 lecture and chapter 12
-"Benchmarking" of "Machine Learning Systems" by Vijay Janapa Reddi and
-contributors (mlsysbook.ai, CC BY-NC-SA 4.0). The power estimate from the
-command "vcgencmd pmic_read_adc", with its linear correction, follows the
-script avg_temp_power.sh of the chapter "Setup" of "Edge AI Engineering:
-Raspberry Pi" by Marcelo Rovai (github.com/Mjrovai/EdgeML_Made_Ease_ebook).
-The script is new code of this course.
 """
 import argparse
 import csv

@@ -11,22 +11,8 @@
 //            Seeed Arduino LSM6DS3 2.0.7, U8g2 2.36.19
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-02). The sketch needs the library of an Edge Impulse project.
-// Only the Studio can make that library, so nobody compiled this sketch.
-//
 // Before you compile: change the first #include line to the name of the
 // header of your library. The name comes from the name of your project.
-//
-// Credits: this sketch is a copy of
-// XIAOML_Kit_code/motion_class_ad_inference_oled/motion_class_ad_inference_oled.ino
-// of "XIAO ESP32S3 Sense" by Marcelo Rovai
-// (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
-// Changes from the source:
-//   - This header comment, and the comment at the #include line.
-//   - MAX_ACCEPTED_RANGE is 16 g, not 2 g. The Day 2 dataset has the sensor
-//     range of 16 g and no limit at 2 g. The training data and the device
-//     must use the same range.
 
 // Change this line to the header of the library of your project.
 #include <XIAOML_Kit_Motion_Class_-_AD_inferencing.h>

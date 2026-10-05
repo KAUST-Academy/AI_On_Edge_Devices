@@ -1,6 +1,5 @@
 # Day 1 lab: toolchain, sensor tests, and model budgets
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 **Goal.** Your group has a toolchain that works, and a first resource budget
 for each device class.

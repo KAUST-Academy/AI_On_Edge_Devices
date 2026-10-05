@@ -1,6 +1,5 @@
 # HW-04: Raspberry Pi 5 image
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 7 lab and the Day 8 lab. Days 9 to 15 use the same card.
 

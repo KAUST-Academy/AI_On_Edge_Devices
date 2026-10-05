@@ -16,9 +16,6 @@
 //            come from the notebook quantization.ipynb. motion_features.h
 //            has the feature code of Day 3.
 //
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles for the two values of MODEL_INT8.
-//
 // What the sketch does:
 //   1. MODEL_INT8 selects the model: 0 is the float32 model, 1 is the int8
 //      model. Only the selected model is in the program.
@@ -27,17 +24,6 @@
 //      with the same class as on the laptop, and the time of Invoke().
 //   3. Then it classifies the motion of the kit, as the sketch of Day 3
 //      does.
-//
-// Credits: the use of TensorFlow Lite Micro follows the example
-// "hello_world" of the library Chirale_TensorFlowLite 2.0.0
-// (github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0), which comes
-// from the TensorFlow Lite Micro example of the TensorFlow Authors. The IMU
-// code, the display code, the four classes, and the window of 2 s follow the
-// sketch XIAOML_Kit_code/motion_class_ad_inference_oled of "XIAO ESP32S3
-// Sense" by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense,
-// Apache-2.0) and the motion classification chapter of "Machine Learning
-// Systems" (mlsysbook.ai, CC BY-NC-SA 4.0). The sampling loop, the feature
-// code, the quantization code, the test set, and the measurements are new.
 
 #include <Chirale_TensorFlowLite.h>
 #include <LSM6DS3.h>

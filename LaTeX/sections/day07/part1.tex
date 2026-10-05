@@ -17,6 +17,7 @@
 \begin{frame}{A new device, a new question}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.13\textwidth}L{0.38\textwidth}L{0.40\textwidth}@{}}
     \toprule
     & \textbf{XIAO ESP32S3} & \textbf{Raspberry Pi 5} \\
@@ -29,7 +30,7 @@
     Runtime   & TensorFlow Lite Micro & LiteRT, ONNX Runtime, and more \\
     Question  & Does the model fit? & How fast does the model run? \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item MobileNetV2 in \code{int8} did not fit the flash of the XIAO on
@@ -246,6 +247,7 @@ for (int oc = 0; oc < C_out; oc++)
   \small
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.13\textwidth}L{0.25\textwidth}L{0.26\textwidth}L{0.27\textwidth}@{}}
     \toprule
     & \textbf{CPU} & \textbf{GPU} & \textbf{NPU} \\
@@ -260,7 +262,7 @@ for (int oc = 0; oc < C_out; oc++)
             & Mostly \code{float32} and \code{float16}
             & Mostly \code{int8} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item NPU: neural processing unit. It is a circuit for one kind of work.
@@ -635,6 +637,7 @@ for (int oc = 0; oc < C_out; oc++)
 \begin{frame}{Read the roofline with care}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
     \toprule
     \textbf{Fact} & \textbf{Example of the measurement} \\
@@ -651,7 +654,7 @@ for (int oc = 0; oc < C_out; oc++)
         first cache it reaches 22.2 GFLOP/s. The roof for data in the
         RAM is 2.4. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item A very small model has one more limit: the fixed cost of each
@@ -719,6 +722,7 @@ for (int oc = 0; oc < C_out; oc++)
   \small
   \renewcommand{\arraystretch}{1.3}
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.15\textwidth}L{0.39\textwidth}L{0.38\textwidth}@{}}
     \toprule
     & \textbf{Memory-bound} & \textbf{Compute-bound} \\
@@ -734,7 +738,7 @@ for (int oc = 0; oc < C_out; oc++)
       & More cores, a higher peak rate
       & A faster memory \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item \code{int8} helps in the two regimes: one quarter of the bytes,
@@ -750,6 +754,7 @@ for (int oc = 0; oc < C_out; oc++)
 \begin{frame}{The Raspberry Pi 5 on this map}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.77\textwidth}@{}}
     \toprule
     Processor & 4 cores of the type Cortex-A76, 2.4 GHz \\
@@ -763,13 +768,11 @@ for (int oc = 0; oc < C_out; oc++)
     GPU, NPU  & A GPU for graphics. No NPU: an accelerator board can use
                 the PCIe port. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The same calculation for the work computer gives 80 GFLOP/s (2
           units, 8 values, 2 operations, 2.5 GHz). The measurement: 82.8.
-    \item Nobody measured the memory bandwidth of the board for this
-          course. So its ridge point is not known.
   \end{itemize}
   \keypoint{On this board, acceleration is: NEON kernels, 4 threads, and
     fewer bytes. The runtime gives the first two. Parts 2 and 3 show how.}
@@ -809,7 +812,6 @@ for (int oc = 0; oc < C_out; oc++)
     \item The model changes to \code{int8}: each layer moves one quarter of
           the bytes. Which layer changes its regime?
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{place three workloads on a Roofline plot}{%

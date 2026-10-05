@@ -19,6 +19,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.30\textwidth}L{0.24\textwidth}L{0.26\textwidth}@{}}
     \toprule
     & \textbf{Example} & \textbf{XIAO} & \textbf{Raspberry Pi} \\
@@ -28,13 +29,14 @@
     C & Room counter with privacy & Person or no person & Count of persons \\
     D & Offline lab assistant & Gesture model & Language model, notes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{Part A: the problem, not a solution}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.44\textwidth}L{0.48\textwidth}@{}}
     \toprule
     \textbf{A solution (weak start)} & \textbf{A problem (good start)} \\
@@ -46,7 +48,7 @@
     ``Classify sounds'' & A camera should start only when a person asks
       for it \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -98,6 +100,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.24\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{No.} & \textbf{Requirement} & \textbf{Number} & \textbf{Test}
@@ -110,7 +113,7 @@
     R3 & Alarm with no network & Works with the router off & Switch off the
       Wi-Fi in the demonstration \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -159,6 +162,7 @@ python3 budget.py power --work-mw 217 --rest-mw 19 --work-ms 50 \
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.38\textwidth}L{0.48\textwidth}@{}}
     \toprule
     \textbf{No.} & \textbf{Requirement} & \textbf{In the machine monitor}
@@ -176,7 +180,7 @@ python3 budget.py power --work-mw 217 --rest-mw 19 --work-ms 50 \
     5 & Benchmark table: latency, memory, energy & Both models, with the
       method of Day 9 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   If one requirement is not met, change the design now, not on Day 15.
@@ -252,6 +256,7 @@ python3 budget.py power --work-mw 217 --rest-mw 19 --work-ms 50 \
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.38\textwidth}L{0.46\textwidth}@{}}
     \toprule
     & \textbf{Riskiest assumption} & \textbf{First test} \\
@@ -264,7 +269,7 @@ python3 budget.py power --work-mw 217 --rest-mw 19 --work-ms 50 \
       the day \\
     D & Short and fast answers & 10 questions, time and length (Day 10) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{Part D: decide, and plan Day 15}

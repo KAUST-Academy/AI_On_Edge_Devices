@@ -12,6 +12,7 @@
   \code{Labs/day02/data/}.
   \vskip 0.3em
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.09\textwidth}L{0.36\textwidth}L{0.45\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{You write} & \textbf{The notebook checks} \\
@@ -28,7 +29,7 @@
     5 & Your estimate of the arena size (Part B)
       & Not checked. You measure it in Part C. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
 \end{frame}
 
@@ -86,6 +87,7 @@ largest difference between Keras and LiteRT: ...
   Section 8 writes three files into \code{sketches/motion\_classifier/}:
   \vskip 0.2em
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.66\textwidth}@{}}
     \toprule
     \code{model.h} & The LiteRT file as a C array \\
@@ -94,7 +96,7 @@ largest difference between Keras and LiteRT: ...
     \code{test\_window.h} & One test window, its 63 features, and the
         output of the model for it \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \textbf{Task 5.} Estimate the arena size from the table of the last cell.
   Write the estimate in the report before Part C.
@@ -107,6 +109,7 @@ largest difference between Keras and LiteRT: ...
   \code{Tools > PSRAM > Disabled}.
   \vskip 0.3em
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.09\textwidth}L{0.24\textwidth}L{0.57\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Place} & \textbf{You write} \\
@@ -119,7 +122,7 @@ largest difference between Keras and LiteRT: ...
          tensor, call \code{Invoke()}, read the output tensor \\
     B4 & \code{bestClass()} & The position of the largest probability \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The sketch compiles before you start. It then prints
@@ -154,14 +157,14 @@ Self-test:            PASS
     \item \textbf{You record:} for each motion, the class that the board
           shows most of the time.
   \end{itemize}
-  \source{The output shows the form of the lines. Nobody measured the
-    values on the kit.}
+  \source{The output shows the form of the lines.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part C
 \begin{frame}[fragile]{Part C: measure three numbers (30 min)}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.13\textwidth}L{0.40\textwidth}L{0.38\textwidth}@{}}
     \toprule
     \textbf{Number} & \textbf{Where you read it} & \textbf{You record} \\
@@ -175,7 +178,7 @@ Self-test:            PASS
     Latency & The columns \code{features\_us} and \code{invoke\_us}
             & The median and the maximum of 20 lines \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   One line of the Serial Monitor for each inference:
 \begin{lstlisting}
@@ -258,6 +261,7 @@ class,probability,features_us,invoke_us,late_samples
 \begin{frame}{Part D: the comparison table}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Number} & \textbf{Your sketch with TensorFlow Lite Micro}
@@ -271,7 +275,7 @@ class,probability,features_us,invoke_us,late_samples
     Time for the inference & \code{invoke\_us} & Classification time \\
     Kernels       & Reference kernels & Optimized kernels (ESP-NN) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item Write ``measured'' or ``estimate'' next to each number of the

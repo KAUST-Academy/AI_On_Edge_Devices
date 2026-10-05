@@ -5,23 +5,6 @@
 // Libraries: PubSubClient 2.8 (Nick O'Leary), Seeed Arduino LSM6DS3 2.0.7
 // Broker:    Mosquitto on the Raspberry Pi of the group (port 1883)
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
-// Credits: this sketch adapts the programs of Task 2 (telemetry) and Task 3
-// (commands) of chapter 3.5 of "XIAO: Big Power, Small Board" by Lei Feng and
-// Marcelo Rovai (github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook,
-// GPL-3.0). The IMU code comes from imu_test.ino of "XIAO ESP32S3 Sense" by
-// Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
-//
-// Changes from the chapter:
-//   - Board XIAO ESP32S3, not XIAO ESP32C3.
-//   - A local broker with an IP address, not the public broker hivemq.com.
-//   - The IMU of the kit, not the DHT20 sensor. JSON payload.
-//   - One topic tree for each group: edgeai/<group>/xiao/...
-//   - A last will message, a sequence number, and a command for the LED.
-//   - The connection code does not block the loop for 5 seconds.
-//
 // Topics (GROUP_ID is in arduino_secrets.h):
 //   edgeai/<group>/xiao/status   "online" or "offline", retained, last will
 //   edgeai/<group>/xiao/imu      telemetry, each 1000 ms

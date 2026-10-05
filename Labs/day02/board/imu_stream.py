@@ -8,17 +8,11 @@
 # Needs:   lsm6ds3.py on the board (mpremote fs cp board/lsm6ds3.py :lsm6ds3.py)
 # Run:     mpremote connect PORT run board/imu_stream.py
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-02).
-#
 # Output: one CSV line for each sample.
 #   n      sample number, starts at 0
 #   t_us   time since the first sample, in microseconds
 #   ax..az acceleration in g
 #   gx..gz angular rate in degrees per second
-#
-# Credits: the sampling rate of 50 Hz follows the data collection sketch of
-# the motion classification chapter of "Machine Learning Systems"
-# (mlsysbook.ai, CC BY-NC-SA 4.0).
 
 import time
 from machine import I2C, Pin

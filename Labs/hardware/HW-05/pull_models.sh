@@ -10,10 +10,6 @@
 #   llama3.2:3b        2.02 GB
 #   nomic-embed-text   0.27 GB   (extras: retrieval-augmented generation)
 #   llava-phi3:3.8b    2.93 GB   (extras: image description)
-#
-# Hardware status: new script, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-
 set -euo pipefail
 
 MODELS=(llama3.2:1b llama3.2:3b)

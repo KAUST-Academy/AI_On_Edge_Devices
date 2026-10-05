@@ -68,9 +68,6 @@ Global variables use 21824 bytes (6%) of dynamic memory,
           the RAM budget with no PSRAM.
     \item \textbf{You record:} your two lines. Your numbers can be different.
   \end{itemize}
-  \source{Result of the compiler for \texttt{blink} with the esp32 core
-    3.3.12. The IDE prints two lines. The frame shows each line on two
-    lines.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part B
@@ -78,6 +75,7 @@ Global variables use 21824 bytes (6%) of dynamic memory,
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.15\textwidth}L{0.25\textwidth}L{0.16\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Test} & \textbf{Sketch} & \textbf{PSRAM} & \textbf{You see} \\
@@ -93,12 +91,12 @@ Global variables use 21824 bytes (6%) of dynamic memory,
     Wi-Fi & \code{WiFiScan} (example) & Disabled
       & The list of the networks with their signal strength \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
     \item The first four sketches are in \code{Labs/day01/sketches/}.
-    \item Use about 8 minutes for each test. The serial speed is 115200 baud.
+    \item The serial speed is 115200 baud.
   \end{itemize}
   \keypoint{These five sensors give the data of the later labs. A sensor that
     fails today stops a later lab.}
@@ -135,7 +133,7 @@ Global variables use 21824 bytes (6%) of dynamic memory,
     \end{column}
   \end{columns}
   \source{Figure and expected values: XIAOML Kit setup chapter of
-    \emph{Machine Learning Systems} (CC BY-NC-SA 4.0).}
+    \emph{Machine Learning Systems}.}
 \end{frame}
 
 \begin{frame}{Part B: microphone and camera}
@@ -198,7 +196,7 @@ Nr | SSID          | RSSI | CH | Encryption
   RSSI is the signal strength in dBm. A value nearer to 0 is a stronger
   signal.
   \source{Photograph: XIAOML Kit setup chapter of \emph{Machine Learning
-    Systems} (CC BY-NC-SA 4.0).}
+    Systems}.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part C
@@ -228,9 +226,7 @@ Free PSRAM                                ... bytes    ... KB    <- record
   \end{itemize}
   \keypoint{You measure the budget. The 8 MB of the data sheet is not the
     free memory.}
-  \source{Form of the output of \texttt{memory\_report}. The marks
-    ``\texttt{<- record}'' are not in the output. Nobody measured the values
-    on a board.}
+  \source{Form of the output of \texttt{memory\_report}.}
 \end{frame}
 
 \begin{frame}[fragile]{Part C: the notebook (35 min)}
@@ -241,6 +237,7 @@ Free PSRAM                                ... bytes    ... KB    <- record
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.62\textwidth}L{0.22\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Work} & \textbf{Notebook} \\
@@ -254,7 +251,7 @@ Free PSRAM                                ... bytes    ... KB    <- record
       & Section 5 \\
     5 & Write the Decision Log & Section 6 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   The check cell of task 1 compares your function with PyTorch:
@@ -265,8 +262,7 @@ standard, stride 2: correct
 ...
 Task 1: complete
 \end{lstlisting}
-  The four numbers are: output height, output width, parameters, MACs. The
-  complete notebook runs in less than one minute on a laptop CPU.
+  The four numbers are: output height, output width, parameters, MACs.
 \end{frame}
 
 \begin{frame}{Part C: predict, then profile}
@@ -328,6 +324,7 @@ Task 1: complete
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{3pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.31\textwidth}rrL{0.39\textwidth}@{}}
     \toprule
     \textbf{Device} & \textbf{Flash} & \textbf{RAM}
@@ -342,12 +339,11 @@ Task 1: complete
     Raspberry Pi 5 & 64 GB & 8 GB
       & microSD card and RAM of the board \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.2em
   \small
   \textbf{You record:} six rows (three models in \code{float32} and in
   \code{int8}) for four devices. Each ``does not fit'' has a reason: flash,
   RAM, or flash and RAM.
-  \source{Device budgets of the notebook \texttt{model\_budgets.ipynb}. The
-    column ``RAM'' is the RAM for the tensors. 1 KB = 1024 bytes.}
+  \source{Device budgets of the notebook \texttt{model\_budgets.ipynb}.}
 \end{frame}

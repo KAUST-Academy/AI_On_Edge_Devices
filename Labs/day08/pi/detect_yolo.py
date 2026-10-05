@@ -14,16 +14,6 @@ downloads this file at the first run (5.4 MB) into the folder models/.
 A model can be a PyTorch file (.pt), an NCNN folder, or a LiteRT file
 (.tflite). An exported file has a fixed image size: give the same size
 with --imgsz.
-
-Hardware status: not tested on hardware (prepared on 2026-10-02).
-
-Credits: the steps follow the notebook
-YOLO_Model_Prediction_with_Ultralytics.ipynb of "EdgeML with Raspberry Pi"
-by Marcelo Rovai (github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0) and
-the kit lab "Object Detection" of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0). The package ultralytics and its models have the licence
-AGPL-3.0. The command line and the time measurement are new code of this
-course.
 """
 import argparse
 import os

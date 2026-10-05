@@ -3,8 +3,8 @@
 Runs on: the laptop, Python 3.10 or later, with the package numpy.
 
 This module makes signals that have the form of the four classes of the kit
-lab: idle, terrestrial, lift, and maritime. Nobody recorded these signals.
-They are for two uses only:
+lab: idle, terrestrial, lift, and maritime. The signals are simulated. They
+are for two uses only:
 
 - host/sim_board.py: a simulated board, to test the logger with no board.
 - host/make_fallback_dataset.py: a fallback dataset for a group that has no
@@ -18,10 +18,6 @@ Each session has its own speed, amplitude, direction, and tilt. Recordings
 of one session are similar. Recordings of different sessions are different.
 A real dataset has the same property: one person in one position makes
 similar motions.
-
-Credits: the four classes and their axes come from the motion
-classification chapter of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0). The signal model is new and has no source.
 """
 
 import math

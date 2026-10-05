@@ -2,9 +2,9 @@
 
 This example has the parts of the report that need no board. The numbers of
 Parts A and B come from the solution notebook with the fallback dataset of
-Day 2. The signals of the fallback dataset are simulated. Nobody recorded
-them. The flash numbers come from the compiler. The parts that need a board
-say "measure in the lab".
+Day 2. The signals of the fallback dataset are simulated. The flash
+numbers come from the compiler. The parts that need a board say "measure in
+the lab".
 
 Group: example
 

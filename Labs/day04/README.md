@@ -1,6 +1,5 @@
 # Day 4 lab: quantization
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has a measured comparison of a `float32` model and an
 `int8` model: size, accuracy, and latency, on the laptop and on the XIAOML
@@ -281,7 +280,3 @@ This lab adapts material from these sources:
 - The library Chirale_TensorFlowLite by Chirale and the TensorFlow Authors
   (github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0): the use of
   the interpreter in the sketch, from its example `hello_world`.
-
-The notebook, the layers for simulated quantization, the quantization code of
-the sketch, the test set for the board, and the measurements are new code of
-this course.

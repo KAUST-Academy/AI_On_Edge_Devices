@@ -25,6 +25,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.18\textwidth}L{0.30\textwidth}L{0.42\textwidth}@{}}
     \toprule
     \textbf{Channel} & \textbf{Question} & \textbf{On the edge device} \\
@@ -38,7 +39,7 @@
     Prediction logs & Did the model behave as before? & A sample of inputs
       and outputs, for later labels \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -81,6 +82,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.36\textwidth}L{0.37\textwidth}@{}}
     \toprule
     \textbf{Field} & \textbf{Content} & \textbf{Why} \\
@@ -96,7 +98,7 @@
     Values & \code{latency\_ms}, \code{temp\_c}, \code{rss\_mb} & The unit
       is part of the name \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -113,6 +115,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}lrL{0.33\textwidth}L{0.33\textwidth}@{}}
     \toprule
     \textbf{Level} & \textbf{Value} & \textbf{Meaning} & \textbf{Example} \\
@@ -124,7 +127,7 @@
     CRITICAL & 50 & The program cannot continue & The model file is
       missing \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -243,7 +246,6 @@ log.debug("boxes", extra={"fields": {"boxes": [[12, 40, 200, 300]]}})
           values. One row for each value (time, name, value) needs 30.9
           bytes for each value.
   \end{itemize}
-  \source{Experiment of this part: synthetic records; 1 MB = 1024 KB.}
 \end{frame}
 
 % ------------------------------------------------------------------ rotation
@@ -319,8 +321,8 @@ log.debug("boxes", extra={"fields": {"boxes": [[12, 40, 200, 300]]}})
           The textbook gives the same rule for a data centre: all errors,
           1 percent of the successful requests.
   \end{itemize}
-  \source{Experiment of this part: synthetic hour, seed 0. Rule: \emph{Machine
-    Learning Systems}, Volume I, chapter ``ML Operations''.}
+  \source{Rule: \emph{Machine Learning Systems}, Volume I, chapter ``ML
+    Operations''.}
 \end{frame}
 
 % ------------------------------------------------------------------ summary
@@ -365,8 +367,7 @@ edgeai_cpu_temp_celsius{device="pi-07"}              60.9   at 14:00:00
     \item A log record can hold any field. A metric holds only numbers with
           a fixed set of labels, so it is small and fast to query.
   \end{itemize}
-  \source{Notation of Prometheus; metric names of HW-08. Example labels and
-    values.}
+  \source{Notation of Prometheus; metric names of HW-08.}
 \end{frame}
 
 % ------------------------------------------------------------------ storage
@@ -374,6 +375,7 @@ edgeai_cpu_temp_celsius{device="pi-07"}              60.9   at 14:00:00
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.22\textwidth}L{0.24\textwidth}L{0.24\textwidth}@{}}
     \toprule
     \textbf{Store} & \textbf{Size of one frame} & \textbf{Good for} &
@@ -386,7 +388,7 @@ edgeai_cpu_temp_celsius{device="pi-07"}              60.9   at 14:00:00
     Time-series database & 1 to 2 bytes for each value & Many series,
       retention, a query language & One more service to run \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -498,6 +500,7 @@ rows = con.execute("SELECT avg(latency_ms), max(latency_ms) FROM frames "
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Do not log} & \textbf{Risk} & \textbf{Log in its place} \\
@@ -509,7 +512,7 @@ rows = con.execute("SELECT avg(latency_ms), max(latency_ms) FROM frames "
     Exact place with time & The habits of a person & A zone, a coarse
       time \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \small
   \begin{itemize}
@@ -553,7 +556,6 @@ rows = con.execute("SELECT avg(latency_ms), max(latency_ms) FROM frames "
     \draw[->] (a) -- (b); \draw[->] (b) -- node[above] {yes} (c);
     \draw[->] (c) -- node[above] {yes} (d);
   \end{tikzpicture}\par\endgroup
-  \source{The threshold 0.4 and the quota are example values.}
 \end{frame}
 
 % ------------------------------------------------------------------ lab

@@ -4,12 +4,9 @@
 # Runs on: MicroPython v1.29.0 for SEEED_XIAO_ESP32S3
 # Run:     mpremote run board/i2c_scan.py
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-#
 # Pins: SDA = GPIO5 (D4), SCL = GPIO6 (D5). Source: pins_arduino.h of the
 # board XIAO_ESP32S3 in the Arduino core "esp32" 3.3.12.
-# Addresses: IMU 0x6A, display 0x3C. Source: the XIAOML Kit setup chapter of
-# "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0).
+# Addresses: IMU 0x6A, display 0x3C. 
 
 from machine import I2C, Pin
 

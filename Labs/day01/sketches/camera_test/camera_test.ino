@@ -7,9 +7,6 @@
 // Libraries: none
 // Build:     Tools > PSRAM > OPI PSRAM. The frame buffer is in the PSRAM.
 //
-// Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // The test needs no Wi-Fi. Cover the lens with your hand: the mean
 // brightness must decrease.
 //
@@ -19,10 +16,6 @@
 //   Camera settings: CameraWebServer.ino of the same example. The core is
 //                by Espressif Systems (github.com/espressif/arduino-esp32,
 //                LGPL-2.1).
-//
-// Credits: the camera test of the XIAOML Kit setup chapter of "Machine
-// Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0) uses that example. This
-// sketch is a smaller test with the same pins and the same driver.
 
 #include "esp_camera.h"
 

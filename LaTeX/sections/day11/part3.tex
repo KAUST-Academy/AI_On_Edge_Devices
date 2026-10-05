@@ -15,7 +15,7 @@
 %    the frame. The stream does not leave the computer: no value is a value
 %    of a board or of a network.
 % 2. Values of Part 2 and of Day 8, and published values of the sources.
-% 3. Example values for the calculations. The frame says so.
+% 3. Example values for the calculations.
 
 \theorypart{Stream architectures}%
   {select the inference location for three camera systems}
@@ -132,14 +132,14 @@
   \end{itemize}
   \keypoint{Each camera that sends video uses the shared channel. A camera
     that sends results uses almost nothing.}
-  \source{Bit rates: Part 2 (moving camera). The size of the JSON message
-    is an example.}
+  \source{Bit rates: Part 2 (moving camera).}
 \end{frame}
 
 % ------------------------------------------------------------------ compare
 \begin{frame}{Compare the two places}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.35\textwidth}L{0.37\textwidth}@{}}
     \toprule
     & \textbf{A. Model on the camera node} & \textbf{B. Model on a central
@@ -158,7 +158,7 @@
     Privacy      & Images can stay on the camera & Images leave the camera
                    \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -204,7 +204,6 @@
     \item The XIAO can be such a filter: a small image model of Day 5 on the
           kit, and a frame to the Raspberry Pi only for an event.
   \end{itemize}
-  \source{The share of 5 percent is an example.}
 \end{frame}
 
 % ------------------------------------------------------------------ delay parts
@@ -447,6 +446,7 @@
 \begin{frame}{Drop frames on purpose}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.32\textwidth}L{0.60\textwidth}@{}}
     \toprule
     \textbf{Method} & \textbf{Effect} \\
@@ -460,7 +460,7 @@
     Skip a fixed number of frames & Simple, but the queue still grows when
       the model time changes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -471,8 +471,7 @@
     \item Report two numbers: the frames each second that the model takes,
           and the age of those frames.
   \end{itemize}
-  \source{MediaMTX documentation, ``Raspberry Pi Cameras'' (MIT). The
-    walking speed is an example.}
+  \source{MediaMTX documentation, ``Raspberry Pi Cameras''.}
 \end{frame}
 
 % ------------------------------------------------------------------ buffers everywhere
@@ -480,6 +479,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.33\textwidth}L{0.35\textwidth}@{}}
     \toprule
     \textbf{Place} & \textbf{Setting} & \textbf{Effect} \\
@@ -494,7 +494,7 @@
     OpenCV reader & Decoder threads & One frame for each thread \\
     Your program & A queue or the newest frame & Grows with a slow model \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -505,7 +505,7 @@
           queue drops packets instead.
   \end{itemize}
   \source{\texttt{esp\_camera.h} of the esp32-camera driver (esp32 core
-    3.3.12). MediaMTX documentation,\\ ``Decrease packet loss'' (MIT).}
+    3.3.12). MediaMTX documentation,\\ ``Decrease packet loss''.}
 \end{frame}
 
 % ------------------------------------------------------------------ privacy
@@ -538,6 +538,7 @@
 \begin{frame}{Protect a stream}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.26\textwidth}L{0.32\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Risk} & \textbf{The lab setup} & \textbf{A product} \\
@@ -551,7 +552,7 @@
       request \\
     Old recordings & None & A fixed time, then delete \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -563,7 +564,7 @@
           Use it only on a closed network.
   \end{itemize}
   \source{MediaMTX documentation, ``RTSP-specific features'' (section
-    ``Encryption'') and ``Authentication'' (MIT).}
+    ``Encryption'') and ``Authentication''.}
 \end{frame}
 
 % ------------------------------------------------------------------ privacy by design
@@ -604,6 +605,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.17\textwidth}L{0.24\textwidth}L{0.23\textwidth}@{}}
     \toprule
     \textbf{System} & \textbf{Place} & \textbf{Network} & \textbf{Day} \\
@@ -617,7 +619,7 @@
     XIAO camera to a Raspberry Pi or a laptop & Central node & MJPEG over
       HTTP & Day 11, Part D \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -652,8 +654,6 @@
   \end{enumerate}
   Use the bit rates of Part 2 (2.62 Mbit/s for H.264) and the frame ages of
   this part.
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{select the inference location}{%

@@ -11,10 +11,6 @@
 // Files:     bench_cases.h and the four files model_*.h are generated files.
 //            bench_stats.h has the sort and the percentile.
 //
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles. A build for an x86 computer ran the four
-// models and gave the outputs of LiteRT.
-//
 // What the sketch does, for each of the four models:
 //   1. It makes an interpreter of TensorFlow Lite Micro with its own arena.
 //      The arena is in the internal RAM if it fits, and in the PSRAM if not.
@@ -30,19 +26,6 @@
 //      file results_kit.csv.
 // The timed window is the call of Invoke(): the model only. The input is in
 // the input tensor before the clock starts.
-//
-// Credits: the use of TensorFlow Lite Micro follows the example
-// "hello_world" of the library Chirale_TensorFlowLite 2.0.0
-// (github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0), which comes
-// from the TensorFlow Lite Micro example of the TensorFlow Authors. The four
-// models are the reference models for keyword spotting and for image
-// classification of MLPerf Tiny by MLCommons (github.com/mlcommons/tiny,
-// Apache-2.0). The float32 keyword model is a conversion of this course (see
-// models/README.md). The run rules (warm-up, repetitions, the median, the
-// model as the timed window) follow the paper "MLPerf Tiny Benchmark"
-// (Banbury et al., 2021) and chapter 12 "Benchmarking" of "Machine Learning
-// Systems" (mlsysbook.ai, CC BY-NC-SA 4.0). The benchmark loop, the test
-// input, and the output check are new code of this course.
 
 #include <Chirale_TensorFlowLite.h>
 #include <esp_heap_caps.h>

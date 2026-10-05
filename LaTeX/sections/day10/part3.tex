@@ -15,8 +15,7 @@
 %    computer. The times say nothing about a board.
 % 2. The documentation of Ollama and llama.cpp.
 % 3. Numbers that the authors of the sources published for the Raspberry
-%    Pi 5, and the power ranges of Day 9. Nobody measured a power or a
-%    temperature for this course.
+%    Pi 5, and the power ranges of Day 9.
 
 \theorypart{Applications and limits}%
   {decide for four tasks: a classifier, a rule, or a language model}
@@ -74,7 +73,7 @@ r = ollama.generate(model="llama3.2:1b", prompt=text, format=schema,
     \item \code{format="json"} is weaker: valid JSON, but any keys.
   \end{itemize}
   \source{Ollama API documentation: structured outputs. llama.cpp
-    documentation: GBNF grammars (MIT).}
+    documentation: GBNF grammars.}
 \end{frame}
 
 \begin{frame}{Measured: valid JSON and correct JSON}
@@ -84,6 +83,7 @@ r = ollama.generate(model="llama3.2:1b", prompt=text, format=schema,
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.05}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.08\textwidth}rrr@{}}
     \toprule
     \textbf{Mode} & \textbf{Model} & \textbf{Parses as JSON} &
@@ -96,7 +96,7 @@ r = ollama.generate(model="llama3.2:1b", prompt=text, format=schema,
     \code{format=schema} & 1B & 20 & 20 & 18 \\
      & 3B & 20 & 20 & 20 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.2em
   \small
   \begin{itemize}
@@ -351,6 +351,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
 \begin{frame}{Guard every action}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.60\textwidth}@{}}
     \toprule
     \textbf{Guard} & \textbf{Example} \\
@@ -367,7 +368,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
     A log                     & Each prompt, answer, and action, with the
                                 time \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item Never run the text of a model as code or as a shell command.
@@ -389,6 +390,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.05}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.46\textwidth}L{0.14\textwidth}@{}}
     \toprule
     \textbf{Question, no facts} & \textbf{Answer of \code{llama3.2:1b}} &
@@ -401,7 +403,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
     How long must I hold the RESET button? & ``You don't need to hold any
       buttons \ldots'' & 8 seconds \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   Countermeasures: retrieval, tools, a schema, and a test set.
@@ -477,6 +479,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
 \begin{frame}{When a language model is the wrong tool}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.32\textwidth}L{0.22\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{The task} & \textbf{The tool} & \textbf{Example} \\
@@ -489,7 +492,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
     Free text, many ways to say one thing & A language model
       & A spoken command, a summary of a log \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item A classifier and a rule are fast, cheap, and they give the same
@@ -549,8 +552,6 @@ calls = r.message.tool_calls     # name and arguments, or empty
           on a small battery.
   \end{enumerate}
   For task 3, write the JSON schema of the ticket with three fields.
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{a classifier, a rule, or a language model?}{%

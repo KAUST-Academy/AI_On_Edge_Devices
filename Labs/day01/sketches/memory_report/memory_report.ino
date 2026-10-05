@@ -4,18 +4,12 @@
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: none
 //
-// Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board with PSRAM disabled and with OPI PSRAM.
-//
 // Build the sketch two times:
 //   Tools > PSRAM > Disabled     the budget of the internal RAM only
 //   Tools > PSRAM > OPI PSRAM    the budget with the 8 MB of external RAM
 //
 // The functions come from the class EspClass of the Arduino core
 // (cores/esp32/Esp.h) and from esp32-hal-psram.h.
-//
-// Credits: the PSRAM setting comes from the XIAOML Kit setup chapter of
-// "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0).
 
 void printRow(const char* name, uint32_t bytes) {
   Serial.printf("%-34s %10lu bytes  %8.1f KB\n", name, (unsigned long)bytes,

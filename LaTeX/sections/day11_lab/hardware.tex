@@ -31,13 +31,14 @@
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.70\textwidth}@{}}
     Lab files & \code{Labs/day11/} on the laptop. Run the laptop commands
                 in this folder. \\
     Names     & \code{NN} is your group: \code{pi-NN},
                 \code{X.(100+NN)}. The examples use \code{X} =
                 \code{192.168.8}. \\
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{The setup}
@@ -65,6 +66,7 @@
   \vskip 0.4em
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.42\textwidth}L{0.30\textwidth}@{}}
     \toprule
     & \textbf{Raspberry Pi} & \textbf{XIAO} \\
@@ -76,7 +78,7 @@
     Start setting         & 1280 $\times$ 720, 30 frames/s, 2 Mbit/s
                           & 640 $\times$ 480 (VGA), quality 12 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   The model runs on the laptop: the central node of Part 3 of the lecture.
 \end{frame}

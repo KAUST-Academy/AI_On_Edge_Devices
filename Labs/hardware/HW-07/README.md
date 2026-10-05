@@ -1,6 +1,5 @@
 # HW-07: MQTT from the XIAO ESP32S3 to a local broker
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 12 lab (broker, telemetry, local decision, offline
 operation). The Day 13 lab uses the same broker.

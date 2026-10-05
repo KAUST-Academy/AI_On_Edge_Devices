@@ -14,7 +14,7 @@
 %    board. They show the effects that the lab measures on the Raspberry Pi.
 % 2. The documentation of Ollama and llama.cpp (options and defaults).
 % 3. Numbers that the authors of the sources published for the Raspberry
-%    Pi 5. Nobody measured a speed on a board for this course.
+%    Pi 5.
 
 \theorypart{Tools and runtimes}%
   {select a model and a quantization level for three applications}
@@ -74,6 +74,7 @@
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.12}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
     \toprule
     \textbf{Program} & \textbf{Use} \\
@@ -84,14 +85,14 @@
     \code{llama-bench}  & A benchmark of the prompt rate and the generation
                           rate \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 llama-server -m llama3.2-3b-q4_k_m.gguf -c 4096 -t 4 --port 8080
 \end{lstlisting}
   \small
   \code{-c}: the context. \code{-t}: the threads. Give the context
   yourself: its default 0 means ``the context of the model file''.
-  \source{llama.cpp documentation: README and \code{tools/server} (MIT).
+  \source{llama.cpp documentation: README and \code{tools/server}.
     Build time: guide\\ ``SLMs at the Edge'', section 5.2.}
 \end{frame}
 
@@ -118,7 +119,7 @@ ollama ps                                       # loaded models, RAM
   \end{itemize}
   \keypoint{Ollama is the shortest way from an empty board to a model that
     answers. The lab uses it.}
-  \source{Ollama documentation: README, API, and FAQ (MIT). Guide ``SLMs at
+  \source{Ollama documentation: README, API, and FAQ. Guide ``SLMs at
     the Edge'', section 3.}
 \end{frame}
 
@@ -146,7 +147,7 @@ litert-lm run --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
     \item The same runtime runs on phones, in the browser, and on the
           board. Fewer models than Ollama: about 20.
   \end{itemize}
-  \source{LiteRT-LM README (Apache-2.0). Chapter ``LiteRT-LM'' of
+  \source{LiteRT-LM README. Chapter ``LiteRT-LM'' of
     \emph{Edge AI Engineering}.}
 \end{frame}
 
@@ -154,6 +155,7 @@ litert-lm run --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
 \begin{frame}{Compare the three tools}
   \footnotesize
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.23\textwidth}L{0.23\textwidth}L{0.23\textwidth}@{}}
     \toprule
     & \textbf{Ollama} & \textbf{llama.cpp} & \textbf{LiteRT-LM} \\
@@ -172,7 +174,7 @@ litert-lm run --from-huggingface-repo=google/gemma-3n-E2B-it-litert-lm \
                     memory, new models & One runtime from the board to a
                     phone \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -237,6 +239,7 @@ curl http://localhost:11434/api/generate -d '{
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.1}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.32\textwidth}L{0.60\textwidth}@{}}
     \toprule
     \textbf{Field} & \textbf{Content} \\
@@ -248,13 +251,13 @@ curl http://localhost:11434/api/generate -d '{
     \code{eval\_count}           & The tokens of the answer \\
     \code{eval\_duration}        & The time of the answer, in ns \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   Generation rate = \code{eval\_count} / \code{eval\_duration} $\times
   10^9$. The prompt rate is the same calculation with the two prompt
   fields.
-  \source{Ollama API documentation (MIT).}
+  \source{Ollama API documentation.}
 \end{frame}
 
 % ------------------------------------------------------------------ cold
@@ -293,6 +296,7 @@ curl http://localhost:11434/api/generate -d '{
 \begin{frame}{Set the options yourself}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.16\textwidth}L{0.18\textwidth}L{0.20\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Setting} & \textbf{Ollama} & \textbf{llama.cpp} &
@@ -309,7 +313,7 @@ curl http://localhost:11434/api/generate -d '{
                    \code{--seed} & Ollama: temperature 0.8 \\
     Stay in RAM  & \code{keep\_alive}  & the server runs & Ollama: 5 minutes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -321,8 +325,8 @@ curl http://localhost:11434/api/generate -d '{
     \item Temperature 0 and a fixed seed give the same answer for the same
           prompt: use them for a benchmark.
   \end{itemize}
-  \source{Ollama documentation: FAQ, Modelfile, and API (MIT).\\ llama.cpp
-    documentation of the CLI and the server (MIT).}
+  \source{Ollama documentation: FAQ, Modelfile, and API.\\ llama.cpp
+    documentation of the CLI and the server.}
 \end{frame}
 
 % ------------------------------------------------------------------ context
@@ -490,6 +494,7 @@ curl http://localhost:11434/api/generate -d '{
 \begin{frame}{Published rates on the Raspberry Pi 5}
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.15\textwidth}L{0.34\textwidth}rrL{0.11\textwidth}@{}}
     \toprule
     \textbf{Tool} & \textbf{Model and level} & \textbf{Prompt} &
@@ -501,7 +506,7 @@ curl http://localhost:11434/api/generate -d '{
     llama-bench & Gemma 4 E2B, QAT \code{Q4\_K\_M}     & about 37 & about 7 & ? \\
     LiteRT-LM   & Gemma 4 E2B, \code{int4}             & ? & 4 to 8 & short \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.2em
   {\scriptsize Rates in tokens/s. ?: not given in the source.\par}
   \vskip 0.4em
@@ -558,6 +563,7 @@ curl http://localhost:11434/api/generate -d '{
 \begin{frame}{Candidates for the Raspberry Pi 5}
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.15\textwidth}rL{0.13\textwidth}L{0.23\textwidth}@{}}
     \toprule
     \textbf{Model} & \textbf{Level} & \textbf{RAM} & \textbf{Rate} &
@@ -571,7 +577,7 @@ curl http://localhost:11434/api/generate -d '{
     Llama 3.2 3B             & \code{Q4\_K\_M}    & 2.2 GB & 2 to 5   & Jobs, slow for a chat \\
     8B to 9B models          & \code{Q4\_K\_M}    & 5 GB   & 1 to 2   & Fits, but very slow \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.2em
   {\scriptsize Rate: generation in tokens/s, CPU only, short context.\par}
   \vskip 0.4em
@@ -605,8 +611,6 @@ curl http://localhost:11434/api/generate -d '{
   \end{enumerate}
   For application 2, calculate the KV cache of Llama 3.2 3B for a context
   of 8192 tokens (Part 1: 114\,688 bytes for each token).
-  \vskip 0.3em
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{select a model for three applications}{%

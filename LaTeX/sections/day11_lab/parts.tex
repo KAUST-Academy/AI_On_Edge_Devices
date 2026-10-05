@@ -7,6 +7,7 @@
 \begin{frame}[fragile]{Part A: network tools (20 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -16,7 +17,7 @@
     2 & Find the devices, check the Raspberry Pi & 5 min \\
     3 & Throughput, jitter, and loss & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 ip -br addr && ip route                      # laptop and Raspberry Pi
 python3 ../hardware/HW-09/net_check.py --scan 192.168.8.0/24
@@ -40,6 +41,7 @@ ping -c 100 -i 0.2 pi-NN.local
 \begin{frame}[fragile]{Part B: start the RTSP server}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -50,7 +52,7 @@ ping -c 100 -i 0.2 pi-NN.local
     4 & Task C1 in \code{stream\_detect.py} & 5 min \\
     5 & Read the stream in Python & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 cd ~/mediamtx                                # on the Raspberry Pi
 cp mediamtx_cam.yml mediamtx_cam.yml.orig
@@ -100,6 +102,7 @@ RESULT label=run url=rtsp://pi-NN.local:8554/cam reader=newest ...
 \begin{frame}[fragile]{Part C: the detector on the stream (45 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -109,7 +112,7 @@ RESULT label=run url=rtsp://pi-NN.local:8554/cam reader=newest ...
     3 & Setting 2: 640 $\times$ 480 at 0.5 Mbit/s & 15 min \\
     4 & The reader in order & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 $PY stream_detect.py $URL --seconds 30 --show \
     --model ../day08/models/yolo11n.pt --imgsz 320
@@ -195,6 +198,7 @@ cp mediamtx_cam.yml.orig mediamtx_cam.yml    # then start MediaMTX again
 \begin{frame}[fragile]{Part D: the XIAO camera (25 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -204,7 +208,7 @@ cp mediamtx_cam.yml.orig mediamtx_cam.yml    # then start MediaMTX again
     3 & Task D1 in \code{mjpeg\_rate.py}, then the bit rate & 7 min \\
     4 & The detector and the latency on the XIAO stream & 8 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{itemize}
     \item Write the Wi-Fi password of the lab in \code{WIFI\_PASSWORD}.

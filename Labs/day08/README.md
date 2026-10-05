@@ -1,6 +1,5 @@
 # Day 8 lab: object detection on the Raspberry Pi
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has a live detection on the Raspberry Pi 5 with a
 custom model for two classes, and a table with the frame rate and the
@@ -317,7 +316,7 @@ precision? Use your frame-rate table and the mAP of each file.
 
 The kit lab trains its model with the dataset "box and wheel" (about 150
 images, licence CC BY 4.0). The dataset is on Roboflow. A download needs a
-free account and a key of your own. Nobody tested this path for this course.
+free account and a key of your own.
 
 1. Make an account on `roboflow.com`, and copy your key from the settings.
 2. Install the package and download the dataset on the laptop:

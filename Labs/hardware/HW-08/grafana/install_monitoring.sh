@@ -11,10 +11,6 @@
 #
 # Sources: grafana.com/docs/grafana/latest/setup-grafana/installation/debian
 # and prometheus.io/docs.
-#
-# Hardware status: new script, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"

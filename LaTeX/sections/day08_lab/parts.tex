@@ -11,6 +11,7 @@
 \begin{frame}[fragile]{Part A: pre-trained models (30 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -21,7 +22,7 @@
     3 & The SSD model, with Task A1 & 9 min \\
     4 & The YOLO model: two image sizes, two IoU thresholds & 9 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 ssh edge@pi-NN.local "mkdir -p ~/edgeai/day08/images"    # on the laptop
 scp -r day08/pi day08/models edge@pi-NN.local:~/edgeai/day08/
@@ -82,7 +83,6 @@ Task A1: not complete
       \end{tikzpicture}
     \end{column}
   \end{columns}
-  \source{Nobody measured the two times on a board.}
 \end{frame}
 
 \begin{frame}[fragile]{Part A: the YOLO model}
@@ -114,7 +114,6 @@ Detections: ...
     \item \textbf{You record:} the time of each step, the detections, and
           the result for the photo of your desk with each model.
   \end{itemize}
-  \source{Nobody measured the times on a board.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part B
@@ -183,6 +182,7 @@ Detections: ...
 \begin{frame}{Part B: Tasks 1, 2, and 3}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.19\textwidth}L{0.64\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Function} & \textbf{You write} \\
@@ -195,7 +195,7 @@ Detections: ...
     3 & \code{count\_image} & TP, FP, and FN for one class in one image:
         each detection takes the free label with the highest IoU \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{columns}[c]
     \begin{column}{0.30\textwidth}
@@ -229,6 +229,7 @@ Detections: ...
 \begin{frame}{Part B: the baseline, the training, and the test}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.11\textwidth}L{0.80\textwidth}@{}}
     \toprule
     \textbf{Section} & \textbf{Work} \\
@@ -241,7 +242,7 @@ Detections: ...
         baseline. The validation images selected the best epoch, so they
         are not a fair test. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{exerciseblock}
     \textbf{Two predictions.} Write each one in the report before you run
@@ -298,6 +299,7 @@ Detections: ...
 \begin{frame}[fragile]{Part C: export and deploy (40 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -308,7 +310,7 @@ Detections: ...
     4 & Live detection with the camera & 12 min \\
     5 & Demonstration for the instructor & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 python pi/detect_yolo.py images/desk.jpg \
     --model models/cupbottle_320_ncnn_model --imgsz 320
@@ -408,13 +410,13 @@ Open http://<name of this board>:5000 in a browser. Stop with Ctrl+C.
           each command, the objects that the model finds, the objects that
           it misses, and the wrong detections.
   \end{itemize}
-  \source{Nobody measured the values on a board.}
 \end{frame}
 
 % ------------------------------------------------------------------- Part D
 \begin{frame}[fragile]{Part D: measure (30 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -428,7 +430,7 @@ Open http://<name of this board>:5000 in a browser. Stop with Ctrl+C.
     5 & Compare with your predictions, and write the Decision Log
       & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[basicstyle=\ttfamily\tiny]
 model                        runtime type     size | capture     pre inference    post | frames/s | objects
 cupbottle_320_ncnn_model     NCNN    float32   320 |     ...     ...       ...     ... |      ... | ...
@@ -443,7 +445,6 @@ cupbottle_640_int8.tflite    LiteRT  int8      640 |     ...     ...       ...  
           The check is the example of the lecture: 325 ms for one frame
           give 3.1 frames in each second.
   \end{itemize}
-  \source{Nobody measured the values on a board.}
 \end{frame}
 
 \begin{frame}{Part D: predict, measure, compare}
@@ -467,8 +468,7 @@ cupbottle_640_int8.tflite    LiteRT  int8      640 |     ...     ...       ...  
           the two temperatures, and the ratios: 320 against 640 pixels,
           \code{int8} against \code{float32}, NCNN against LiteRT.
     \item The lecture measured on an x86 processor: \code{int8} was slower
-          than \code{float32}, and NCNN was slower than LiteRT. Nobody
-          measured these rows on a Raspberry Pi 5 for this course. What do
+          than \code{float32}, and NCNN was slower than LiteRT. What do
           you measure?
   \end{itemize}
 \end{frame}

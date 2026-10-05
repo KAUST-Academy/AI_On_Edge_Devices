@@ -14,11 +14,6 @@
 // Broker:    Mosquitto on the Raspberry Pi of the group (port 1883)
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-03). The sketch needs the library of an Edge Impulse project.
-// Only the Studio can make that library. The sketch compiles with a
-// replacement for that library, which is not in this repository.
-//
 // Before you compile:
 //   1. Change the #include line of the library to the header of your Day 5
 //      library. The name comes from the name of your project.
@@ -33,24 +28,6 @@
 //                                {"seq":8,"ms":80000,"windows":312,"events":3,
 //                                 "heap":201234}
 //   edgeai/<group>/xiao/cmd      command to the board: "led=1" or "led=0"
-//
-// Credits: this sketch joins two sketches of this course.
-//   - Labs/day05/sketches/kws_stream (solution): the microphone, the ring
-//     buffer, the sliding window, and the post-processing. That sketch
-//     adapts XIAOML_Kit_code/xiaoml-kit_kws_oled/xiaoml-kit_kws_oled.ino of
-//     "XIAO ESP32S3 Sense" by Marcelo Rovai
-//     (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0), which adapts the
-//     example "esp32_microphone" of Edge Impulse. The notice of Edge Impulse
-//     follows this comment.
-//   - Labs/hardware/HW-07/sketches/mqtt_imu: the Wi-Fi, the broker, the last
-//     will, and the command. That sketch adapts Task 2 and Task 3 of chapter
-//     3.5 of "XIAO: Big Power, Small Board" by Lei Feng and Marcelo Rovai
-//     (github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook, GPL-3.0).
-// Changes from the two sketches:
-//   - The LED shows the command of the Raspberry Pi, not the event. The
-//     display still shows each event for one second.
-//   - New: one MQTT message for each event, and the message "stats".
-//   - The loop calls client.loop() before it waits for the next window.
 
 /* Edge Impulse Arduino examples
  * Copyright (c) 2022 EdgeImpulse Inc.

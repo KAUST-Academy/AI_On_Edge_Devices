@@ -149,6 +149,7 @@
   \]
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.12\textwidth}L{0.80\textwidth}@{}}
     \toprule
     $L_{\text{hard}}$ & The cross-entropy between the label and the output
@@ -162,7 +163,7 @@
         the factor $1/T^2$. The factor $T^2$ keeps the two parts in
         balance. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The temperature is a tool of the training. On the device, the
@@ -397,6 +398,7 @@ def distillation_loss(T, alpha):
 \begin{frame}{Distillation and pruning in comparison}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.33\textwidth}L{0.33\textwidth}@{}}
     \toprule
     & \textbf{Distillation} & \textbf{Pruning} \\
@@ -411,7 +413,7 @@ def distillation_loss(T, alpha):
     Typical use    & A change to a different model family
                    & A model that is some percent too large \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item A known result: DistilBERT has 40 percent fewer parameters than
@@ -570,6 +572,7 @@ def distillation_loss(T, alpha):
 \begin{frame}{The methods of Parts 1 and 2}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.15\textwidth}L{0.24\textwidth}L{0.24\textwidth}L{0.24\textwidth}@{}}
     \toprule
     & \textbf{Structured pruning} & \textbf{Distillation}
@@ -584,7 +587,7 @@ def distillation_loss(T, alpha):
                 & A large step in size
                 & Large layers with redundancy \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \begin{itemize}
     \item The three methods give a dense model. After each of them, the
@@ -622,7 +625,6 @@ def distillation_loss(T, alpha):
           $T = 1$?
     \item What is the result for a very large $T$? Is this useful?
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{soft targets at two temperatures}{%

@@ -7,14 +7,6 @@
 #         bash setup_pi.sh base yolo  install the named parts only
 # Parts:  base  litert  yolo  slm  network
 #
-# Hardware status: new script, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-#
-# Credits: the packages and the three virtual environments follow the setup
-# steps of "Edge AI Engineering: Raspberry Pi" by Marcelo Rovai
-# (mjrovai.github.io/EdgeML_Made_Ease_ebook) and of the Raspberry Pi kit labs
-# of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0).
-#
 # The script is safe to run again. It does not delete a file.
 
 set -euo pipefail

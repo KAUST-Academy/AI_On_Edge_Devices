@@ -19,12 +19,6 @@ message on edgeai/<group>/pi/alert/<metric>. The dashboard shows it in its
 state bar. Two copies of the program can watch two metrics.
 With --xiao-led, it also sends led=1 and led=0 to the XIAO of the Day 12
 lab (topic edgeai/<group>/xiao/cmd).
-
-Hardware status: not tested on hardware (prepared on 2026-10-03). The program
-ran on the work computer of the course with a Mosquitto broker.
-
-Credits: the rule follows Part 3 of the Day 13 lecture of this course (a
-window, a duration, hysteresis). All code is new code of this course.
 """
 import argparse
 import collections

@@ -171,7 +171,6 @@ Sketches of `Labs/day05/` (2026-10-02, XIAO ESP32S3, OPI PSRAM): `kws_stream`
 and `image_classifier` need the Arduino library of an Edge Impulse project.
 They compile with a replacement for that library, so this file gives no
 size. The kit lab of the source names the core 2.0.17 for these libraries.
-Nobody built a real library with the core 3.3.12.
 
 Sketch of `Labs/day09/` (2026-10-02, XIAO ESP32S3, OPI PSRAM):
 

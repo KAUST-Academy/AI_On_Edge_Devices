@@ -17,7 +17,7 @@
 % 3. The Mosquitto 2.0.11 manual, RFC 5905 (NTP version 4), the Raspberry Pi
 %    documentation (the RTC of the Raspberry Pi 5).
 % 4. Example values of this course (50 keyword events in one day, a clock
-%    error of 20 ppm). The frames say so.
+%    error of 20 ppm).
 % 1 GB = 10^9 bytes and 1 MB = 10^6 bytes in this part, as for a bit rate.
 
 \theorypart{Edge-to-cloud design}%
@@ -97,8 +97,7 @@
     \item Send more detail for a short time when you look for an error,
           then go back to the events.
   \end{itemize}
-  \source{Calculation of this course. 50 keywords in one day is an example
-    value.}
+  \source{Calculation of this course.}
 \end{frame}
 
 % ------------------------------------------------------------------ what
@@ -106,6 +105,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.18}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.0cm}L{3.3cm}L{4.6cm}@{}}
     \toprule
     \textbf{Type} & \textbf{Example} & \textbf{Use} \\
@@ -119,7 +119,7 @@
     Sample & a few images when the model is not sure & a check by a person,
       new training data \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -225,8 +225,6 @@
           ``on change'' sends a burst during the fall, and few messages when
           the value is stable.
   \end{itemize}
-  \source{Simulation of this course (synthetic signal, noise of 0.05
-    degrees, seed 0).}
 \end{frame}
 
 % ------------------------------------------------------------------ rules
@@ -261,8 +259,6 @@
     \item A summary with the minimum and the maximum shows the event after
           59 s with one message each minute.
   \end{itemize}
-  \source{Simulation of this course (synthetic signal of one day, seed 0).
-    Bytes with the topic\\ and the MQTT, IP, and TCP headers.}
 \end{frame}
 
 % ------------------------------------------------------------------ lost link
@@ -270,6 +266,7 @@
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.4cm}L{3.6cm}L{4.0cm}@{}}
     \toprule
     \textbf{Choice} & \textbf{When} & \textbf{Example} \\
@@ -281,7 +278,7 @@
     Store and forward & each message matters & counts, events, the data of
       a trend \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -440,6 +437,7 @@ persistence true
   \vskip 0.2em
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.6cm}L{2.6cm}r@{}}
     \toprule
     \textbf{Device} & \textbf{Rate and cut} & \textbf{Buffer} \\
@@ -448,7 +446,7 @@ persistence true
     Raspberry Pi, detections & 10 each s, 1 day & 864\,000 $\times$ 100 B
       = 86.4 MB \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.1em
   {\scriptsize Example values of this course. 1 kB = 1000 bytes.\par}
   \vskip 0.4em
@@ -468,6 +466,7 @@ persistence true
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{2.5cm}L{2.7cm}L{4.8cm}@{}}
     \toprule
     \textbf{Clock} & \textbf{Example} & \textbf{Property} \\
@@ -479,7 +478,7 @@ persistence true
     Arrival time & the clock of the server & adds the network delay and the
       time in a buffer \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}
@@ -527,8 +526,7 @@ persistence true
           clock with an error of 20 ppm (parts per million) drifts 1.7 s
           each day.
   \end{itemize}
-  \source{RFC 5905 (NTP version 4), section 8. Measured by this course. 20
-    ppm is an example value.}
+  \source{RFC 5905 (NTP version 4), section 8. Measured by this course.}
 \end{frame}
 
 % ------------------------------------------------------------------ offline time
@@ -635,13 +633,14 @@ pattern readwrite edgeai/%u/#
   Give each result in bytes, and the ratio of design 1 to designs 2 and 3.
   Which design would you select for a dashboard of the people in a room?
   \vskip 0.3em
-  Work with your neighbour for 8 minutes. Use 1 GB = 10\textsuperscript{9}
+  Use 1 GB = 10\textsuperscript{9}
   bytes.
 }
 
 \begin{frame}{Answer: the data of one camera for a day}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{3.0cm}L{4.4cm}r@{}}
     \toprule
     \textbf{Design} & \textbf{Calculation} & \textbf{One day} \\
@@ -650,7 +649,7 @@ pattern readwrite edgeai/%u/#
     2. A result each frame & 10 $\times$ 150 $\times$ 86\,400 & 129.6 MB \\
     3. Only the changes & 200 $\times$ 150 & 30 kB \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \begin{itemize}

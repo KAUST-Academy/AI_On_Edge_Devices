@@ -7,6 +7,7 @@
 \begin{frame}[fragile]{Part A: run and measure (45 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -20,7 +21,7 @@
     4 & Measure the two models & 15 min \\
     5 & The context and the threads & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 scp -r day10 edge@pi-NN.local:~/edgeai/      # on the laptop, in Labs/
 ssh edge@pi-NN.local                         # then on the board
@@ -47,6 +48,7 @@ python measure_slm.py                        # in the first terminal
   The script uses the method of Day 9:
   \vskip 0.2em
   \renewcommand{\arraystretch}{1.12}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.28\textwidth}L{0.64\textwidth}@{}}
     \toprule
     \textbf{Part of the method} & \textbf{Value} \\
@@ -59,7 +61,7 @@ python measure_slm.py                        # in the first terminal
     Settings       & Context 2048 tokens, at most 128 tokens for each answer \\
     Window         & The counters of Ollama: the model only \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The script prints \code{Task A1: complete}, then one line for each
@@ -97,6 +99,7 @@ done
 \begin{frame}[fragile]{Part B: structured output (45 min)}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -109,7 +112,7 @@ done
       & 10 min \\
     4 & Function calls with the two models & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}
 class Command(BaseModel):          # Task B1: replace each str
     device: str                    # -> Literal["lamp", "fan", ...]
@@ -159,6 +162,7 @@ Request: Set the heater in the garage to 300 degrees.
 \begin{frame}{Part C: select one application (60 min)}
   \small
   \renewcommand{\arraystretch}{1.1}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.38\textwidth}L{0.38\textwidth}@{}}
     \toprule
     & \textbf{Option 1: retrieval} & \textbf{Option 2: image description} \\
@@ -175,7 +179,7 @@ Request: Set the heater in the garage to 300 degrees.
     Time     & seconds for each question & 1 to 4 minutes for each image
                (estimate) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The two options end with the line
@@ -190,6 +194,7 @@ Request: Set the heater in the garage to 300 degrees.
 \begin{frame}[fragile]{Part C, option 1: retrieval-augmented generation}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -200,7 +205,7 @@ Request: Set the heater in the garage to 300 degrees.
     4 & Three facts of your own, and one question with \code{--ask} & 10 min \\
     5 & The questions of Part C in the report & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 python part_c/rag.py                         # llama3.2:1b, k = 2
 python part_c/rag.py --model llama3.2:3b
@@ -218,6 +223,7 @@ python part_c/rag.py --ask "When does the fan stop?"
 \begin{frame}[fragile]{Part C, option 2: image description}
   \small
   \renewcommand{\arraystretch}{1.08}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -227,7 +233,7 @@ python part_c/rag.py --ask "When does the fan stop?"
     3 & Compare \code{containers} with the counts of COCO & 10 min \\
     4 & The questions of Part C in the report & 15 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 python part_c/describe_image.py
 python part_c/describe_image.py --image part_c/images/000000166277.jpg

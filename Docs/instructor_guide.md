@@ -136,8 +136,7 @@ Write the name `pi-NN` on each card.
 - [ ] Run each lab one time with the checklist of its `TEST_NOTES.md`.
       Record the time of each part and the measured numbers.
 - [ ] Do the steps "After the test" of each `TEST_NOTES.md`: write the
-      measured numbers in `solutions/report_example.md` and in the lab deck,
-      and change the line `Hardware status:` of the `README.md`.
+      measured numbers in `solutions/report_example.md` and in the lab deck.
 - [ ] Write the final tool versions in `Labs/VERSIONS.md`. Use the same
       versions for the complete course.
 

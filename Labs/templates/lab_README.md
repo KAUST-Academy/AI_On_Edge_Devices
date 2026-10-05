@@ -1,6 +1,5 @@
 # Day NN lab: TITLE OF THE LAB
 
-Hardware status: not tested on hardware (prepared on YYYY-MM-DD)
 
 **Goal.** ONE SENTENCE. WHAT THE GROUP CAN DO AT THE END.
 

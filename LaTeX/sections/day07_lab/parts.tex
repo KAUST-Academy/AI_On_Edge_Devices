@@ -8,6 +8,7 @@
 \begin{frame}[fragile]{Part A: setup (35 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -17,7 +18,7 @@
     3 & Test the camera, and look at the photo on the laptop & 10 min \\
     4 & Copy the lab folder to the board & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}[style=shell]
 ssh edge@pi-NN.local                      # NN is the number of your group
 bash ~/HW-04/check_pi.sh                  # each line: PASS, FAIL, or INFO
@@ -60,13 +61,13 @@ Task B1: not complete. The list shows the raw output values.
     125 ms on the board. Which median latency do you expect with 4 threads?
     Write your number in the report. Then run the script.
   \end{exerciseblock}
-  \source{Photo: Fir0002, Wikimedia Commons, GFDL 1.2. Nobody measured the
-    three times on a board.}
+  \source{Photo: Fir0002, Wikimedia Commons.}
 \end{frame}
 
 \begin{frame}{Part B: Task B1 and the camera}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -76,7 +77,7 @@ Task B1: not complete. The list shows the raw output values.
     4 & Classify photos of the camera, and compare 1 thread with 4 threads
       & 10 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item \textbf{Task B1} is the function \code{dequantize\_and\_softmax}
@@ -102,6 +103,7 @@ Task B1: not complete. The list shows the raw output values.
   Work on the laptop, in the notebook \code{export\_inspect.ipynb}.
   \vskip 0.2em
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.12\textwidth}L{0.66\textwidth}L{0.11\textwidth}@{}}
     \toprule
     \textbf{Section} & \textbf{Work} & \textbf{Time} \\
@@ -117,7 +119,7 @@ Task B1: not complete. The list shows the raw output values.
     7 and 8 & The same result in each runtime, and the files for the
         board & 3 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The cell after a task prints \code{Task N: complete} or
@@ -131,6 +133,7 @@ Task B1: not complete. The list shows the raw output values.
 \begin{frame}{Part C: Tasks 1 and 2, the two exports}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.09\textwidth}L{0.25\textwidth}L{0.56\textwidth}@{}}
     \toprule
     \textbf{Task} & \textbf{Function} & \textbf{You write} \\
@@ -140,7 +143,7 @@ Task B1: not complete. The list shows the raw output values.
     2 & \code{export\_dynamic} & The same call with \code{dynamic\_shapes}:
         dimension 0 of the input gets the name \code{batch} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The checks: the static file has the input shape 1, 3, 224, 224.
@@ -181,6 +184,7 @@ Task B1: not complete. The list shows the raw output values.
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.36\textwidth}L{0.56\textwidth}@{}}
     \toprule
     \textbf{File in \code{models/}} & \textbf{Question of the report} \\
@@ -193,7 +197,7 @@ Task B1: not complete. The list shows the raw output values.
                          activation? Which operator comes before it, and
                          why? \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item Drag a file into the page \code{netron.app}. Click a node to see
@@ -234,6 +238,7 @@ Task B1: not complete. The list shows the raw output values.
 \begin{frame}[fragile]{Part D: measure (35 min)}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.70\textwidth}L{0.12\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Time} \\
@@ -247,7 +252,7 @@ Task B1: not complete. The list shows the raw output values.
     5 & Compare with your predictions, and write the Decision Log
       & 5 min \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \begin{lstlisting}
 runtime      file             type     threads   load ms  median ms
 litert       mnv2.tflite      float32        1       ...        ...
@@ -260,7 +265,6 @@ onnxruntime  mnv2_int8.onnx   int8           4       ...        ...
     \item Task D1: some calls to warm up, then one time for each call, then
           the median.
   \end{itemize}
-  \source{Nobody measured the values on a board.}
 \end{frame}
 
 \begin{frame}{Part D: predict, measure, compare}

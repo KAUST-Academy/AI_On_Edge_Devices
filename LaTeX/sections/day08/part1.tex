@@ -138,6 +138,7 @@
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.19\textwidth}L{0.42\textwidth}L{0.31\textwidth}@{}}
     \toprule
     \textbf{Part} & \textbf{Job} & \textbf{Examples} \\
@@ -154,7 +155,7 @@
                no weights.
              & Score threshold, non-maximum suppression \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \keypoint{A new detector changes one of the four parts. Ask which part
     changed.}
@@ -484,6 +485,7 @@ print(int(keep.sum()))              # 47
   \small
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{5pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}rrrL{0.26\textwidth}@{}}
     \toprule
     \textbf{Model} & \textbf{Image} & \textbf{Maps} & \textbf{Candidates}
@@ -495,7 +497,7 @@ print(int(keep.sum()))              # 47
     YOLO11n            & 640 & 3 & 8400     & $4 + 80$ \\
     FOMO               & 160 & 1 & 400      & 3, and no box \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The number of candidates is fixed. It comes from the image size,
@@ -676,6 +678,7 @@ print(int(keep.sum()))              # 47
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{IoU = 0} & \textbf{IoU = 0.5} & \textbf{IoU = 1} \\
@@ -683,7 +686,7 @@ print(int(keep.sum()))              # 47
     The boxes do not touch. & Two equal boxes share two thirds of their
     area. & The boxes are the same. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \keypoint{Two candidates with a high IoU show the same object. Part 2
     uses the IoU to compare a prediction with a label.}
@@ -737,6 +740,7 @@ print(int(keep.sum()))              # 47
 \begin{frame}{The two thresholds}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Threshold} & \textbf{Too low} & \textbf{Too high} \\
@@ -746,7 +750,7 @@ print(int(keep.sum()))              # 47
     IoU   & Two real objects that are near become one detection.
           & Two boxes of one object stay. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The test image with the IoU thresholds 0.3, 0.5, and 0.7: 5
@@ -768,6 +772,7 @@ print(int(keep.sum()))              # 47
   \small
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.32\textwidth}L{0.38\textwidth}@{}}
     \toprule
     \textbf{Model} & \textbf{Where} & \textbf{Thresholds} \\
@@ -779,7 +784,7 @@ print(int(keep.sum()))              # 47
         & In the Python program, after the runtime
         & Arguments of each call \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item On the work computer, YOLO11n needs 66.7 ms for the network and
@@ -799,6 +804,7 @@ print(int(keep.sum()))              # 47
 \begin{frame}{YOLO26: a head with no suppression}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.18\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
     \toprule
     & \textbf{One-to-many head} & \textbf{One-to-one head} \\
@@ -809,7 +815,7 @@ print(int(keep.sum()))              # 47
     Suppression & Necessary                    & Not necessary \\
     Models      & YOLOv8, YOLO11               & YOLO26 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item YOLO26n has the two heads. Its one-to-one head gives 300 rows:
@@ -831,6 +837,7 @@ print(int(keep.sum()))              # 47
   \footnotesize
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.15\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.19\textwidth}L{0.17\textwidth}@{}}
     \toprule
     & \textbf{SSD MobileNet V1} & \textbf{EfficientDet-Lite0}
@@ -844,7 +851,7 @@ print(int(keep.sum()))              # 47
     Weights     & 8 bits & 8 bits & \code{float16} & 8 bits \\
     Suppression & In the file & In the file & In the program & None \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.2em
   \small
   \begin{itemize}
@@ -912,7 +919,6 @@ print(int(keep.sum()))              # 47
     \item Which boxes stay with the threshold 0.5, when the suppression
           compares boxes of all classes?
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{suppression of six boxes by hand}{%

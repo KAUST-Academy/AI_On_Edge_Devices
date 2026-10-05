@@ -1,14 +1,6 @@
 // bench_stats.h - the statistics of the benchmark sketch kit_bench
 //
 // Day 9 lab, Part B. Task B1 is in this file: the function percentileUs().
-//
-// Credits: new code of this course. The percentile follows the nearest-rank
-// rule of Parts 1 and 2 of the Day 9 lecture, and the measurement rules
-// (warm-up, repetitions, percentiles) follow chapter 12 "Benchmarking" of
-// "Machine Learning Systems" by Vijay Janapa Reddi and contributors
-// (mlsysbook.ai, CC BY-NC-SA 4.0).
-#ifndef BENCH_STATS_H_
-#define BENCH_STATS_H_
 
 #include <stdint.h>
 

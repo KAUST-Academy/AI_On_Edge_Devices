@@ -18,6 +18,7 @@
 \begin{frame}{Why not PyTorch on the device?}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.32\textwidth}L{0.34\textwidth}@{}}
     \toprule
     & \textbf{Training framework} & \textbf{Inference runtime} \\
@@ -29,7 +30,7 @@
     Load the model     & 2.8 s            & 0.05 to 0.11 s \\
     One inference      & 31.9 ms          & 11.7 to 16.6 ms \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{itemize}
     \item A training framework can do each operation on each tensor. This
@@ -79,6 +80,7 @@
   \small
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.19\textwidth}L{0.22\textwidth}L{0.26\textwidth}r@{}}
     \toprule
     \textbf{Runtime} & \textbf{File} & \textbf{Made by}
@@ -91,7 +93,7 @@
                  & 7\,020\,315 \\
     ExecuTorch   & \code{.pte}    & The ExecuTorch export & 13.58 MB \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The sizes are in bytes. The model has 3\,504\,872 parameters:
@@ -138,6 +140,7 @@ torch.onnx.export(model, (example,), "mnv2_static.onnx",
 \begin{frame}{Layer 2: the graph optimizer}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.25\textwidth}L{0.33\textwidth}L{0.32\textwidth}@{}}
     \toprule
     \textbf{When} & \textbf{Who} & \textbf{Example} \\
@@ -147,7 +150,7 @@ torch.onnx.export(model, (example,), "mnv2_static.onnx",
     When the program loads the model & The runtime on the device
                   & ONNX Runtime \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item An optimization at the export costs no time on the device. The
@@ -188,6 +191,7 @@ torch.onnx.export(model, (example,), "mnv2_static.onnx",
   \vskip 0.5em
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.68\textwidth}@{}}
     \toprule
     \textbf{Library} & \textbf{Used by} \\
@@ -199,7 +203,7 @@ torch.onnx.export(model, (example,), "mnv2_static.onnx",
                 phones \\
     CMSIS-NN  & TensorFlow Lite Micro on Arm Cortex-M (Day 3) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{Measured: one file, three sets of kernels}
@@ -412,6 +416,7 @@ scores = session.run(None, {"image": image})[0]
   \small
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.19\textwidth}L{0.51\textwidth}L{0.21\textwidth}@{}}
     \toprule
     \textbf{Runtime} & \textbf{Setting} & \textbf{With no setting} \\
@@ -420,7 +425,7 @@ scores = session.run(None, {"image": image})[0]
     ONNX Runtime & \code{options.intra\_op\_num\_threads = 4} & All cores \\
     NCNN         & \code{net.opt.num\_threads = 4}            & All cores \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The threads of this table split the work of one operator.
@@ -476,6 +481,7 @@ scores = session.run(None, {"image": image})[0]
 \begin{frame}{The same model, the same result?}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.34\textwidth}L{0.30\textwidth}r@{}}
     \toprule
     \textbf{Runtime} & \textbf{Weights} & \textbf{Largest difference} \\
@@ -484,7 +490,7 @@ scores = session.run(None, {"image": image})[0]
     LiteRT       & \code{float32} & 0.00011 percent \\
     NCNN         & \code{float16} & 1.0 percent \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item For one input, the table compares the 1000 outputs with the
@@ -505,6 +511,7 @@ scores = session.run(None, {"image": image})[0]
 \begin{frame}{How to select a runtime}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
     \toprule
     \textbf{Runtime} & \textbf{A good first choice when} \\
@@ -518,7 +525,7 @@ scores = session.run(None, {"image": image})[0]
     ExecuTorch   & The team works with PyTorch and wants one tool from the
                    training to the device. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   The table gives candidates. Answer these questions, and then measure on
   the device:
@@ -555,12 +562,12 @@ scores = session.run(None, {"image": image})[0]
     \item Name one fact that you check before the decision is final.
     \item Give the number of threads for the model, and the reason.
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{select a runtime for three cases}{%
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.15\textwidth}L{0.40\textwidth}L{0.31\textwidth}@{}}
     \toprule
     & \textbf{Runtime} & \textbf{Reason} & \textbf{Check} \\
@@ -579,7 +586,7 @@ scores = session.run(None, {"image": image})[0]
       & The frame rate and the accuracy of the three formats on the
         board \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \begin{itemize}
     \item ExecuTorch with XNNPACK is a second good answer for case A, if

@@ -48,6 +48,7 @@
 \begin{frame}{Each stage has a place and an output}
   \small
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.27\textwidth}L{0.44\textwidth}@{}}
     \toprule
     \textbf{Stage} & \textbf{Where it runs} & \textbf{Output} \\
@@ -64,7 +65,7 @@
     6. Monitoring   & Device and network   & Measured values, logs, new
                                              data \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \keypoint{Training runs where the computation is. Inference runs where the
     data is. This pattern is the train-serve split.}
@@ -167,6 +168,7 @@
 
 \begin{frame}{Stage 3: optimization}
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.42\textwidth}L{0.22\textwidth}@{}}
     \toprule
     \textbf{Method} & \textbf{What it changes} & \textbf{In this course} \\
@@ -178,7 +180,7 @@
                  & Day 6 \\
     Efficient design & Blocks with a lower cost (Part~2). & Days 1 and 6 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \begin{itemize}
     \item Each method exchanges accuracy for size, latency, or energy.
@@ -323,6 +325,7 @@
 \begin{frame}{Three patterns for a hybrid system}
   \small
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.21\textwidth}L{0.34\textwidth}L{0.35\textwidth}@{}}
     \toprule
     \textbf{Pattern} & \textbf{What it does} & \textbf{Select it when} \\
@@ -335,7 +338,7 @@
     Progressive deployment & One model family, compressed for each tier.
       & The same function is necessary on devices of different size. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \normalsize
   A special case of hierarchical processing: a small model on the device
@@ -437,6 +440,7 @@
 \begin{frame}{The demonstration through the six stages}
   \small
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.70\textwidth}@{}}
     \toprule
     \textbf{Stage} & \textbf{Keyword spotting on the kit} \\
@@ -453,7 +457,7 @@
     6. Monitoring   & The display shows the class and the confidence. No
                       data leaves the kit. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \normalsize
 \end{frame}

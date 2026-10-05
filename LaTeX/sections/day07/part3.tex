@@ -48,6 +48,7 @@
 \begin{frame}{Six jobs of a graph optimizer}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.48\textwidth}L{0.19\textwidth}@{}}
     \toprule
     \textbf{Job} & \textbf{What it does} & \textbf{The result} \\
@@ -65,7 +66,7 @@
     Precision selection & It changes \code{float32} to \code{float16} or
                        to \code{int8} & It changes \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item ``The same'' means: the same to about 6 digits. The order of the
@@ -116,6 +117,7 @@
 \begin{frame}{Removal of unused nodes}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
     \toprule
     \textbf{Node} & \textbf{Why it can go} \\
@@ -128,7 +130,7 @@
     Two equal subgraphs & They have the same inputs and the same
                           operators. One of them is enough. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The optimizer starts at the outputs and goes back through the
@@ -267,6 +269,7 @@
   \small
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{4pt}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.14\textwidth}rL{0.46\textwidth}rr@{}}
     \toprule
     \textbf{Level} & \textbf{Nodes} & \textbf{What changes}
@@ -281,7 +284,7 @@
                      go into the convolutions.
              & 11.5 ms & 0.097 s \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The file is an export of MobileNetV2 that keeps its batch
@@ -545,6 +548,7 @@ quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.72\textwidth}@{}}
     \toprule
     \textbf{Runtime} & \textbf{Where you see the optimized graph} \\
@@ -553,7 +557,7 @@ quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
     ONNX Runtime & Set \code{options.optimized\_model\_filepath}. The
                    runtime then writes the graph that it runs. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \keypoint{Do not trust a setting. Look at the graph that runs.}
 \end{frame}
@@ -561,6 +565,7 @@ quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
 \begin{frame}{The lab of today}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.20\textwidth}rL{0.56\textwidth}@{}}
     \toprule
     & \textbf{Part} & \textbf{Time} & \textbf{You do} \\
@@ -575,7 +580,7 @@ quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
     D & Measure & 35 min & Measure the latency for each runtime, thread
                          count, and precision. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item You hand in the latency table and one Decision Log entry.
@@ -595,13 +600,14 @@ quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
   \vskip 0.2em
   {\footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.60\textwidth}@{}}
     \toprule
     Convolution & $W = (2,\ -1,\ 0.5)$ and $b = 1$ \\
     Batch normalization & $\gamma = 3$, $\beta = -1$, $\mu = 3$,
                           $\sigma = 2$ \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}\par\endgroup}
   \begin{enumerate}
     \item Calculate $s$, the weights $W'$, and the bias $b'$ of the fused
           convolution.
@@ -613,7 +619,6 @@ quantize_static("mnv2_prepared.onnx", "mnv2_int8.onnx", Reader(images),
           Each operator reads its input and writes its output. How many MB
           move with three operators, and with the fused operator?
   \end{enumerate}
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{fuse three operators on paper}{%

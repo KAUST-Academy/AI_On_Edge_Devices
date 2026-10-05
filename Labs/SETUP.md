@@ -139,21 +139,7 @@ collect data and train a model.
 
 The official steps are on `docs.edgeimpulse.com/docs/edge-impulse-cli/cli-installation`.
 
-## 7. Arduino core and library of the Nano 33 BLE Sense
-
-Install this step only for the backup modules that use the Nano 33 BLE Sense
-Rev2.
-
-1. Open the Boards Manager. Install **Arduino Mbed OS Nano Boards**.
-2. Open the Library Manager. Install **Harvard_TinyMLx**.
-3. For the Rev2 board, install also **Arduino_BMI270_BMM150** (the IMU) and
-   **ArduinoBLE** (the magic wand example).
-4. Write the versions in `VERSIONS.md`.
-
-`Labs/hardware/HW-10/` gives the one line to change for the Rev2 board and
-the list of the examples.
-
-## 8. `arduino-cli` (optional)
+## 7. `arduino-cli` (optional)
 
 `arduino-cli` compiles a sketch without a board. Use it to check that a sketch
 builds.
@@ -180,7 +166,7 @@ builds.
 
 `VERSIONS.md` gives the board name (FQBN) of each board.
 
-## 9. Permission for the USB port (Linux)
+## 8. Permission for the USB port (Linux)
 
 The Arduino IDE needs write access to the serial port. Add the user to the
 group `dialout`:

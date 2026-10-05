@@ -4,8 +4,8 @@
 % duty cycle and battery life estimate. Exercise: estimate the battery life of
 % an always-on keyword spotting device.
 %
-% Nobody measured a power or a temperature for this course. The numbers of
-% this part have three origins, and each frame names its origin in the source
+% The numbers of
+% this part have two origins, and each frame names its origin in the source
 % line.
 % 1. Published values: the data sheet of the ESP32-S3 (Espressif, version
 %    2.2), the page of the XIAO ESP32S3 boards (Seeed Studio), the
@@ -14,8 +14,6 @@
 % 2. Calculations of this course with these values. The frames use 217 mW,
 %    157 mW, and 0.79 mW for the active state, the idle state, and the light
 %    sleep of the ESP32-S3 chip.
-% 3. Example values (a latency of 50 ms, a battery of 1000 mAh). The frame
-%    says that the value is an example.
 
 \theorypart{Power, energy, and temperature}%
   {estimate the battery life of an always-on keyword spotting device}
@@ -53,6 +51,7 @@
 \begin{frame}{Power, energy, and a battery}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.16\textwidth}L{0.30\textwidth}L{0.44\textwidth}@{}}
     \toprule
     \textbf{Quantity} & \textbf{Formula and unit} & \textbf{It tells you} \\
@@ -64,7 +63,7 @@
     Capacity & mAh
              & The charge of a battery. With its voltage: the energy. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item 1 J = 1 W for 1 s. 1 mW for 1 ms is 1 $\mu$J. 1 Wh = 3600 J.
@@ -76,7 +75,6 @@
   \end{itemize}
   \keypoint{A data sheet gives a current in mA. Multiply it by the supply
     voltage to get the power.}
-  \source{The battery is an example value.}
 \end{frame}
 
 % --------------------------------------------------------------------- range
@@ -214,8 +212,7 @@
   \end{itemize}
   \keypoint{Low power is not low energy. Compare the energy of the complete
     task.}
-  \source{Calculations with the data sheet of the ESP32-S3.\\
-    Nobody measured these energies.}
+  \source{Calculations with the data sheet of the ESP32-S3.}
 \end{frame}
 
 % ------------------------------------------------------------------ boundary
@@ -273,6 +270,7 @@
 \begin{frame}{Four ways to get a power value}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.24\textwidth}L{0.34\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Method} & \textbf{It gives} & \textbf{Limit} \\
@@ -291,7 +289,7 @@
         & The voltage and the current of each supply rail
         & An estimate. Compare it with a meter one time. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \begin{itemize}
@@ -339,8 +337,7 @@
           pipeline.
     \item Warm up first. The power changes with the temperature.
   \end{itemize}
-  \source{The latency of 50 ms is an example value.\\
-    MLPerf Tiny: Banbury et al., 2021.}
+  \source{MLPerf Tiny: Banbury et al., 2021.}
 \end{frame}
 
 \begin{frame}{A faster board is not always more efficient}
@@ -440,7 +437,7 @@
   \end{itemize}
   \keypoint{Decide the rest state first. An optimization of the model
     changes only the first term of the formula.}
-  \source{Calculations. The latency and the battery are examples.}
+  \source{Calculations.}
 \end{frame}
 
 \begin{frame}{The rest state decides the battery life}
@@ -577,8 +574,7 @@
   \end{itemize}
   \keypoint{A hot chip is a slower chip. The temperature is a part of the
     system description.}
-  \source{The limits: the documentation of the Raspberry Pi.\\
-    The curve is a drawing, not a measurement.}
+  \source{The limits: the documentation of the Raspberry Pi.}
 \end{frame}
 
 \begin{frame}[fragile]{Read the thermal state of the Raspberry Pi}
@@ -590,6 +586,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \end{lstlisting}
   \footnotesize
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.36\textwidth}lL{0.30\textwidth}@{}}
     \toprule
     \textbf{Value} & \textbf{Now} & \textbf{Value} & \textbf{Since the start} \\
@@ -603,7 +600,7 @@ vcgencmd get_throttled                      # throttled=0x0
     \code{0x8} & The soft temperature limit is active
         & \code{0x80000} & The soft limit was active \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \small
   \begin{itemize}
@@ -663,6 +660,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \begin{frame}{A short run and a long run}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.30\textwidth}L{0.32\textwidth}@{}}
     \toprule
     & \textbf{Short run} & \textbf{Long run} \\
@@ -674,7 +672,7 @@ vcgencmd get_throttled                      # throttled=0x0
     Use it for      & A comparison of two models
                     & A product decision \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item A run of MLPerf Inference has 600 seconds or more.
@@ -692,6 +690,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \begin{frame}{Common errors with power and energy}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.42\textwidth}L{0.50\textwidth}@{}}
     \toprule
     \textbf{Error} & \textbf{Result} \\
@@ -711,7 +710,7 @@ vcgencmd get_throttled                      # throttled=0x0
     Energy with no accuracy and no window
         & You cannot compare the value with a second system \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \keypoint{An energy value needs the same facts as a latency, and two
@@ -722,6 +721,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \begin{frame}{In the lab: one report for two boards}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}lL{0.50\textwidth}L{0.24\textwidth}@{}}
     \toprule
     \textbf{Part} & \textbf{You do} & \textbf{From the lecture} \\
@@ -734,7 +734,7 @@ vcgencmd get_throttled                      # throttled=0x0
     D & Energy for one inference, a battery estimate, and the report
                                                             & Part 3 \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The power of the kit: a USB power meter, or the data sheet values
@@ -744,8 +744,6 @@ vcgencmd get_throttled                      # throttled=0x0
     \item Each number of the report has its method. Each energy has its
           boundary.
   \end{itemize}
-  \keypoint{Nobody measured these boards for this course. Your report has
-    the first values.}
 \end{frame}
 
 % -------------------------------------------------------------------- exercise
@@ -775,7 +773,6 @@ vcgencmd get_throttled                      # throttled=0x0
     \item Name two changes that can give this duty cycle, and one power
           consumer that is not in the table.
   \end{enumerate}
-  Work with your neighbour for 10 minutes.
 }
 
 \answerframe{the battery life of a keyword detector}{%

@@ -8,14 +8,6 @@
 // during the suppression time. Part 3 of the Day 5 lecture gives the method.
 //
 // The file uses only standard C++. It runs on the board and on a laptop.
-//
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). A test program ran it on a laptop with the example of the
-// lecture.
-//
-// Credits: new code of this course. The idea of a mean, a threshold, and a
-// suppression time for the results of a keyword model follows the common
-// method for streaming keyword spotting.
 
 #ifndef POSTPROCESS_H_
 #define POSTPROCESS_H_

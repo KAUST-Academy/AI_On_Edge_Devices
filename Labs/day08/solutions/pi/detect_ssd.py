@@ -8,16 +8,6 @@ Use:     python pi/detect_ssd.py images/bus.jpg
          python pi/detect_ssd.py images/desk.jpg --score 0.3
 Output:  the input and the outputs of the model, the times, the list of
          detections, and the file ssd_result.jpg with the boxes.
-
-Hardware status: not tested on hardware (prepared on 2026-10-02).
-
-Credits: the steps follow the notebook SSD_MobileNetV1.ipynb of
-"EdgeML with Raspberry Pi" by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0) and the kit lab
-"Object Detection" of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0). The model file is SSD MobileNet V1 of the TensorFlow
-authors (Apache-2.0). The command line, the time measurement, and the
-function to_pixel_boxes are new code of this course.
 """
 import argparse
 import os

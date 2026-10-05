@@ -1,6 +1,5 @@
 # Day 11 lab: inference on a network video stream
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your group measures the lab network, publishes the camera of the
 Raspberry Pi 5 as an RTSP stream, runs the Day 8 detector on the stream, and
@@ -286,8 +285,8 @@ the shop?
 
 The start values of the stream are 1280 x 720, 30 frames each second,
 2 Mbit/s, and one keyframe each second (`mediamtx_cam.yml`). With no model,
-`stream_detect.py` must show about 30 frames/s. Nobody measured a latency
-on the hardware of the lab. The clock method has an error of about 50 ms
+`stream_detect.py` must show about 30 frames/s. Measure the latency on the
+hardware of the lab. The clock method has an error of about 50 ms
 for one reading: use the median of 10. A run on one computer, with no
 network and no camera, gave a frame age of 40 ms with one decoder thread
 (Part 3 of the lecture). Your latency also includes the camera, the

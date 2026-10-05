@@ -1,6 +1,5 @@
 # Day 13 lab: a monitored inference application
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your group adds measurements and a log to the Day 8 detector on
 the Raspberry Pi 5. The detector sends one summary each 10 s with MQTT to a

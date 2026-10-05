@@ -15,8 +15,7 @@
 %    of ggml-common.h of llama.cpp (tools/experiments/day10_slm.py).
 % 3. Numbers that the authors of the sources published: the speed on the
 %    Raspberry Pi 5 (lab "Small Language Models" of Machine Learning Systems)
-%    and the rules of the guide "SLMs at the Edge". Nobody measured a speed
-%    on a board for this course.
+%    and the rules of the guide "SLMs at the Edge".
 % Sizes in GB are 10^9 bytes, as in the Ollama library.
 
 \theorypart{Small language models from a systems view}%
@@ -70,6 +69,7 @@
   \end{itemize}
   \vskip 0.4em
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.40\textwidth}L{0.50\textwidth}@{}}
     \toprule
     \textbf{Rate of a person} & \textbf{Rate of a model} \\
@@ -77,7 +77,7 @@
     Reading: 5 to 7 words in each second & About 8 to 10 tokens in each
       second \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \keypoint{Count in tokens, not in words. The prompt, the context, the
     speed, and the price of a cloud model all use tokens.}
@@ -163,6 +163,7 @@
 \begin{frame}{Count the parameters of the 3B model}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.40\textwidth}r@{}}
     \toprule
     \textbf{Part} & \textbf{Calculation} & \textbf{Parameters} \\
@@ -179,7 +180,7 @@
     \midrule
     \textbf{Total}          & & \textbf{3\,212\,749\,888} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item The MLP has 75 percent of the weights of a layer.
@@ -256,7 +257,7 @@
     \item Day 6 used one scale for each tensor or for each channel. A small
           block gives a better fit to the weights, for some more bytes.
   \end{itemize}
-  \source{Block definitions in \code{ggml-common.h} of llama.cpp (MIT).}
+  \source{Block definitions in \code{ggml-common.h} of llama.cpp.}
 \end{frame}
 
 % ------------------------------------------------------------- k-quants
@@ -286,7 +287,7 @@
     \item The scales themselves are quantized: 6 bits, not 16. So the cost
           of 8 scales stays small.
   \end{itemize}
-  \source{Block definitions in \code{ggml-common.h} of llama.cpp (MIT).}
+  \source{Block definitions in \code{ggml-common.h} of llama.cpp.}
 \end{frame}
 
 % ------------------------------------------------------------- names
@@ -527,6 +528,7 @@ tokenizer.ggml.tokens  128256 strings
   operations with it.
   \vskip 0.4em
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.46\textwidth}L{0.44\textwidth}@{}}
     \toprule
     \textbf{\code{llama3.2:3b}, one token} & \textbf{Value} \\
@@ -536,7 +538,7 @@ tokenizer.ggml.tokens  128256 strings
     Intensity                   & $6.4 / 2.02 = 3.2$ FLOP for each byte \\
     At 5.3 tokens/s (published) & $6.4 \times 5.3 = 34$ GFLOP/s \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
     \item Day 7: the peak of the 4 cores is 153.6 GFLOP/s. The generation
@@ -584,6 +586,7 @@ tokenizer.ggml.tokens  128256 strings
 \begin{frame}{Tokens per second: what is usable?}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.24\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Use} & \textbf{Rate that you need} & \textbf{Why} \\
@@ -592,7 +595,7 @@ tokenizer.ggml.tokens  128256 strings
     A job with no person: summarize a log, classify a message
       & 2 tokens/s can be enough & Nobody waits for each word \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \textbf{The total time of one answer} (if the rates stay the same):
   \vskip 0.2em
@@ -654,6 +657,7 @@ tokenizer.ggml.tokens  128256 strings
 \begin{frame}{What a small model does well}
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.45\textwidth}L{0.45\textwidth}@{}}
     \toprule
     \textbf{Good tasks for a model of about 1B} & \textbf{Weak tasks} \\
@@ -664,7 +668,7 @@ tokenizer.ggml.tokens  128256 strings
     Extract fields from messy text       & Long and complex instructions \\
     A basic conversation                 & A guaranteed correct answer \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \begin{itemize}
     \item The guide: the question at the edge is not ``how large a model
@@ -694,7 +698,7 @@ tokenizer.ggml.tokens  128256 strings
           Why?
     \item Give two changes that make the larger context fit.
   \end{enumerate}
-  Work with your neighbour for 8 minutes. Use GB = $10^9$ bytes.
+  Use GB = $10^9$ bytes.
 }
 
 \answerframe{the RAM of a 4-bit 3B model}{%

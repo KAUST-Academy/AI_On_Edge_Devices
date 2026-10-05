@@ -6,13 +6,6 @@
 #
 # The script prints one line for each check: PASS, FAIL, or INFO.
 # It changes nothing. Its exit code is the number of failed checks.
-#
-# Hardware status: new script, not tested on a Raspberry Pi
-# (prepared on 2026-10-01).
-#
-# Credits: the camera commands and the temperature command come from the
-# Raspberry Pi kit labs of "Machine Learning Systems" (mlsysbook.ai,
-# CC BY-NC-SA 4.0).
 
 FAILED=0
 

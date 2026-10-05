@@ -1,6 +1,5 @@
 # HW-02: TensorFlow Lite Micro on the ESP32-S3
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 3 lab (convert and deploy) and the Day 5 lab.
 

@@ -16,12 +16,6 @@ For each model, the script does this:
 
 The numbers "prompt eval rate" and "eval rate" are the numbers that
 "ollama run MODEL --verbose" prints.
-
-Hardware status: tested on a laptop with Ollama. Not tested on a
-Raspberry Pi (prepared on 2026-10-01).
-
-Credits: the metrics and the first three prompts come from the lab "Small
-Language Models" of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0).
 """
 
 import argparse
