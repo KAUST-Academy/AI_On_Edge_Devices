@@ -295,5 +295,3 @@ This lab adapts material from these sources:
   the interpreter in `sketches/motion_classifier/`, from its example
   `hello_world`.
 
-The notebook, the feature code in C++, the self-test, and the measurements
-are new code of this course.

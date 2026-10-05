@@ -443,6 +443,3 @@ This lab adapts material from these sources:
 - The MicroPython documentation (docs.micropython.org) and the Edge Impulse
   documentation (docs.edgeimpulse.com): the commands of the tools and the
   CSV format of the upload.
-
-The MicroPython scripts, the logger, the notebook, and the simulated
-signals are new code of this course.

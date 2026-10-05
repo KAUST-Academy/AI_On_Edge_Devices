@@ -287,6 +287,3 @@ This lab adapts material from these sources:
 - The keyword dataset of Edge Impulse, with words of the dataset "Speech
   Commands" by Pete Warden (CC BY 4.0). The script downloads it. It is not
   in this repository.
-
-The sliding window of the keyword sketch, the post-processing, the vote of
-the image sketch, and the measurements are new code of this course.

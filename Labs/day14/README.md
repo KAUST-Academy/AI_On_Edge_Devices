@@ -186,6 +186,3 @@ This lab adapts material from these sources:
   (github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook, GPL-3.0),
   chapter 2.1: the prototype design process, through Day 14, Part 3 of the
   lecture.
-- The labs of Days 1 to 13 of this course and Day 14, Part 3 of the lecture:
-  the budgets and the example project. `budget.py` is new code of this
-  course.

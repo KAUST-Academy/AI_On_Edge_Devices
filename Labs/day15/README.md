@@ -138,5 +138,3 @@ This lab adapts material from these sources:
   (`instructors/assessment.qmd`): the structure of the design report
   (problem, approach, results, trade-offs) and the robustness test, through
   `Docs/capstone.md`.
-- The labs of Days 1 to 14 of this course. `schedule.py` is new code of
-  this course.
