@@ -277,6 +277,7 @@ def fake_quant(x, S, Z):
 \begin{frame}{First checks when the accuracy decreases}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.30\textwidth}L{0.62\textwidth}@{}}
     \toprule
     \textbf{Check} & \textbf{Typical cause} \\
@@ -292,7 +293,7 @@ def fake_quant(x, S, Z):
     The accuracy of each class & One class fails. The total accuracy hides
         it. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.7em
   \keypoint{Most ``quantization problems'' are data problems or code
     problems. Do these five checks before you change the method.}
@@ -363,6 +364,7 @@ def fake_quant(x, S, Z):
 \begin{frame}{Layers that are often sensitive}
   \footnotesize
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.40\textwidth}L{0.30\textwidth}@{}}
     \toprule
     \textbf{Layer} & \textbf{Reason} & \textbf{Possible repair} \\
@@ -379,7 +381,7 @@ def fake_quant(x, S, Z):
     The last layer & Small differences between the outputs decide the
         class & Keep this layer in float \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.5em
   \small
   \keypoint{Many repairs are changes of the model, not of the quantizer. A

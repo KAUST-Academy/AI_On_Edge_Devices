@@ -3,6 +3,7 @@
 \begin{frame}{If a part does not work}
   \small
   \renewcommand{\arraystretch}{1.3}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.33\textwidth}L{0.60\textwidth}@{}}
     \toprule
     \textbf{Problem} & \textbf{Fallback} \\
@@ -22,7 +23,7 @@
       & The notebook makes the fallback dataset. Write in the data card
         that the signals are simulated. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \keypoint{A fallback keeps your group in the lab. Write in the report
     which fallback you used.}

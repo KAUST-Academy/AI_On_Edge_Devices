@@ -12,6 +12,7 @@
 \begin{frame}{The course in three weeks}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.07\textwidth}L{0.24\textwidth}L{0.19\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Week} & \textbf{Subject} & \textbf{Board} & \textbf{Days} \\
@@ -25,7 +26,7 @@
     3 & Connected systems and production & Both boards &
         RTSP streaming, MQTT, monitoring, production design, capstone \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 1em
   \keypoint{You optimize a model, deploy it on two device classes, connect
     the devices, and monitor them. The capstone project combines all parts
@@ -138,6 +139,7 @@
 % ---------------------------------------------------------------- five reasons
 \begin{frame}{Five reasons to move inference to the edge}
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}p{0.21\textwidth}p{0.72\textwidth}@{}}
     \toprule
     \textbf{Reason} & \textbf{The question that you ask} \\
@@ -151,7 +153,7 @@
                    each device cost? \\
     Availability & Must the system work when the network fails? \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \keypoint{One of these constraints usually decides. Find that constraint
     first.}

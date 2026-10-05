@@ -472,6 +472,7 @@ Speed: 0.7ms preprocess, 22.3ms inference, 0.0ms loss, 2.0ms postprocess
 \begin{frame}{Which number for which decision}
   \small
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.36\textwidth}L{0.56\textwidth}@{}}
     \toprule
     \textbf{Decision} & \textbf{Number} \\
@@ -490,7 +491,7 @@ Speed: 0.7ms preprocess, 22.3ms inference, 0.0ms loss, 2.0ms postprocess
     Can the device run the model?
         & The frames each second of the complete pipeline (Part 3) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \keypoint{The mAP selects the model. The precision and the recall at your
     threshold tell you what the user sees.}
@@ -625,6 +626,7 @@ names: ['box', 'wheel']
   \vskip 0.3em
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.36\textwidth}L{0.36\textwidth}@{}}
     \toprule
     \textbf{Error} & \textbf{In the training set} & \textbf{In the test
@@ -639,7 +641,7 @@ names: ['box', 'wheel']
     Extra label   & The model learns to see objects in the background.
                   & A false negative that no model can avoid. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
 \end{frame}
 
 \begin{frame}{Measured: label errors change the result}
@@ -677,6 +679,7 @@ names: ['box', 'wheel']
 \begin{frame}{How to check the labels}
   \small
   \renewcommand{\arraystretch}{1.25}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.42\textwidth}L{0.50\textwidth}@{}}
     \toprule
     \textbf{Check} & \textbf{It finds} \\
@@ -695,7 +698,7 @@ names: ['box', 'wheel']
     boxes.
         & Rules that are not clear \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \keypoint{The labels are a part of the model. Review them as you review
     code. After a correction, train again and measure again.}

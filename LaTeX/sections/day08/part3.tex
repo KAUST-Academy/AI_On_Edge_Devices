@@ -537,6 +537,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
   \vskip 0.4em
   \small
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.17\textwidth}L{0.43\textwidth}L{0.32\textwidth}@{}}
     \toprule
     \textbf{Step} & \textbf{Work} & \textbf{Who does it} \\
@@ -553,7 +554,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
     Use the result & Draw, count, send a message (Week 3)
                  & Your program \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.3em
   \keypoint{The frame rate is one divided by the sum of all steps, not by
     the time of the network.}

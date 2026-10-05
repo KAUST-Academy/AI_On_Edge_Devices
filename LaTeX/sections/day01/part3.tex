@@ -48,6 +48,7 @@
 \begin{frame}{Each stage has a place and an output}
   \small
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.20\textwidth}L{0.27\textwidth}L{0.44\textwidth}@{}}
     \toprule
     \textbf{Stage} & \textbf{Where it runs} & \textbf{Output} \\
@@ -64,7 +65,7 @@
     6. Monitoring   & Device and network   & Measured values, logs, new
                                              data \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \keypoint{Training runs where the computation is. Inference runs where the
     data is. This pattern is the train-serve split.}
@@ -437,6 +438,7 @@
 \begin{frame}{The demonstration through the six stages}
   \small
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.70\textwidth}@{}}
     \toprule
     \textbf{Stage} & \textbf{Keyword spotting on the kit} \\
@@ -453,7 +455,7 @@
     6. Monitoring   & The display shows the class and the confidence. No
                       data leaves the kit. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.6em
   \normalsize
 \end{frame}

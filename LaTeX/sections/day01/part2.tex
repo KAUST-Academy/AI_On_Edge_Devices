@@ -192,6 +192,7 @@
 \begin{frame}{Layers with few parameters or no parameters}
   \small
   \renewcommand{\arraystretch}{1.35}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.22\textwidth}L{0.17\textwidth}L{0.52\textwidth}@{}}
     \toprule
     \textbf{Layer} & \textbf{Parameters} & \textbf{Effect on the cost} \\
@@ -205,7 +206,7 @@
     Batch normalization & $2C$ & After training, the converter merges it
       into the convolution before it. Its cost at inference is then zero. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.8em
   \keypoint{A stride of 2 early in the network is the cheapest method to
     decrease the operations and the RAM of all later layers.}

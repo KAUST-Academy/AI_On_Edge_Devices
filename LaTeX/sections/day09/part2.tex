@@ -187,6 +187,7 @@
 \begin{frame}{Where the variance comes from}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.27\textwidth}L{0.31\textwidth}L{0.34\textwidth}@{}}
     \toprule
     \textbf{Source} & \textbf{Effect} & \textbf{What you do} \\
@@ -207,7 +208,7 @@
         & The caches are cold after the move
         & More runs. On Linux: fix the cores. \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \keypoint{You cannot remove the variance. You can control it, measure it,
@@ -592,6 +593,7 @@ Serial.printf("median %lu us\n", percentileUs(times_us, kTimedRuns, 50));
 \begin{frame}{Common errors}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.40\textwidth}L{0.52\textwidth}@{}}
     \toprule
     \textbf{Error} & \textbf{Result} \\
@@ -612,7 +614,7 @@ Serial.printf("median %lu us\n", percentileUs(times_us, kTimedRuns, 50));
     A short run on a hot or cold chip  & The result changes after some
                                          minutes (Part 3) \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \keypoint{Each error gives a number that looks exact. Only the written

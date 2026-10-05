@@ -686,6 +686,7 @@ vcgencmd get_throttled                      # throttled=0x0
 \begin{frame}{Common errors with power and energy}
   \footnotesize
   \renewcommand{\arraystretch}{1.2}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.42\textwidth}L{0.50\textwidth}@{}}
     \toprule
     \textbf{Error} & \textbf{Result} \\
@@ -705,7 +706,7 @@ vcgencmd get_throttled                      # throttled=0x0
     Energy with no accuracy and no window
         & You cannot compare the value with a second system \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}\par\endgroup
   \vskip 0.4em
   \small
   \keypoint{An energy value needs the same facts as a latency, and two
