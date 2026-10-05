@@ -124,7 +124,7 @@
           uses the same values, so Day 2 and Day 3 see the same numbers.
   \end{itemize}
   \source{Figure and ranges: \emph{Machine Learning Systems}, XIAOML Kit,
-    ``Motion Classification and Anomaly Detection'' (CC BY-NC-SA 4.0).
+    ``Motion Classification and Anomaly Detection''.
     Count values: library ``Seeed Arduino LSM6DS3''.}
 \end{frame}
 
@@ -160,7 +160,7 @@
     and a low rate. The window of a keyword model holds 16\,000 numbers.
     The window of a motion model holds some hundreds.}
   \source{Audio settings: \emph{Machine Learning Systems}, XIAOML Kit,
-    ``Keyword Spotting''. The curve is a drawing, not a recording.}
+    ``Keyword Spotting''.}
 \end{frame}
 
 % ---------------------------------------------------------------------- camera
@@ -440,7 +440,7 @@
     \item You make each motion with the kit in your hand.
   \end{itemize}
   \source{Figure: \emph{Machine Learning Systems}, XIAOML Kit, ``Motion
-    Classification and Anomaly Detection'' (CC BY-NC-SA 4.0).}
+    Classification and Anomaly Detection''.}
 \end{frame}
 
 \begin{frame}{Windows: the input of the model}
@@ -465,8 +465,8 @@
   \keypoint{A window of 2 s at 50 Hz with 3 axes holds
     $2 \times 50 \times 3 = 300$ values. This is the input size of the
     Day 3 model.}
-  \source{Figure and window: \emph{Machine Learning Systems}, XIAOML Kit,
-    ``Motion Classification and Anomaly Detection'' (CC BY-NC-SA 4.0).}
+  \source{\emph{Machine Learning Systems}, XIAOML Kit,
+    ``Motion Classification and Anomaly Detection''.}
 \end{frame}
 
 \begin{frame}{Window length and stride}
@@ -500,8 +500,7 @@
     \item A smaller stride gives more windows. With $S = 0.2$ s, two
           adjacent windows share 90 percent of their samples.
   \end{itemize}
-  \source{The figure shows a stride of 1 s. Window and stride of the
-    example: \emph{Machine Learning Systems}, XIAOML Kit, ``Motion
+  \source{\emph{Machine Learning Systems}, XIAOML Kit, ``Motion
     Classification and Anomaly Detection''.}
 \end{frame}
 
@@ -608,7 +607,6 @@ def window():
     The mean rate is within 1 percent of 50 Hz. At most 1 percent of the
     periods are outside 18 to 22 ms. No line is lost.
   \end{block}
-  \source{The periods of the figure are an example, not measured values.}
 \end{frame}
 
 % ------------------------------------------------------- MicroPython and C++
@@ -707,7 +705,6 @@ void loop() {
           25 times each second. The model must see 5 turns.
   \end{enumerate}
   Use these rates: 50 Hz, 100 Hz, 4 kHz, 8 kHz, 16 kHz.\\
-  Work with your neighbour for 8 minutes.
 }
 
 \answerframe{sampling rate and window}{%

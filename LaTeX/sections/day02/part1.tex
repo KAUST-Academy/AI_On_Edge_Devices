@@ -235,7 +235,7 @@
     \node[b] (x)   at (0,0)      {Crystal\\40 MHz};
     \node[b] (pll) at (2.7,0)    {Multiplier};
     \node[b, draw=cardinalred] (cpu) at (5.5,0.6)
-      {CPU clock\\80, 160, or 240 MHz};
+      {CPU clock\\80, 160, 240 MHz};
     \node[b] (apb) at (5.5,-0.6) {Bus clock\\80 MHz};
     \node[b] (c1)  at (8.5,0.6)  {Processor};
     \node[b] (c2)  at (8.5,-0.6) {Timers, buses};
@@ -518,7 +518,7 @@ print([hex(a) for a in i2c.scan()])        # ['0x3c', '0x6a']
 print(hex(i2c.readfrom_mem(0x6A, 0x0F, 1)[0]))   # 0x6a
 \end{lstlisting}
   \source{Register values: library ``Seeed Arduino LSM6DS3''. The output is
-    the expected output. Nobody measured it on the kit.}
+    the expected output.}
 \end{frame}
 
 % ------------------------------------------------------------------------- SPI
@@ -695,7 +695,7 @@ button.irq(trigger=Pin.IRQ_FALLING,
   \end{itemize}
   \keypoint{The model of Day 3 expects 50 Hz. Data at a different rate is
     a different signal. Measure the rate in the lab.}
-  \source{The read time of 4 ms is an example, not a measured value.}
+  \source{The read time of 4 ms is an example.}
 \end{frame}
 
 % ----------------------------------------------------------------- power modes
@@ -764,8 +764,7 @@ button.irq(trigger=Pin.IRQ_FALLING,
   \vskip 0.4em
   \keypoint{The time in sleep decides the energy of an always-on sensor.
     Day 9 measures the energy of one inference.}
-  \source{A calculation with the currents of the frame before. The battery
-    size is an example. A real battery gives less.}
+  \source{The battery size is an example. A real battery gives less.}
 \end{frame}
 
 % -------------------------------------------------------------------- exercise
@@ -795,7 +794,6 @@ button.irq(trigger=Pin.IRQ_FALLING,
           program needs 300 KB of flash. Does the model fit? Which number
           do you need in addition?
   \end{enumerate}
-  Work with your neighbour for 5 minutes.
   \sourcehere{Data sheet of the Arduino Nano 33 BLE Sense Rev2
     (ABX00069).}
 }
