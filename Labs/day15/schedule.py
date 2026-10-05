@@ -12,8 +12,6 @@ Each slot has the demonstration time (default 10 minutes, as in the
 syllabus) and a change time between two teams (default 0). With --seed, the
 order is random but the same for the same seed. The script prints a
 Markdown table and warns when the slots do not fit the time of Part B.
-
-Credits: new code of this course.
 """
 import argparse
 import random

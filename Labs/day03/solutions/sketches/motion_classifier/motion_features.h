@@ -15,12 +15,6 @@
 //   5..20  spectral power of the frequency bins 1 to 16 (FFT length 32)
 //
 // The file uses only standard C++. It runs on the board and on a laptop.
-//
-// Credits: the feature list and the method of the spectral power (frames
-// of the FFT length, and the largest power of each bin over the frames)
-// follow the chapter "DSP Spectral Features" of "Machine Learning Systems"
-// by Vijay Janapa Reddi and contributors, written by Marcelo Rovai
-// (mlsysbook.ai, CC BY-NC-SA 4.0). The code is new.
 
 #ifndef MOTION_FEATURES_H_
 #define MOTION_FEATURES_H_

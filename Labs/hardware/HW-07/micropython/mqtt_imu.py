@@ -7,11 +7,6 @@
 # Broker:  Mosquitto on the Raspberry Pi of the group (port 1883)
 # Run:     mpremote connect PORT run micropython/mqtt_imu.py
 #
-# Credits: the telemetry and command design follows chapter 3.5 of
-# "XIAO: Big Power, Small Board" by Lei Feng and Marcelo Rovai
-# (github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook, GPL-3.0).
-# The chapter has Arduino code only. This MicroPython version is new.
-#
 # Topics:
 #   edgeai/<group>/xiao/status   "online" or "offline", retained, last will
 #   edgeai/<group>/xiao/imu      telemetry, each 200 ms

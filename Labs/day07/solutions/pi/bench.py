@@ -9,10 +9,6 @@ Use:    python pi/bench.py
         python pi/bench.py --only litert
         python pi/bench.py --levels
 
-Credits: new code of this course. The method (some runs to warm up, then the
-median of many runs, one thread setting for each runtime) follows Parts 2 and
-3 of the Day 7 lecture.
-
 The script measures each model file that it finds in the folder models/:
 
     mnv2.tflite                         LiteRT        float32  (from Part C)

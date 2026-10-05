@@ -26,11 +26,6 @@ limitations under the License.
 //   2. It prints the free memory before and after.
 //   3. It prints how many bytes of the arena the model uses.
 //   4. It prints the latency of the model.
-//
-// Credits: the interpreter code adapts the example "hello_world" of the
-// library Chirale_TensorFlowLite 2.0.0
-// (github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0).
-// The memory report and the arena on the heap are new.
 
 #include <Chirale_TensorFlowLite.h>
 

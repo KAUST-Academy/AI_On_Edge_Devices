@@ -24,8 +24,6 @@ Rules (Section 13 of the course plan, from the Day 12 lecture):
   - At most 20 messages in flight. The receiver drops a second copy by the
     pair (topic, seq).
   - WAL and synchronous=NORMAL: a commit does not wait for the disk.
-
-Credits: new work of this course.
 """
 
 import argparse

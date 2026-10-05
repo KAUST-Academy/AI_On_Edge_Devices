@@ -13,12 +13,6 @@ Output:  the tables on the screen and in the file report_tables.md. Copy the
 
 The script calculates no latency. It reads the measured values of the two
 result files and adds the energy for one inference and a battery estimate.
-
-Credits: the energy of one inference and the mean power of a duty cycle
-follow Part 3 of the Day 9 lecture and the section "Battery and thermal
-benchmarking" of chapter 12 "Benchmarking" of "Machine Learning Systems" by
-Vijay Janapa Reddi and contributors (mlsysbook.ai, CC BY-NC-SA 4.0). The
-script is new code of this course.
 """
 import argparse
 import csv

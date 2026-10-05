@@ -18,9 +18,6 @@ no board and only the Python standard library.
 Units: 1 KB = 1024 bytes for memory. 1 GB = 10^9 bytes for a data volume
 (as in Day 12, Part 3). Mark each value that you did not measure as an
 estimate in the proposal.
-
-Credits: the method follows Day 9, Part 3 (power and battery) and Day 14,
-Part 3 (budgets) of this course. New code of this course.
 """
 import argparse
 import sys

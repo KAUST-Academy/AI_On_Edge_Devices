@@ -14,23 +14,6 @@
 //
 // Before you compile: change the first #include line to the name of the
 // header of your library. The name comes from the name of your project.
-//
-// Credits: this sketch is a copy of
-// XIAOML_Kit_code/XIAOML-Kit-Img_Class_OLED_Gen/XIAOML-Kit-Img_Class_OLED_Gen.ino
-// of "XIAO ESP32S3 Sense" by Marcelo Rovai
-// (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0). That sketch adapts
-// the example "esp32_camera" of Edge Impulse. The notice of Edge Impulse
-// follows this comment.
-// Changes from the source:
-//   - This header comment, and the comment at the #include line.
-//   - The two pin names of the camera bus are the names of the core 3.x
-//     (pin_sccb_sda and pin_sccb_scl).
-//   - The sketch waits 3 s for the Serial Monitor, not for all time. So it
-//     also starts with no laptop.
-//   - New: the capture time, the free memory, and the time of one loop in
-//     the output, for Part C of the lab.
-//   - New: the setting VOTE_FRAMES. The display shows a class only when the
-//     last frames agree (Part 3 of the Day 5 lecture).
 
 /* Edge Impulse Arduino examples
  * Copyright (c) 2022 EdgeImpulse Inc.

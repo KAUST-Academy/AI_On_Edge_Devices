@@ -23,9 +23,6 @@ To send the metrics of a real model, import the class MetricsPublisher:
     from metrics_publisher import MetricsPublisher
     publisher = MetricsPublisher("localhost", "g07")
     publisher.publish(latency_ms=41.3, fps=22.8, confidence=0.84)
-
-Credits: the temperature command comes from the lab "Small Language Models"
-of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0).
 """
 
 import argparse

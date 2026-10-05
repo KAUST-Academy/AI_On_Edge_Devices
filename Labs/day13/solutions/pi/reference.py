@@ -22,9 +22,6 @@ value is mean - m / 3.
 
 The reference period must be a normal period: the usual light, the usual
 objects in front of the camera, and no person who moves the camera.
-
-Credits: the method follows Part 3 of the Day 13 lecture of this course. All
-code is new code of this course.
 """
 import argparse
 import csv

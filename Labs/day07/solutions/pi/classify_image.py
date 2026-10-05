@@ -7,15 +7,6 @@ Use:    python pi/classify_image.py images/Cat03.jpg
         python pi/classify_image.py images/Cat03.jpg --model models/mnv2.tflite
         python pi/classify_image.py images/Cat03.jpg --threads 4 --runs 20
 
-Credits: the steps (load the model, read the input details, resize the
-image, run the interpreter, dequantize the output, softmax, top 5) follow
-the function image_classification() of the chapter "Image Classification" of
-the Raspberry Pi kit labs in "Machine Learning Systems" by Vijay Janapa Reddi
-and contributors, written by Marcelo Rovai (mlsysbook.ai, CC BY-NC-SA 4.0).
-New in this course: the command line, the support for a float32 file and for
-an input in the order channel, height, width, the thread setting, and the
-latency output.
-
 The script reads the input details of the model and prepares the image for
 three types of file:
 

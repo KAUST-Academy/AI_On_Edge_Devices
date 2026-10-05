@@ -4,11 +4,6 @@
 //            FQBN esp32:esp32:XIAO_ESP32S3
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: U8g2 by oliver 2.36.19
-//
-// Credits: XIAOML_Kit_code/oled_test/oled_test.ino of the repository
-// XIAO-ESP32S3-Sense by Marcelo Rovai
-// (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
-// Change: this comment. The code has no change.
 
 #include <U8g2lib.h>
 #include <Wire.h>

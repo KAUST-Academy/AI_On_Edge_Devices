@@ -32,9 +32,6 @@ Topics (<group> is the value of --group):
 Task C1 of the lab is the function next_state(). The program checks it at
 the start with a table of transitions and prints "Task C1: complete" or
 "Task C1: not complete".
-
-Credits: new work of this course. The state machine follows Part 1 of the
-Day 12 lecture.
 """
 
 import argparse

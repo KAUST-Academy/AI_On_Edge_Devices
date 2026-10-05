@@ -16,14 +16,6 @@ dataset in the format of YOLO:
 
 The download has about 65 MB. The script is safe to run again: it keeps
 each image that is complete.
-
-Credits: the images and the labels come from the dataset COCO 2017
-(cocodataset.org; Lin et al., "Microsoft COCO: Common Objects in Context",
-2014). The labels are a selection of the COCO annotations, licence
-CC BY 4.0. Each image keeps the licence that its author gave on Flickr, so
-the images are not in this repository. The dataset format follows the kit
-lab "Object Detection" of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0). The script is new code of this course.
 """
 import argparse
 import collections

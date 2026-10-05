@@ -18,11 +18,6 @@ from the file name: the text before the first full stop.
 With no split.json, name the test sessions yourself:
 
     python3 host/to_edge_impulse.py --data data --test-sessions s3
-
-Credits: the file format follows the Edge Impulse documentation
-(docs.edgeimpulse.com, data acquisition format CSV). The use of the three
-accelerometer axes in m/s^2 follows the motion classification chapter of
-"Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0). The code is new.
 """
 
 import argparse

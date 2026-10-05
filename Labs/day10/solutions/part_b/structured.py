@@ -14,10 +14,6 @@ with three fields. It checks each answer with the Pydantic class Command and
 compares it with the correct answer.
 
 Task B1 is in the class Command.
-
-Credits: the use of Pydantic with Ollama follows the notebook
-20-Ollama_Function_Calling_Pydantic.ipynb of "EdgeML with Raspberry Pi"
-(Marcelo Rovai, GPL-3.0). The commands are new.
 """
 
 import argparse

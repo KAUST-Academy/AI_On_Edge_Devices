@@ -30,11 +30,6 @@ the stream with the boxes. Point the camera at the clock. Press s to save the
 window (10 times), q to stop. The difference of the two clocks in an image is
 the end-to-end latency. --no-window --count N saves N images with no window
 (a test with no screen).
-
-Credits: the clock method and the reader thread follow
-Labs/hardware/HW-06/ of this course. The detector is the Day 8 lab code
-(day08/pi/detector.py) with the package ultralytics (AGPL-3.0). All other
-code is new code of this course.
 """
 import argparse
 import csv

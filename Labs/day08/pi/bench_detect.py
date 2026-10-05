@@ -13,12 +13,6 @@ For each model, the script takes frames from the camera and runs the
 complete pipeline of the lecture: capture, pre-processing, inference, and
 post-processing. It gives the median time of each step and the frame rate.
 It does not draw the boxes and it sends no image.
-
-Credits: the method follows Part 3 of the Day 8 lecture and the
-measurement rules of chapter 12 "Benchmarking" of "Machine Learning
-Systems" by Vijay Janapa Reddi and contributors (mlsysbook.ai,
-CC BY-NC-SA 4.0). The package ultralytics has the licence AGPL-3.0. The
-script is new code of this course.
 """
 import argparse
 import csv

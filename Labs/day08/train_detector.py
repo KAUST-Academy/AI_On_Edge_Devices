@@ -13,14 +13,6 @@ The training starts from the weights yolo11n.pt, which the package
 downloads (5.4 MB). The option freeze=10 keeps the first 10 modules of the
 model (the backbone) fixed. Only the neck and the head learn. An epoch is
 then faster, and 240 images cannot damage the features of the backbone.
-
-Credits: the training steps follow the notebook yolo11_box_vs_wheel.ipynb
-of "EdgeML with Raspberry Pi" by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0) and the kit lab
-"Object Detection" of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0). Changes: the dataset, the image size of 320 pixels, the
-fixed backbone, and a training on the processor of a laptop. The package
-ultralytics and the weights yolo11n.pt have the licence AGPL-3.0.
 """
 import argparse
 import json

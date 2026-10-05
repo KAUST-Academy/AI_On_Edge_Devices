@@ -26,13 +26,6 @@ the boxes at or above --conf (0.25).
 
 --dim-after S multiplies each frame by --dim-gain after S seconds, for
 --dim-seconds seconds: a simulated drift for a test with no lamp.
-
-Credits: the camera, the model, and the web page come from the Day 8 lab of
-this course (pi/detector.py, pi/live_detect.py), which follows
-object_detection_app.py of "EdgeML with Raspberry Pi" by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0). The package
-ultralytics has the licence AGPL-3.0. The measurements, the log, and the
-summary are new code of this course.
 """
 import argparse
 import os

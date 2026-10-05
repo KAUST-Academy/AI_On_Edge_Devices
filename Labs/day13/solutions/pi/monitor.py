@@ -9,13 +9,6 @@ The script pi/monitor_detect.py imports this file. It has five parts:
 
 Runs on: the Raspberry Pi 5, in the environment ~/yolo (numpy, OpenCV,
          paho-mqtt 2.x, psutil).
-
-Credits: the brightness and sharpness statistics, the summary, the JSON log,
-and the rotation follow Parts 1 and 2 of the Day 13 lecture. The message
-format is the format of Labs/hardware/HW-08/metrics_publisher.py of this
-course, with more fields. The temperature command comes from the lab "Small
-Language Models" of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0), through HW-08. All code is new code of this course.
 """
 import json
 import logging

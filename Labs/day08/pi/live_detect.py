@@ -15,15 +15,6 @@ rate, the time of each step, and the objects of the last frame.
 
 The image size comes from the name of the model: cupbottle_320... runs with
 320 pixels. For a different name, give --imgsz.
-
-Credits: the web server, the camera thread, and the page follow the script
-object_detection_app.py of "EdgeML with Raspberry Pi" by Marcelo Rovai
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0), which the kit lab
-"Object Detection" of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0) describes. Changes: the model is a YOLO model of the
-package ultralytics (AGPL-3.0) in place of the SSD model, the camera gives
-arrays, the page needs no file from the internet, and the script measures
-each step.
 """
 import argparse
 import collections

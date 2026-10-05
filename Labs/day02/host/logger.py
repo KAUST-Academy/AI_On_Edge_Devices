@@ -23,10 +23,6 @@ Each recording goes to one file: <out>/<label>.<session>.<number>.csv
 The file starts with comment lines (#) that hold the settings. Then it has
 the header line and one line for each sample. The sample number n and the
 time t_us start at 0 in each file.
-
-Credits: the recording length of 10 s and the rate of 50 Hz follow the
-motion classification chapter of "Machine Learning Systems" (mlsysbook.ai,
-CC BY-NC-SA 4.0). The code is new.
 """
 
 import argparse

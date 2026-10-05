@@ -18,17 +18,6 @@
 //   2. It reads the IMU 50 times each second into a ring buffer of 2 s.
 //   3. After each 10 samples (0.2 s) it calculates the 63 features of the
 //      newest window, runs the model, and shows the class on the display.
-//
-// Credits: the use of TensorFlow Lite Micro follows the example
-// "hello_world" of the library Chirale_TensorFlowLite 2.0.0
-// (github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0), which comes
-// from the TensorFlow Lite Micro example of the TensorFlow Authors. The IMU
-// code, the display code, the four classes, and the window of 2 s follow the
-// sketch XIAOML_Kit_code/motion_class_ad_inference_oled of "XIAO ESP32S3
-// Sense" by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense,
-// Apache-2.0) and the motion classification chapter of "Machine Learning
-// Systems" (mlsysbook.ai, CC BY-NC-SA 4.0). The sampling loop, the feature
-// code, the self-test, and the measurements are new.
 
 #include <Chirale_TensorFlowLite.h>
 #include <LSM6DS3.h>

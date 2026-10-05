@@ -15,9 +15,6 @@ What the program does:
   4. It serves one web page that draws the metrics and updates each second.
   5. It applies one alert rule: the mean confidence of the last 20 messages
      is below a threshold.
-
-Credits: the CSV log follows data_logger.py of "EdgeML with Raspberry Pi" by
-Marcelo Rovai (github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0).
 """
 
 import argparse

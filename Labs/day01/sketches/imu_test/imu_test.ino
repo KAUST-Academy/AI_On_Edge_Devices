@@ -4,13 +4,6 @@
 //            FQBN esp32:esp32:XIAO_ESP32S3
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: Seeed Arduino LSM6DS3 2.0.7
-//
-// Credits: XIAOML_Kit_code/imu_test/imu_test.ino of the repository
-// XIAO-ESP32S3-Sense by Marcelo Rovai
-// (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
-// Changes: this comment, and the two lines that print the sensor range.
-// The source prints 2 g and 250 dps. The library sets 16 g and 2000 dps
-// (LSM6DS3.cpp, default settings), so the sketch prints those values.
 
 #include <LSM6DS3.h>
 #include <Wire.h>

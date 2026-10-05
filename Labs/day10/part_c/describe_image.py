@@ -13,12 +13,6 @@ Use:
 For each image, the model answers with a JSON object (the class Scene,
 Task C2): a caption, at most 5 objects, and the number of containers (cups,
 glasses, and bottles). The script checks each answer with Pydantic.
-
-Credits: the model and the image prompt follow the lab "Small Language
-Models" of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0) and
-the notebook 30-Function_Calling_with_images.ipynb of "EdgeML with
-Raspberry Pi" (Marcelo Rovai, GPL-3.0). The five images come from COCO 2017
-(part_c/images/README.md gives the source and the licence of each image).
 """
 
 import argparse

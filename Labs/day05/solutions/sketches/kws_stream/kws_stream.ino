@@ -25,22 +25,6 @@
 //   3. The post-processing of postprocess.h makes events from the results.
 //   4. The Serial Monitor gets one line for each window. The display shows
 //      an event for one second.
-//
-// Credits: this sketch adapts
-// XIAOML_Kit_code/xiaoml-kit_kws_oled/xiaoml-kit_kws_oled.ino of "XIAO
-// ESP32S3 Sense" by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense,
-// Apache-2.0). That sketch adapts the example "esp32_microphone" of Edge
-// Impulse. The notice of Edge Impulse follows this comment.
-// Changes from the source:
-//   - With the core 3.x, the microphone uses the library ESP_I2S. The source
-//     uses the library I2S of the core 2.0.17, which the core 3.x does not
-//     have. The lines of the source are still in the sketch, for a build
-//     with the core 2.0.17. The pin numbers (42 and 41), the sampling rate,
-//     and the gain of 8 are the values of the source.
-//   - New: the ring buffer and the sliding window. The source runs the model
-//     one time for each second, on windows with no overlap.
-//   - New: the post-processing, the output lines, and the settings below.
-//   - The display code is shorter.
 
 /* Edge Impulse Arduino examples
  * Copyright (c) 2022 EdgeImpulse Inc.
