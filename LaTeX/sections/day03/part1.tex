@@ -418,8 +418,7 @@ onnx2tf -i model.onnx -o saved_model         # writes model_float32.tflite
           not equal byte for byte, but they calculate the same function.
     \item The file size is the flash that the model needs on the device.
   \end{itemize}
-  \source{Results on the work computer of the course: TensorFlow 2.21.0,
-    PyTorch 2.14.1, onnx2tf 1.29.24.}
+  \source{Measured with TensorFlow 2.21.0, PyTorch 2.14.1, onnx2tf 1.29.24.}
 \end{frame}
 
 \begin{frame}{NCHW and NHWC: the order of the channels}
