@@ -10,9 +10,6 @@ The script pi/monitor_detect.py imports this file. It has five parts:
 Runs on: the Raspberry Pi 5, in the environment ~/yolo (numpy, OpenCV,
          paho-mqtt 2.x, psutil).
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). The code
-ran on the work computer of the course with image files.
-
 Credits: the brightness and sharpness statistics, the summary, the JSON log,
 and the rotation follow Parts 1 and 2 of the Day 13 lecture. The message
 format is the format of Labs/hardware/HW-08/metrics_publisher.py of this

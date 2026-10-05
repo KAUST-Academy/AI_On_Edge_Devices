@@ -5,9 +5,6 @@
 // Libraries: PubSubClient 2.8 (Nick O'Leary), Seeed Arduino LSM6DS3 2.0.7
 // Broker:    Mosquitto on the Raspberry Pi of the group (port 1883)
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // Credits: this sketch adapts the programs of Task 2 (telemetry) and Task 3
 // (commands) of chapter 3.5 of "XIAO: Big Power, Small Board" by Lei Feng and
 // Marcelo Rovai (github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook,

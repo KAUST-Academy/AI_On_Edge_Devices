@@ -6,8 +6,6 @@
 # Run:     mpremote connect PORT run board/imu_wifi.py
 # Laptop:  python3 host/logger.py --udp 5005 --label test --session wifi
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-02).
-#
 # The board sends the same CSV lines as imu_stream.py. One UDP packet holds
 # the lines of 5 samples, so the board sends 10 packets each second. UDP has
 # no repeat: a packet that the network loses does not arrive. The sample

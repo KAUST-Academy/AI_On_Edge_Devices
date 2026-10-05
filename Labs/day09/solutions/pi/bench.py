@@ -38,11 +38,6 @@ The suites use the model files of the earlier labs:
     tiny             models/            the four models of the kit sketch,
                                         with the test input of the sketch
 
-Hardware status: tested on the work computer (x86). Not tested on a
-Raspberry Pi (prepared on 2026-10-02). The functions that read the
-temperature, the clock, the throttle state, and the power need a Raspberry
-Pi. On a different computer they give no value.
-
 Credits: the run rules (warm-up, repetitions, percentiles, one window, the
 system description) follow Parts 1 and 2 of the Day 9 lecture and chapter 12
 "Benchmarking" of "Machine Learning Systems" by Vijay Janapa Reddi and

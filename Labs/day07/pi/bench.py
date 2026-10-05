@@ -9,9 +9,6 @@ Use:    python pi/bench.py
         python pi/bench.py --only litert
         python pi/bench.py --levels
 
-Hardware status: tested on the work computer (x86). Not tested on a
-Raspberry Pi (prepared on 2026-10-02).
-
 Credits: new code of this course. The method (some runs to warm up, then the
 median of many runs, one thread setting for each runtime) follows Parts 2 and
 3 of the Day 7 lecture.

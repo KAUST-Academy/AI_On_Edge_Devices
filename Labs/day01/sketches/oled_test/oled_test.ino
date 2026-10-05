@@ -5,9 +5,6 @@
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: U8g2 by oliver 2.36.19
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // Credits: XIAOML_Kit_code/oled_test/oled_test.ino of the repository
 // XIAO-ESP32S3-Sense by Marcelo Rovai
 // (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).

@@ -21,9 +21,6 @@ limitations under the License.
 // Model:     model.h, the "hello world" sine model (int8, 2488 bytes).
 //            Replace model.h with your model (see Labs/hardware/HW-02).
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board with PSRAM disabled and with OPI PSRAM.
-//
 // What the sketch does:
 //   1. It reserves the arena in the internal RAM or in the PSRAM.
 //   2. It prints the free memory before and after.

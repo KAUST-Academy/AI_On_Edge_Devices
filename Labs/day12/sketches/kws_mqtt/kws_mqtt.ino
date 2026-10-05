@@ -14,11 +14,6 @@
 // Broker:    Mosquitto on the Raspberry Pi of the group (port 1883)
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-03). The sketch needs the library of an Edge Impulse project.
-// Only the Studio can make that library. The sketch compiles with a
-// replacement for that library, which is not in this repository.
-//
 // Before you compile:
 //   1. Change the #include line of the library to the header of your Day 5
 //      library. The name comes from the name of your project.

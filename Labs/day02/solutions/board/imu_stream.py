@@ -5,8 +5,6 @@
 # Needs:   lsm6ds3.py on the board (mpremote cp board/lsm6ds3.py :)
 # Run:     mpremote run board/imu_stream.py
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-#
 # Output: one CSV line for each sample.
 #   n      sample number, starts at 0
 #   t_us   time since the first sample, in microseconds

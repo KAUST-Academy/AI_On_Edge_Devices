@@ -23,9 +23,6 @@ value is mean - m / 3.
 The reference period must be a normal period: the usual light, the usual
 objects in front of the camera, and no person who moves the camera.
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). The script
-ran on the work computer of the course with the CSV file of a test.
-
 Credits: the method follows Part 3 of the Day 13 lecture of this course. All
 code is new code of this course.
 """

@@ -14,8 +14,6 @@ complete pipeline of the lecture: capture, pre-processing, inference, and
 post-processing. It gives the median time of each step and the frame rate.
 It does not draw the boxes and it sends no image.
 
-Hardware status: not tested on hardware (prepared on 2026-10-02).
-
 Credits: the method follows Part 3 of the Day 8 lecture and the
 measurement rules of chapter 12 "Benchmarking" of "Machine Learning
 Systems" by Vijay Janapa Reddi and contributors (mlsysbook.ai,

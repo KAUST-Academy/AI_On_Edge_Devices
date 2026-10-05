@@ -19,9 +19,6 @@ Steps:
 The script checks each answer with Pydantic and with the correct answer of
 part_c/questions.txt.
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with Ollama 0.32.6.
-
 Credits: the steps follow the chapter "SLM: Basic Optimization Techniques"
 of "Edge AI Engineering" and the notebook 40-RAG-simple-bee.ipynb of
 "EdgeML with Raspberry Pi" (Marcelo Rovai, GPL-3.0). This version uses no

@@ -4,8 +4,6 @@
 # Runs on: MicroPython v1.29.0 for SEEED_XIAO_ESP32S3
 # Run:     mpremote connect PORT run board/blink_timer.py
 #
-# Hardware status: new code, not tested on hardware (prepared on 2026-10-02).
-#
 # Pins: the LED is on GPIO21 and it is on when the pin is low. The boot
 # button is on GPIO0 and it connects the pin to 0 V. Source: the XIAOML Kit
 # setup chapter of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0)

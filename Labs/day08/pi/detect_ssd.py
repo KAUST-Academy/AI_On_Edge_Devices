@@ -9,8 +9,6 @@ Use:     python pi/detect_ssd.py images/bus.jpg
 Output:  the input and the outputs of the model, the times, the list of
          detections, and the file ssd_result.jpg with the boxes.
 
-Hardware status: not tested on hardware (prepared on 2026-10-02).
-
 Credits: the steps follow the notebook SSD_MobileNetV1.ipynb of
 "EdgeML with Raspberry Pi" by Marcelo Rovai
 (github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0) and the kit lab

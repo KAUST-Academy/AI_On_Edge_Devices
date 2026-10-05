@@ -7,9 +7,6 @@ Use:    python pi/classify_image.py images/Cat03.jpg
         python pi/classify_image.py images/Cat03.jpg --model models/mnv2.tflite
         python pi/classify_image.py images/Cat03.jpg --threads 4 --runs 20
 
-Hardware status: tested on the work computer (x86). Not tested on a
-Raspberry Pi (prepared on 2026-10-02).
-
 Credits: the steps (load the model, read the input details, resize the
 image, run the interpreter, dequantize the output, softmax, top 5) follow
 the function image_classification() of the chapter "Image Classification" of

@@ -11,10 +11,6 @@
 //            Seeed Arduino LSM6DS3 2.0.7, U8g2 2.36.19
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-02). The sketch needs the library of an Edge Impulse project.
-// Only the Studio can make that library, so nobody compiled this sketch.
-//
 // Before you compile: change the first #include line to the name of the
 // header of your library. The name comes from the name of your project.
 //

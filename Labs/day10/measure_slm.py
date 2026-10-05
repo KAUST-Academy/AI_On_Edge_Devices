@@ -22,9 +22,6 @@ The context and the threads are set in each request (Part 2 of the lecture).
 
 Task A1 is in the function token_rate.
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with Ollama 0.32.6.
-
 Credits: the metrics and prompts 1 to 3 come from the lab "Small Language
 Models" of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0). The
 script grows from Labs/hardware/HW-05/measure_slm.py of this course.

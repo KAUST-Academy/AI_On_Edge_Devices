@@ -31,10 +31,6 @@ window (10 times), q to stop. The difference of the two clocks in an image is
 the end-to-end latency. --no-window --count N saves N images with no window
 (a test with no screen).
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with MediaMTX, a test stream, and an MJPEG
-stream of FFmpeg.
-
 Credits: the clock method and the reader thread follow
 Labs/hardware/HW-06/ of this course. The detector is the Day 8 lab code
 (day08/pi/detector.py) with the package ultralytics (AGPL-3.0). All other

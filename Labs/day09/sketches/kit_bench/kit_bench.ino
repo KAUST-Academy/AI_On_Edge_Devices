@@ -11,10 +11,6 @@
 // Files:     bench_cases.h and the four files model_*.h are generated files.
 //            bench_stats.h has the sort and the percentile.
 //
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles. A build for an x86 computer ran the four
-// models and gave the outputs of LiteRT.
-//
 // What the sketch does, for each of the four models:
 //   1. It makes an interpreter of TensorFlow Lite Micro with its own arena.
 //      The arena is in the internal RAM if it fits, and in the PSRAM if not.

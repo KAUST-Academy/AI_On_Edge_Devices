@@ -11,9 +11,6 @@
 // Library:   Seeed Arduino LSM6DS3 2.0.7
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles.
-//
 // Output: one CSV line for each sample.
 //   n      sample number, starts at 0
 //   t_us   time since the start, in microseconds

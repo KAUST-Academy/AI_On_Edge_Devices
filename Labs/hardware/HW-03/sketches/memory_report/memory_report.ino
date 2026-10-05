@@ -4,9 +4,6 @@
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: none
 //
-// Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board with PSRAM disabled and with OPI PSRAM.
-//
 // Build the sketch two times:
 //   Tools > PSRAM > Disabled     the budget of the internal RAM only
 //   Tools > PSRAM > OPI PSRAM    the budget with the 8 MB of external RAM

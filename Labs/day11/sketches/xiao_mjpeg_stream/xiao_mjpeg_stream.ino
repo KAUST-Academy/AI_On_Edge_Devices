@@ -7,9 +7,6 @@
 // Libraries: none
 // Build:     Tools > PSRAM > OPI PSRAM. The frame buffer is in the PSRAM.
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-03). The
-// sketch compiles for the board.
-//
 // Use: set the Wi-Fi password below, upload, open the Serial Monitor at
 // 115200 baud. The sketch prints the address of the stream, for example
 // http://192.168.8.163/. Open it in a browser, or read it with

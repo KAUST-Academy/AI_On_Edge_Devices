@@ -18,8 +18,6 @@ topic has a lost number.
 Task D1 of the lab is the function count_sequence(). The program checks it
 at the start and prints "Task D1: complete" or "Task D1: not complete".
 
-Hardware status: new code, tested on the work computer with a broker and a
-forwarder. Not tested in the lab network (prepared on 2026-10-03).
 Credits: new work of this course. It extends the counter of
 Labs/hardware/HW-07/host/mqtt_check.py.
 """

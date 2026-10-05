@@ -16,9 +16,6 @@
 //            come from the notebook quantization.ipynb. motion_features.h
 //            has the feature code of Day 3.
 //
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles for the two values of MODEL_INT8.
-//
 // What the sketch does:
 //   1. MODEL_INT8 selects the model: 0 is the float32 model, 1 is the int8
 //      model. Only the selected model is in the program.

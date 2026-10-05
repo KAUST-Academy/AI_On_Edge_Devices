@@ -12,11 +12,6 @@
 //            "Quantized (int8)"), U8g2 2.36.19
 // Serial:    115200 baud
 //
-// Hardware status: changed code, not tested on hardware (prepared on
-// 2026-10-02). The sketch needs the library of an Edge Impulse project.
-// Only the Studio can make that library. The sketch compiles with a
-// replacement for that library, which is not in this repository.
-//
 // Before you compile: change the first #include line to the name of the
 // header of your library. The name comes from the name of your project.
 //

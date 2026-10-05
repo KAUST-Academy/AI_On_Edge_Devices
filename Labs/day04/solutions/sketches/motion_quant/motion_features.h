@@ -16,9 +16,6 @@
 //
 // The file uses only standard C++. It runs on the board and on a laptop.
 //
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). It was compared with the Python code on a laptop.
-//
 // Credits: the feature list and the method of the spectral power (frames
 // of the FFT length, and the largest power of each bin over the frames)
 // follow the chapter "DSP Spectral Features" of "Machine Learning Systems"

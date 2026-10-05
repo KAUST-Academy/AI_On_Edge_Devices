@@ -13,8 +13,6 @@ The script subscribes to edgeai/<group>/# and prints each message. For the
 topics with a "seq" field, it counts the messages and the gaps in the
 sequence. A gap is a lost message.
 
-Hardware status: tested on a laptop with a simulated board. Not tested with
-the XIAO (prepared on 2026-10-01).
 """
 
 import argparse

@@ -15,8 +15,6 @@ a slow model fills the buffer of OpenCV and the delay grows.
 
 Put your model in the function process().
 
-Hardware status: tested on a Linux laptop with a synthetic stream.
-Not tested with the Raspberry Pi camera (prepared on 2026-10-01).
 """
 
 import argparse

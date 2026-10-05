@@ -13,10 +13,6 @@ script reads the parts for some seconds and calculates (Task D1) the frame
 rate, the mean size of a JPEG image, and the bit rate. It prints one line
 that starts with RESULT.
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with an MJPEG stream of FFmpeg and with a
-test server in the format of the XIAO sketch.
-
 Credits: the stream format is the format of the sketch Streeming_Video.ino of
 "XIAO ESP32S3 Sense" by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense,
 Apache-2.0). The script is new code of this course.

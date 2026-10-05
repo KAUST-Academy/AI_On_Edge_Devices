@@ -15,8 +15,6 @@ A model can be a PyTorch file (.pt), an NCNN folder, or a LiteRT file
 (.tflite). An exported file has a fixed image size: give the same size
 with --imgsz.
 
-Hardware status: not tested on hardware (prepared on 2026-10-02).
-
 Credits: the steps follow the notebook
 YOLO_Model_Prediction_with_Ultralytics.ipynb of "EdgeML with Raspberry Pi"
 by Marcelo Rovai (github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0) and

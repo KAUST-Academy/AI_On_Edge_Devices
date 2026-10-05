@@ -4,9 +4,6 @@
 // Core:      esp32 by Espressif Systems 3.3.12
 // Libraries: none
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // Credits: the code comes from the XIAOML Kit setup chapter of "Machine
 // Learning Systems" by Vijay Janapa Reddi and contributors, written by
 // Marcelo Rovai (mlsysbook.ai, CC BY-NC-SA 4.0). Changes: this comment and the

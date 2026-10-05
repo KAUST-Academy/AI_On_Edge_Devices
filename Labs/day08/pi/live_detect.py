@@ -16,8 +16,6 @@ rate, the time of each step, and the objects of the last frame.
 The image size comes from the name of the model: cupbottle_320... runs with
 320 pixels. For a different name, give --imgsz.
 
-Hardware status: not tested on hardware (prepared on 2026-10-02).
-
 Credits: the web server, the camera thread, and the page follow the script
 object_detection_app.py of "EdgeML with Raspberry Pi" by Marcelo Rovai
 (github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0), which the kit lab

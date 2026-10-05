@@ -30,9 +30,6 @@ Limits of the method:
 Test with no camera and no screen (the script saves 3 images and stops):
     python3 latency_clock.py rtsp://localhost:8554/test --no-window --count 3
 
-Hardware status: the mode --no-window was tested on a Linux laptop with a
-synthetic stream. The window mode and the camera were not tested
-(prepared on 2026-10-01).
 """
 
 import argparse

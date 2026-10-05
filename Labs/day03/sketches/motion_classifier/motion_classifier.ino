@@ -14,9 +14,6 @@
 //            notebook motion_classifier.ipynb. motion_features.h has the
 //            feature code.
 //
-// Hardware status: new code, not tested on hardware (prepared on
-// 2026-10-02). The sketch compiles.
-//
 // What the sketch does:
 //   1. At the start it tests the feature code and the model with the window
 //      of test_window.h, and it prints the memory numbers.

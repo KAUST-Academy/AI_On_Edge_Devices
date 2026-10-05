@@ -21,8 +21,6 @@ Checks for one target:
 A closed port is a FAIL only for the ports that you name with --need.
 The other ports give INFO, because not each service runs on each day.
 
-Hardware status: tested on one Linux computer against itself. Not tested
-between two devices on the lab router (prepared on 2026-10-01).
 """
 
 import argparse

@@ -7,9 +7,6 @@
 // Libraries: none
 // Build:     Tools > PSRAM > OPI PSRAM. The frame buffer is in the PSRAM.
 //
-// Hardware status: new code, not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // The test needs no Wi-Fi. Cover the lens with your hand: the mean
 // brightness must decrease.
 //

@@ -14,9 +14,6 @@ For each image, the model answers with a JSON object (the class Scene,
 Task C2): a caption, at most 5 objects, and the number of containers (cups,
 glasses, and bottles). The script checks each answer with Pydantic.
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with Ollama 0.32.6.
-
 Credits: the model and the image prompt follow the lab "Small Language
 Models" of "Machine Learning Systems" (mlsysbook.ai, CC BY-NC-SA 4.0) and
 the notebook 30-Function_Calling_with_images.ipynb of "EdgeML with

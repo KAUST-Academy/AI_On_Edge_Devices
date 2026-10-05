@@ -15,9 +15,6 @@ compares it with the correct answer.
 
 Task B1 is in the class Command.
 
-Hardware status: not tested on hardware (prepared on 2026-10-03). Tested on
-the work computer of the course with Ollama 0.32.6.
-
 Credits: the use of Pydantic with Ollama follows the notebook
 20-Ollama_Function_Calling_Pydantic.ipynb of "EdgeML with Raspberry Pi"
 (Marcelo Rovai, GPL-3.0). The commands are new.

@@ -7,9 +7,6 @@ Use:    python pi/classify_camera.py
         python pi/classify_camera.py --count 5 --interval 2
         python pi/classify_camera.py --model models/mnv2.tflite
 
-Hardware status: not tested on a Raspberry Pi (prepared on 2026-10-02). The
-logic was tested on the work computer with a replacement for picamera2.
-
 Credits: the camera code (still configuration of 640 x 480, a wait of 2 s,
 capture_file) is the script capture_image.py of the repository
 EdgeML-with-Raspberry-Pi by Marcelo Rovai

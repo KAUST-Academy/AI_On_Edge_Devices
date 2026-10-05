@@ -20,9 +20,6 @@ limitations under the License.
 // Libraries: Chirale_TensorFlowLite 2.0.0
 // Model:     model.h, the "hello world" sine model (int8, 2488 bytes)
 //
-// Hardware status: not tested on hardware (prepared on 2026-10-01).
-// The sketch compiles for the board.
-//
 // Credits: this sketch adapts the example "hello_world" of the library
 // Chirale_TensorFlowLite 2.0.0 (github.com/spaziochirale/Chirale_TensorFlowLite,
 // Apache-2.0), which comes from the TensorFlow Lite Micro example of the
