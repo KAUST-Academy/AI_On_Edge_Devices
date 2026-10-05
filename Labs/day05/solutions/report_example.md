@@ -1,10 +1,10 @@
 # Day 5 lab report: example
 
-This lab needs Edge Impulse Studio and the kit for almost all numbers.
-Nobody ran the lab on hardware. So this example gives the structure of the
-answers, the numbers that the kit lab of the source reports, and "measure in
-the lab" for each number of your group. The numbers of the source come from
-a different dataset and a different firmware.
+This lab needs Edge Impulse Studio and the kit for almost all numbers. So
+this example gives the structure of the answers, the numbers that the kit
+lab of the source reports, and "measure in the lab" for each number of your
+group. The numbers of the source come from a different dataset and a
+different firmware.
 
 Group: example
 

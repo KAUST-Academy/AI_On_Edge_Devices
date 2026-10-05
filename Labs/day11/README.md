@@ -285,8 +285,8 @@ the shop?
 
 The start values of the stream are 1280 x 720, 30 frames each second,
 2 Mbit/s, and one keyframe each second (`mediamtx_cam.yml`). With no model,
-`stream_detect.py` must show about 30 frames/s. Nobody measured a latency
-on the hardware of the lab. The clock method has an error of about 50 ms
+`stream_detect.py` must show about 30 frames/s. Measure the latency on the
+hardware of the lab. The clock method has an error of about 50 ms
 for one reading: use the median of 10. A run on one computer, with no
 network and no camera, gave a frame age of 40 ms with one decoder thread
 (Part 3 of the lecture). Your latency also includes the camera, the

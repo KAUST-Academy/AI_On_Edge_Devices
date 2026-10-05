@@ -197,7 +197,7 @@ No Raspberry Pi was used. The test used a broker on the work computer and
 The alert went on after the drift (mean confidence 0.578, threshold 0.60).
 The CSV file has 52 rows. The address `/data.json` gives the data, and an
 unknown address gives the code 404. A port in use gives a clear error. The
-JavaScript of the page passed a syntax check. **Nobody looked at the page in
+JavaScript of the page passed a syntax check. **The page was not opened in
 a browser.**
 
 **Option A.** `promtool` of Prometheus 3.15.0 accepts `prometheus.yml` and
@@ -205,7 +205,7 @@ the three rules. Prometheus read the bridge (target `edgeai` up). The rule
 `LowConfidence` reached the state `firing` with the text "The mean confidence
 of 30 s is 0.49". Grafana 13.2.3 loaded the data source and the dashboard
 into the folder `Edge AI`. All 13 queries of the 12 panels returned the
-status 200 through Grafana. **Nobody looked at the dashboard in a browser.**
+status 200 through Grafana. **The dashboard was not opened in a browser.**
 
 ## Code status
 

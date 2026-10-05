@@ -2,8 +2,8 @@
 
 This example has the parts of the report that need no board. The numbers of
 Part C come from the solution notebook with the fallback dataset. The
-signals of the fallback dataset are simulated. Nobody recorded them. The
-parts that need a board say "measure in the lab".
+signals of the fallback dataset are simulated. The parts that need a
+board say "measure in the lab".
 
 Group: example
 

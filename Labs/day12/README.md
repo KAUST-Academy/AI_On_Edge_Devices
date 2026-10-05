@@ -321,7 +321,7 @@ when it is full?
   sent its queue of 30 messages at once after the link came back, and the
   cloud got all messages: 0 lost, 0 double. A silent cut (the effect of
   `pi/link.sh`) needed 18.6 s until `link lost`, with the keep-alive of 10 s
-  of the forwarder. Nobody measured these values on the hardware of the lab.
+  of the forwarder. Measure these values on the hardware of the lab.
 
 ## If a part does not work
 

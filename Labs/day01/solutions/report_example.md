@@ -37,7 +37,7 @@ Prediction before the camera test:
 
 ### The memory of the board
 
-Measure in the lab. Nobody ran `memory_report` on a board.
+Measure in the lab.
 
 ### Predictions (task 2 of the notebook)
 
@@ -84,8 +84,7 @@ the chip). The measured values can be smaller. A result can then change.
    partition of the board gives 3 342 336 bytes to one sketch, and the program
    needs about 300 KB of it. The number of parameters must decrease, for
    example with a narrower MobileNetV2. A different partition scheme of the
-   8 MB flash chip is a second option. Nobody tested that option for this
-   course.
+   8 MB flash chip is a second option.
 3. MobileNetV2: 1 505 280 values. ResNet-18: 1 003 520 values. The second
    block of MobileNetV2 expands the tensor to 96 channels at 112 x 112
    (1 204 224 values). ResNet-18 has its peak at the first pooling layer, and

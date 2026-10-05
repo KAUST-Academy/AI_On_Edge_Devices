@@ -120,8 +120,7 @@ are not measured on a board.
   it at run time.
 
 The free heap, the largest block, the arena use, and the latency are **not**
-in this file. Nobody measured them. The instructor measures them in the test
-below.
+in this file. The instructor measures them in the test below.
 
 ## Code status
 

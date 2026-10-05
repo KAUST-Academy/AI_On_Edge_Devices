@@ -4,9 +4,9 @@ This example has the parts of the report that need no board: the
 estimates, the method, and the counts of valid and correct answers. The
 counts come from the work computer of the course (Ollama 0.32.6, CPU only,
 temperature 0). The counts depend on the model file and the settings, so
-your counts are probably the same or near. Nobody measured a rate, a
-temperature, or a time on a Raspberry Pi for this course. These cells have
-the text "measure in the lab".
+your counts are probably the same or near. A rate, a temperature, and a
+time on a Raspberry Pi are values of the board. These cells have the text
+"measure in the lab".
 
 ## Part A: run and measure
 

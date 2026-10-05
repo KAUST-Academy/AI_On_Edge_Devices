@@ -2,8 +2,8 @@
 
 This is an example of a complete report. Part C has the output of the
 solution notebook on the work computer of the course, an x86 computer
-(2026-10-02). Parts A, B, and D need a Raspberry Pi. Nobody measured them:
-the text "measure in the lab" marks each such value.
+(2026-10-02). Parts A, B, and D need a Raspberry Pi. The text "measure in
+the lab" marks each such value.
 
 Group: example
 

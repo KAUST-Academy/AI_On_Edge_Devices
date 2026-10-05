@@ -4,8 +4,8 @@ This is an example of a complete report. Part B and the two tables of the
 export in Part C have the output of the solution notebook on the work
 computer of the course, an x86 computer (2026-10-02). The detections of
 Part A come from a run of the two scripts on that computer. Each time of
-Part A, the live detection of Part C, and Part D need a Raspberry Pi.
-Nobody measured them: the text "measure in the lab" marks each such value.
+Part A, the live detection of Part C, and Part D need a Raspberry Pi. The
+text "measure in the lab" marks each such value.
 
 Group: example
 

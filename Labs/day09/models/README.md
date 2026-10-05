@@ -33,8 +33,8 @@ mixture. So the course made a file with `float32` weights:
 The result has the same operators as the published file: 5 `CONV_2D`,
 4 `DEPTHWISE_CONV_2D`, `AVERAGE_POOL_2D`, `RESHAPE`, `FULLY_CONNECTED`,
 `SOFTMAX`. For 200 random inputs, the new file and the published file give
-the same class each time. Nobody measured the accuracy of the new file on
-the dataset Speech Commands.
+the same class each time. Measure the accuracy of the new file on the
+dataset Speech Commands.
 
 ## Inputs
 

@@ -4,8 +4,8 @@
 Runs on: the laptop, Python 3.10 or later, with the package numpy.
 
 Use the fallback dataset only if your group has no recordings of its own.
-The signals come from host/motion_sim.py. Nobody recorded them. A model
-that learns from this dataset does not work on the real kit.
+The signals come from host/motion_sim.py. They are simulated. A model that
+learns from this dataset does not work on the real kit.
 
     python3 host/make_fallback_dataset.py
 
@@ -59,7 +59,7 @@ def main():
                 write_recording(args.out, label, session, number)
                 count += 1
     print("Wrote %d files to %s/" % (count, args.out))
-    print("These signals are simulated. Nobody recorded them.")
+    print("These signals are simulated.")
     return 0
 
 

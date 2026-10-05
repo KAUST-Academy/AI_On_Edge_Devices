@@ -4,7 +4,7 @@
 Runs on: the laptop, Python 3.10 or later, with the package numpy.
 
 Use this program to test host/logger.py when no board is available. The
-signals come from host/motion_sim.py. Nobody recorded them.
+signals come from host/motion_sim.py. They are simulated.
 
 Start the logger in one terminal:
     python3 host/logger.py --udp 5005 --label lift --session s1 --count 2

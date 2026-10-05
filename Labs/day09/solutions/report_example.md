@@ -2,8 +2,8 @@
 
 This example has the parts of the report that need no board: the protocol,
 the sizes of the models, the accuracy table, and the method of each
-calculation. Nobody measured a time, a temperature, or a power on the two
-boards for this course. These cells have the text "measure in the lab".
+calculation. Measure a time, a temperature, and a power on the two boards.
+These cells have the text "measure in the lab".
 
 ## Part A: the protocol
 

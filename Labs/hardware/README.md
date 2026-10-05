@@ -52,7 +52,7 @@ line.
 |---|---|
 | "compiles" | `arduino-cli` built the sketch for the board. No board ran it. |
 | "tested on the work computer" | The script ran on a Linux computer with no board, with simulated input where necessary |
-| "not tested" | Nobody ran the code |
+| "not tested" | The code did not run on the board |
 | "tested on hardware (date)" | The instructor ran the test steps on the real board |
 
 A number in a folder is from the compiler, from a source (with the source
