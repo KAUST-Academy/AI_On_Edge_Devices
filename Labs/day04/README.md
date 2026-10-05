@@ -1,6 +1,5 @@
 # Day 4 lab: quantization
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has a measured comparison of a `float32` model and an
 `int8` model: size, accuracy, and latency, on the laptop and on the XIAOML

@@ -1,6 +1,5 @@
 # Day 11 lab: inference on a network video stream
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your group measures the lab network, publishes the camera of the
 Raspberry Pi 5 as an RTSP stream, runs the Day 8 detector on the stream, and

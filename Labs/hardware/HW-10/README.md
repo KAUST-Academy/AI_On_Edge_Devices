@@ -1,6 +1,5 @@
 # HW-10: Arduino Nano 33 BLE Sense Rev2
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the backup modules NB-1 to NB-7.
 

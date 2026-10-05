@@ -1,6 +1,5 @@
 # Day 5 lab: audio and vision on the microcontroller
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has one audio model and one vision model on the XIAOML
 Kit: a keyword spotter that makes one event for each spoken keyword, and an

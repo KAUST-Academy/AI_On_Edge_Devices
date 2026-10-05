@@ -1,6 +1,5 @@
 # Day 10 lab: small language models on the Raspberry Pi
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your group measures two small language models on the Raspberry
 Pi 5 with the method of Day 9, calls a model from Python with structured

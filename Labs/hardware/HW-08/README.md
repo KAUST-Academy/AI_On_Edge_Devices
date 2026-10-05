@@ -1,6 +1,5 @@
 # HW-08: Dashboard for the monitored application
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 13 lab (instrument, dashboard, drift, alert).
 

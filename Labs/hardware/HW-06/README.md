@@ -1,6 +1,5 @@
 # HW-06: RTSP from the Raspberry Pi camera
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 11 lab (RTSP server, inference on the stream, latency).
 

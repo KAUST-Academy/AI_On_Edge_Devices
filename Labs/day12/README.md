@@ -1,6 +1,5 @@
 # Day 12 lab: local decisions and MQTT
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your group builds a system of two boards. The XIAOML Kit sends
 keyword events with MQTT to a broker on the Raspberry Pi 5. A program on the

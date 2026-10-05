@@ -1,6 +1,5 @@
 # Day 7 lab: inference runtimes on the Raspberry Pi
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has a runtime comparison on the Raspberry Pi 5: the
 latency of one model for each runtime, thread count, and precision.

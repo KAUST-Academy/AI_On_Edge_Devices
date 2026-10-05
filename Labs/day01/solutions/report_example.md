@@ -1,6 +1,5 @@
 # Day 1 lab report: example for the instructor
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 This file gives the parts of the report that need no board. The numbers come
 from `solutions/model_budgets.ipynb`. The parts that need a board have the

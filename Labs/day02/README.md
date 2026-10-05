@@ -1,6 +1,5 @@
 # Day 2 lab: MicroPython, sensor input, and a motion dataset
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has a labelled motion dataset that Day 3 uses, with a
 constant sampling rate and a correct split between training and test data.

@@ -1,6 +1,5 @@
 # Day 8 lab: object detection on the Raspberry Pi
 
-Hardware status: not tested on hardware (prepared on 2026-10-02)
 
 **Goal.** Your group has a live detection on the Raspberry Pi 5 with a
 custom model for two classes, and a table with the frame rate and the

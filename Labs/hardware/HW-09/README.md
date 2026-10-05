@@ -1,6 +1,5 @@
 # HW-09: Lab network
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the labs of Day 11 (RTSP), Day 12 (MQTT), and Day 13
 (monitoring). Days 7 to 10 use the same network for SSH.

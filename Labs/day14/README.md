@@ -1,6 +1,5 @@
 # Day 14 lab: capstone proposal and start of the build
 
-Hardware status: not tested on hardware (prepared on 2026-10-03)
 
 **Goal.** Your team writes a one-page proposal for the capstone system,
 presents it in a design review, and starts the build with a first test of

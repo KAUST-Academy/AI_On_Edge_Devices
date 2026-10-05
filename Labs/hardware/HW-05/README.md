@@ -1,6 +1,5 @@
 # HW-05: Small language models on the Raspberry Pi 5
 
-Hardware status: not tested on hardware (prepared on 2026-10-01)
 
 Needed by: the Day 10 lab (run and measure, Python integration, application).
 
