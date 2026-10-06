@@ -301,8 +301,7 @@ Write each result in `report.md` when you get it.
      you run the experiment.
    - Task 5: the data card in `report.md`.
 
-   The notebook writes `data/split.json`. The complete notebook runs in
-   less than one minute on a laptop CPU.
+   The notebook writes `data/split.json`.
 
    If the folder `data/` has no recordings, the notebook uses a fallback
    dataset with simulated signals. Use it only if your group has no
