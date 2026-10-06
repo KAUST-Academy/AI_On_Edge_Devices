@@ -1,60 +1,7 @@
 # HW-07: MQTT from the XIAO ESP32S3 to a local broker
 
-
 Needed by: the Day 12 lab (broker, telemetry, local decision, offline
 operation). The Day 13 lab uses the same broker.
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| Broker | Mosquitto on the Raspberry Pi of each group, port 1883, no password on the closed lab network |
-| Arduino library | PubSubClient 2.8 by Nick O'Leary |
-| MicroPython library | `umqtt.simple` |
-| Broker address in the board code | The IP address of the Raspberry Pi, not the name `pi-NN.local` |
-| Payload | One JSON object with a sequence number `seq` |
-| Topic tree | `edgeai/<group>/<device>/<channel>`, for example `edgeai/g07/xiao/imu` |
-| Device state | A retained status topic with a last will message |
-
-Topics of the XIAO:
-
-| Topic | Direction | Payload |
-|---|---|---|
-| `edgeai/<group>/xiao/status` | board to broker | `online` or `offline`, retained |
-| `edgeai/<group>/xiao/imu` | board to broker | `{"seq":12,"ms":34567,"ax":0.010,"ay":0.020,"az":0.990,"gx":0.10,"gy":0.20,"gz":0.30}` |
-| `edgeai/<group>/xiao/result` | board to broker | `{"seq":12,"ms":34567,"label":"z","score":0.97}` (Arduino sketch only) |
-| `edgeai/<group>/xiao/cmd` | broker to board | `led=1` or `led=0` |
-
-## Reason
-
-- The source chapter uses PubSubClient for telemetry and for commands. The
-  course keeps this library, so the code of the chapter stays valid.
-- The chapter uses a public broker on the internet. Day 12 teaches a system
-  that works with no internet connection. The broker must then be in the lab
-  network.
-- One broker for each group gives each group a system that it controls. A
-  group can stop its broker in Part D with no effect on other groups.
-- The syllabus asks for a unique topic prefix for each group. The group
-  number in the topic gives this prefix. A group can also read the messages
-  of the instructor broker with the same tree.
-- The Arduino core does not resolve a `.local` name in `WiFi` connections
-  without more code. An IP address works in the Arduino sketch and in
-  MicroPython. `HW-09` gives each Raspberry Pi a fixed address.
-- The sequence number lets the laptop count the lost messages. The Day 12
-  check is "no message is lost after the link returns".
-- The last will message shows the state of the board with no polling. Day 12
-  teaches this feature.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Telemetry sketch, command sketch, reconnection | `chapter_3-5.qmd` of "XIAO: Big Power, Small Board", Task 2 and Task 3 (GPL-3.0) |
-| IMU code | `XIAOML_Kit_code/imu_test/imu_test.ino` of "XIAO ESP32S3 Sense" (Apache-2.0) |
-| LED pin and its inverted logic | XIAOML Kit setup chapter of "Machine Learning Systems" |
-| Broker settings | Mosquitto documentation (`mosquitto.org/man/mosquitto-conf-5.html`) |
-| `umqtt.simple` | MicroPython library documentation (`github.com/micropython/micropython-lib`, folder `micropython/umqtt.simple`) |
-| Python client | `paho-mqtt` documentation (version 2 API) |
 
 ## Files
 
@@ -188,40 +135,6 @@ mosquitto_pub -h pi-07.local -t edgeai/g07/xiao/cmd -m led=1
   writes that part.
 - `mosquitto_lab.conf` has no password. Use it only on the lab router.
 
-## Result of the test on the work computer
-
-No board was connected. The test used a broker on the work computer.
-
-- `mqtt_imu.ino` compiles for the XIAO ESP32S3: 885 880 bytes of flash,
-  47 744 bytes of static RAM (core 3.3.12, PubSubClient 2.8, Seeed Arduino
-  LSM6DS3 2.0.7).
-- `micropython/mqtt_imu.py` ran under Python on the work computer with
-  stand-in modules for `machine`, `network`, and `umqtt.simple`. Result: 21
-  messages in 4 seconds (5.00 each second), no gap, the command `led=1`
-  arrived, and the broker sent `offline` after the script stopped. This test
-  checks the logic of the script. It does not check the Wi-Fi, the sensor, or
-  the real `umqtt.simple` module.
-- `host/mqtt_check.py`: the sequence 1, 2, 5, 6, 0, 1 gives "2 lost,
-  1 restart" and `RESULT: FAIL`. A wrong port gives a clear error. `--send`
-  works.
-
-## Code status
-
-| File | State | Source | Change |
-|---|---|---|---|
-| `sketches/mqtt_imu/mqtt_imu.ino` | changed | Task 2 and Task 3 programs of `chapter_3-5.qmd` | Board ESP32S3. Local broker by IP address. IMU in place of the DHT20 sensor. JSON payload with `seq`. Topic tree `edgeai/<group>/xiao/`. Last will. LED command in place of the buzzer. One connection attempt each 5 seconds with no blocking loop. New function `publishResult()`. |
-| `sketches/mqtt_imu/arduino_secrets.h` | new | no source | not tested |
-| `micropython/mqtt_imu.py` | new | Design of the chapter | Logic tested with stand-in modules. Not tested on the board. |
-| `micropython/config.py` | new | no source | not tested |
-| `host/mqtt_check.py` | new | no source | tested on the work computer |
-| `mosquitto_lab.conf` | new | Mosquitto documentation | not tested (the work computer has no Mosquitto broker) |
-
-Compile check (no board):
-
-| Sketch | Board name (FQBN) | Result | Date |
-|---|---|---|---|
-| `mqtt_imu` | `esp32:esp32:XIAO_ESP32S3` | compiles: 885 880 bytes flash, 47 744 bytes RAM | 2026-10-01 |
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -247,16 +160,7 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the Mosquitto version and the PubSubClient version in
+1. Write the Mosquitto version and the PubSubClient version in
    `Labs/VERSIONS.md`.
-3. Put `mosquitto_lab.conf` on the master card (`HW-04`, step 4).
-4. Write the measured reconnection time in the Day 12 lab deck.
-
-## Credits
-
-The Arduino sketch adapts chapter 3.5 of "XIAO: Big Power, Small Board" by
-Lei Feng and Marcelo Rovai
-(github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook, GPL-3.0). The IMU code
-comes from "XIAO ESP32S3 Sense" by Marcelo Rovai
-(github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
+2. Put `mosquitto_lab.conf` on the master card (`HW-04`, step 4).
+3. Write the measured reconnection time in the Day 12 lab deck.

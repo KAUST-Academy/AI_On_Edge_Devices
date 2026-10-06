@@ -1,66 +1,7 @@
 # HW-09: Lab network
 
-
 Needed by: the labs of Day 11 (RTSP), Day 12 (MQTT), and Day 13
 (monitoring). Days 7 to 10 use the same network for SSH.
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| Network | One dedicated Wi-Fi router for the lab. KAUST Academy provides it. Not the campus Wi-Fi. |
-| Wi-Fi name | `edgeai-lab`. One name for all bands, or a separate 2.4 GHz name if the XIAO does not connect. |
-| Security | WPA2-Personal with one password for the course |
-| Band | 2.4 GHz must be active. The XIAO ESP32S3 has 2.4 GHz Wi-Fi only. |
-| Client isolation | **Off.** The devices must reach each other. |
-| Addresses | DHCP for all devices. One reserved address for each Raspberry Pi. |
-| Names | `pi-NN` for the Raspberry Pi of group `NN`, `xiao-gNN` as the MQTT client name of the XIAO |
-| Internet | The router has an uplink for downloads. Day 12 Part D removes the uplink cable. |
-| "Cloud" broker | The instructor laptop, with a reserved address |
-| Test | `net_check.py` from a laptop to each Raspberry Pi |
-
-Address plan. `X` is the network of the router, for example `192.168.8`:
-
-| Device | Address | How |
-|---|---|---|
-| Router | `X.1` | Default of the router |
-| Instructor laptop ("cloud" broker) | `X.10` | Reserved in the router |
-| Raspberry Pi of group `NN` | `X.(100+NN)`, for example `X.107` for group 07 | Reserved in the router by the MAC address |
-| XIAO boards and student laptops | `X.150` to `X.250` | DHCP pool |
-
-The files of `HW-07` use `192.168.8.101` as the example for group 01. Change
-the network part to the network of the real router.
-
-Topic prefix of each group: `edgeai/gNN/`.
-
-## Reason
-
-- The syllabus says that Days 11 to 13 need direct traffic between devices,
-  and that a campus network can block this traffic. A dedicated router gives
-  the instructor control of this setting.
-- The kit chapter states "2.4 GHz Wi-Fi" for the XIAO ESP32S3. A router that
-  sends only on 5 GHz does not work for the kit.
-- A campus Wi-Fi with a login for each user does not work for a
-  microcontroller sketch that has only a network name and a password.
-- The Arduino sketch and the MicroPython script of `HW-07` use the IP address
-  of the broker. A reserved address stays the same for the full course, so a
-  group changes its code one time only.
-- The name `pi-NN.local` works from a laptop with no address list. It needs
-  no DNS server. The Raspberry Pi OS sends this name with `avahi`.
-- One removable uplink cable gives a clear "internet off" state for Day 12.
-  The lab network continues to work, and this is the point of the lab.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Need for a dedicated router, firewall check, uplink for Part D | Syllabus, Days 11 and 12 (preparation notes) |
-| 2.4 GHz Wi-Fi of the XIAO ESP32S3 | XIAOML Kit setup chapter of "Machine Learning Systems" |
-| `hostname -I`, `ssh user@hostname.local` | Raspberry Pi setup chapter of "Machine Learning Systems" |
-| Layer model, `ping`, Wi-Fi basics | `chapter_3-4.qmd` of "XIAO: Big Power, Small Board" |
-
-The syllabus marks this preparation as "New". The script and the address plan
-are new.
 
 ## Files
 
@@ -73,23 +14,19 @@ are new.
 Set these values in the web page of the router. The names of the menus
 depend on the router model.
 
-| Setting | Value | Reason |
-|---|---|---|
-| Wi-Fi name (SSID) | `edgeai-lab` | The files of the course use this name |
-| Security | WPA2-Personal (AES) | The Arduino sketch and MicroPython support it |
-| 2.4 GHz band | On, channel 1, 6, or 11, width 20 MHz | The XIAO needs 2.4 GHz |
-| 5 GHz band | On, if the router has it | More capacity for laptops and for the Raspberry Pi |
-| Client isolation (also "AP isolation", "guest mode") | Off | Devices must reach each other |
-| DHCP pool | `X.150` to `X.250` | The addresses below 150 are for reserved devices |
-| DHCP reservation | One for each Raspberry Pi and one for the instructor laptop | Fixed broker addresses |
-| DHCP lease time | 24 hours or more | The addresses stay the same during a day |
-| Multicast | On. "IGMP snooping" off if `.local` names fail. | The `.local` names use multicast |
-| Captive portal, parental control, band steering | Off | These features block or move devices |
-| Uplink (WAN) | Cable to the campus network | Remove it for Day 12 Part D |
-
-If a wired switch is available, connect each Raspberry Pi with an Ethernet
-cable. The video streams of Day 11 then do not share the Wi-Fi with the
-XIAO boards. Write in the lab deck which connection the measurements used.
+| Setting | Value |
+|---|---|
+| Wi-Fi name (SSID) | `edgeai-lab` | 
+| Security | WPA2-Personal (AES) | 
+| 2.4 GHz band | On, channel 1, 6, or 11, width 20 MHz | 
+| 5 GHz band | On, if the router has it | 
+| Client isolation (also "AP isolation", "guest mode") | Off | 
+| DHCP pool | `X.150` to `X.250` | 
+| DHCP reservation | One for each Raspberry Pi and one for the instructor laptop | 
+| DHCP lease time | 24 hours or more | 
+| Multicast | On. "IGMP snooping" off if `.local` names fail. | 
+| Captive portal, parental control, band steering | Off | 
+| Uplink (WAN) | Cable to the campus network |
 
 ## Steps
 
@@ -195,24 +132,6 @@ laptop: port 1883 must accept connections from the lab network.
 
 The IP address always works. Use the printed address list.
 
-## Result of the test on the work computer
-
-One computer cannot test a network between two devices. The test checked the
-script only, with the computer as its own target.
-
-- Name, ping, and port checks: correct for open and closed ports.
-- `--need` with a closed port gives `RESULT: FAIL` and the exit code 1.
-- A name that does not exist gives `FAIL` and the exit code 1.
-- `--mqtt`: round trip through a test broker.
-- `--iperf`: the script reads the result of `iperf3`.
-- `--scan`: tested on the loopback network `127.0.0.0/29`.
-
-## Code status
-
-| File | State | Change |
-|---|---|---|
-| `net_check.py` | new | tested on one Linux computer against itself. Not tested on macOS, on Windows, or between two devices. |
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -237,18 +156,9 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the network `X`, the router model, and the address list in the
+1. Write the network `X`, the router model, and the address list in the
    instructor guide.
-3. Change the example address `192.168.8.101` in `HW-07` if the network of
+2. Change the example address `192.168.8.101` in `HW-07` if the network of
    the router is different.
-4. Write the measured throughput in the Day 11 lab deck as the expected
+3. Write the measured throughput in the Day 11 lab deck as the expected
    value.
-
-## Credits
-
-The network commands follow chapter 3.4 of "XIAO: Big Power, Small Board" by
-Lei Feng and Marcelo Rovai
-(github.com/Mjrovai/XIAO_Big_Power_Small_Board-ebook, GPL-3.0) and the
-Raspberry Pi setup chapter of "Machine Learning Systems" by Vijay Janapa
-Reddi and contributors (mlsysbook.ai, CC BY-NC-SA 4.0). The script is new.

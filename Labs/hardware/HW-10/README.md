@@ -1,62 +1,6 @@
 # HW-10: Arduino Nano 33 BLE Sense Rev2
 
-
 Needed by: the backup modules NB-1 to NB-7.
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| Board core | **Arduino Mbed OS Nano Boards** 4.6.0. Board name (FQBN): `arduino:mbed_nano:nano33ble`. |
-| Library | **Harvard_TinyMLx** 1.2.4-Alpha (Arduino Library Manager) |
-| IMU library for the Rev2 board | **Arduino_BMI270_BMM150** 1.2.4 |
-| Bluetooth library (magic wand only) | **ArduinoBLE** 2.1.0 |
-| TensorFlow Lite Micro | The copy inside Harvard_TinyMLx. Do not install a separate TensorFlow library for these modules. |
-| Change for the Rev2 board | Remove the comment signs of the line `#define NANO33_BLE_REV2` in `test_IMU` and in `magic_wand` |
-| Serial speed | 9600 baud, as in the examples |
-
-## Reason
-
-- The eight examples of the library cover the modules NB-1 to NB-7 with no
-  new code. The authors tested the examples on the board.
-- The library contains its own copy of TensorFlow Lite Micro 2.4.0-Alpha, a
-  camera driver, and the shield functions. One library gives the same
-  versions on each lab computer.
-- The courseware tells the student to install also `Arduino_TensorFlowLite`
-  2.4.0-ALPHA. This library is not in the library index now. The examples
-  compile without it.
-- The courseware names the core "Arduino mbed-enabled Boards" 1.3.1 from
-  2021. The Arduino IDE now shows this core as deprecated. All eight
-  examples compile with the current core 4.6.0.
-- The Rev2 board has a different IMU than the first revision. The library
-  supports both with one line. The other six examples need no change.
-- The same board name (FQBN) is valid for the first revision and for Rev2.
-
-## Differences between the board revisions
-
-| Sensor | Nano 33 BLE Sense (first revision) | Nano 33 BLE Sense Rev2 | Effect on the examples |
-|---|---|---|---|
-| IMU | LSM9DS1 (9 axes) | BMI270 (accelerometer, gyroscope) and BMM150 (magnetometer) | `test_IMU` and `magic_wand` need `#define NANO33_BLE_REV2` |
-| Microphone | MP34DT05 | MP34DT06JTR | none: both use the `PDM` library of the core |
-| Temperature and humidity | HTS221 | HS3003 | none: no example uses it |
-| Pressure | LPS22HB | LPS22HB | none |
-| Gesture, light, proximity | APDS9960 | APDS9960 | none |
-
-Both revisions use the nRF52840 microcontroller: Arm Cortex-M4F, 1 MB of
-flash, 256 KB of RAM. The build tool reports a limit of 983 040 bytes of
-flash and 262 144 bytes of RAM.
-
-The Nano 33 BLE (no "Sense") has the IMU only. The syllabus says that the
-modules NB-2, NB-3, NB-4, NB-8, and NB-9 also run on that board.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Library, examples, `NANO33_BLE_REV2` switch | `github.com/tinyMLx/arduino-library` (CC BY-NC-SA 4.0), files `library.properties`, `examples/`, `src/TinyMLShield.h` |
-| Install steps, library list, sensor tests | HarvardX TinyML courseware, chapter 4.2: readings 4-2-3 (hardware), 4-2-5 (software), 4-2-13 (sensor tests) |
-| Sensors of each revision | Arduino documentation, `docs.arduino.cc/hardware/nano-33-ble-sense-rev2` and `docs.arduino.cc/hardware/nano-33-ble-sense` |
-| Sizes | Compile check on the work computer (2026-10-01) |
 
 ## The examples and their sensors
 
@@ -159,28 +103,6 @@ Use the option `--clean` after you change the version of a library. Without
 it, the tool can use old compiled files of the library, and the build fails
 with "undefined reference".
 
-## Code status
-
-This folder has no code. The modules copy the examples from the library.
-
-Compile check (no board), 2026-10-01, `arduino:mbed_nano:nano33ble`:
-
-| Example | Change | Result |
-|---|---|---|
-| `test_IMU` | `NANO33_BLE_REV2` defined | compiles |
-| `test_IMU` | no change (first revision) | compiles (95 552 bytes flash, 45 944 bytes RAM, with Arduino_LSM9DS1) |
-| `test_microphone` | none | compiles |
-| `test_camera` | none | compiles |
-| `hello_world` | none | compiles |
-| `magic_wand` | `NANO33_BLE_REV2` defined | compiles |
-| `micro_speech` | none | compiles |
-| `person_detection` | none | compiles |
-| `multi_tenant` | none | compiles |
-
-`test_IMU` and `magic_wand` were also compiled with the older library
-versions of the work computer (Arduino_BMI270_BMM150 1.1.0 and ArduinoBLE
-1.3.6). Both compile.
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -208,14 +130,6 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the versions that work in `Labs/VERSIONS.md`.
-3. If an example fails with the core 4.6.0, test the older core that the
+1. Write the versions that work in `Labs/VERSIONS.md`.
+2. If an example fails with the core 4.6.0, test the older core that the
    courseware names, and write the result here.
-
-## Credits
-
-The examples and the install steps come from the HarvardX TinyML courseware
-and the TinyMLx Arduino library by Vijay Janapa Reddi, Laurence Moroney, Pete
-Warden, Lara Suzuki, and the TinyMLx team (github.com/tinyMLx/courseware,
-github.com/tinyMLx/arduino-library, CC BY-NC-SA 4.0).

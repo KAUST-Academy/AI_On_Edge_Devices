@@ -1,40 +1,7 @@
 # HW-03: Memory budget on the XIAO ESP32S3
 
-
 Needed by: the Day 1 lab (model budgets), the Day 3 lab (measure), and the
 Day 4 lab (float and int8 on the board).
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| Build with no PSRAM | Arduino IDE: `Tools` > `PSRAM` > `Disabled`. `arduino-cli`: the board name `esp32:esp32:XIAO_ESP32S3:PSRAM=disabled`. |
-| Build with PSRAM | Arduino IDE: `Tools` > `PSRAM` > `OPI PSRAM`. `arduino-cli`: `esp32:esp32:XIAO_ESP32S3:PSRAM=opi`. |
-| Free memory | The functions of `ESP` in the Arduino core: `getFreeHeap()`, `getMaxAllocHeap()`, `getFreePsram()` |
-| Arena size | `interpreter->arena_used_bytes()` after `AllocateTensors()`, then a search for the smallest size that works |
-| Flash use | The line `Sketch uses ... bytes` of the build, and `ESP.getSketchSize()` |
-
-## Reason
-
-- The PSRAM setting is a build option of the board. It needs no change of the
-  hardware. One sketch then gives both budgets.
-- `Disabled` is the default value of the board `XIAO_ESP32S3`. A student who
-  forgets the setting measures the small budget, not the large one. The camera
-  labs fail without PSRAM, so each lab names the setting that it needs.
-- `arena_used_bytes()` is the number that TensorFlow Lite Micro itself
-  reports. It is exact for one model and one library version.
-- The functions of `ESP` need no library. The Day 1 lab uses them before the
-  students know TensorFlow Lite Micro.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| PSRAM setting, 8 MB PSRAM, 8 MB flash | XIAOML Kit setup chapter of "Machine Learning Systems" (section "Microphone Test") |
-| Build options `PSRAM=disabled` and `PSRAM=opi` | `boards.txt` of the Arduino core "esp32" 3.3.12, board `XIAO_ESP32S3` |
-| Memory functions | `cores/esp32/Esp.h` and `cores/esp32/esp32-hal-psram.h` of the same core |
-| `arena_used_bytes()` | `tensorflow/lite/micro/micro_interpreter.h` of Chirale_TensorFlowLite 2.0.0 |
-| 512 KB of internal SRAM | ESP32-S3 data sheet of Espressif |
 
 ## Files
 
@@ -51,11 +18,6 @@ Day 4 lab (float and int8 on the board).
 | Flash | 8 MB chip. The default partition gives 3 342 336 bytes to one sketch. | The program, the model weights (`model.h`), the constants |
 | Internal RAM | 512 KB in the chip. The build tool reports a limit of 327 680 bytes for the data of a sketch. | The stack, the global variables, the heap, the tensor arena |
 | PSRAM | 8 MB, external, active only with `OPI PSRAM` | Large buffers: images, audio, a large tensor arena |
-
-The model weights stay in flash. Only the arena needs RAM. The arena holds
-the activations, so its size depends on the peak activation memory of the
-model, not on the number of parameters. Day 1 calculates this number. Day 3
-measures it.
 
 ## Method 1: the memory budget (Day 1)
 
@@ -101,45 +63,6 @@ Results to expect:
 - Predict the latency with the arena in the PSRAM before you measure it. The
   PSRAM is an external chip.
 
-## Facts from the compile check
-
-These numbers come from the compiler on the work computer (core 3.3.12). They
-are not measured on a board.
-
-| Sketch | PSRAM option | Flash (bytes) | Static RAM (bytes) |
-|---|---|---|---|
-| `memory_report` | Disabled | 274 217 | 21 832 |
-| `memory_report` | OPI PSRAM | 279 435 | 22 308 |
-| `arena_report` | Disabled | 332 077 | 23 592 |
-| `arena_report` | OPI PSRAM | 337 311 | 24 076 |
-
-- The PSRAM driver adds about 5 200 bytes of flash and about 480 bytes of
-  static RAM.
-- "Static RAM" is the line `Global variables use ... bytes` of the build. The
-  arena of `arena_report` is not in this number, because the sketch reserves
-  it at run time.
-
-The free heap, the largest block, the arena use, and the latency are **not**
-in this file. The instructor measures them in the test below.
-
-## Code status
-
-| File | State | Source | Change |
-|---|---|---|---|
-| `sketches/memory_report/memory_report.ino` | new | Functions of `Esp.h` | not tested |
-| `sketches/arena_report/arena_report.ino` | changed | `examples/hello_world/hello_world.ino` of Chirale_TensorFlowLite 2.0.0 | New: the arena on the heap with `heap_caps_aligned_alloc`, the switch `ARENA_IN_PSRAM`, the memory lines, the latency loop. Removed: the serial input. |
-| `sketches/arena_report/model.h` | copied with no change | `Labs/hardware/HW-02/sketches/tflm_hello/model.h` | none |
-
-Compile check (no board):
-
-| Sketch | Board name (FQBN) | Result | Date |
-|---|---|---|---|
-| `memory_report` | `esp32:esp32:XIAO_ESP32S3:PSRAM=disabled` | compiles | 2026-10-01 |
-| `memory_report` | `esp32:esp32:XIAO_ESP32S3:PSRAM=opi` | compiles | 2026-10-01 |
-| `arena_report` | `esp32:esp32:XIAO_ESP32S3:PSRAM=disabled` | compiles | 2026-10-01 |
-| `arena_report` | `esp32:esp32:XIAO_ESP32S3:PSRAM=opi` | compiles | 2026-10-01 |
-| `arena_report` with `ARENA_IN_PSRAM 1` | `esp32:esp32:XIAO_ESP32S3:PSRAM=opi` | compiles | 2026-10-01 |
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -162,15 +85,7 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the measured budgets in the Day 1 lab `README.md` and in the Day 1
+1. Write the measured budgets in the Day 1 lab `README.md` and in the Day 1
    lab deck.
-3. Write the answer of step 3 in this file. The Day 5 lab needs it.
-
-## Credits
-
-The PSRAM setting comes from the XIAOML Kit setup chapter of "Machine Learning
-Systems" by Vijay Janapa Reddi and contributors (mlsysbook.ai,
-CC BY-NC-SA 4.0). The interpreter code adapts the example `hello_world` of
-Chirale_TensorFlowLite (github.com/spaziochirale/Chirale_TensorFlowLite,
-Apache-2.0).
+2. Write the answer of step 3 in `The three memories of the board`. The Day 5
+   lab needs it.

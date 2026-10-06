@@ -1,57 +1,6 @@
 # HW-02: TensorFlow Lite Micro on the ESP32-S3
 
-
 Needed by: the Day 3 lab (convert and deploy) and the Day 5 lab.
-
-## Decision
-
-The course uses two paths to run a model on the XIAO ESP32S3.
-
-| Path | Library | Used for |
-|---|---|---|
-| A. Own model | **Chirale_TensorFlowLite 2.0.0** (Arduino Library Manager) | Day 3 Part B and C, Day 4 Part D: the students convert a model and write the inference code |
-| B. Edge Impulse | The Arduino library that Edge Impulse Studio makes for each project | Day 3 Part D, Day 5: keyword spotting and image classification |
-
-This folder prepares path A. The kit labs of the sources give path B.
-
-## Reason
-
-- The library is in the Arduino Library Manager. A student installs it with
-  one click. It needs no ESP-IDF and no command line.
-- It supports the architecture `esp32`. The minimal sketch of this folder
-  compiles for `esp32:esp32:XIAO_ESP32S3` with the core 3.3.12.
-- It contains the source code of TensorFlow Lite Micro. The students can read
-  the interpreter, the operator resolver, and the kernels. Day 3 teaches these
-  parts.
-- It uses the standard API of TensorFlow Lite Micro (`MicroInterpreter`,
-  `MicroMutableOpResolver`, `arena_used_bytes()`). The same code works on the
-  Nano 33 BLE, so the modules NB-2 and NB-8 can compare the two boards.
-- Its licence is Apache-2.0.
-
-Options that were compared on 2026-10-01:
-
-| Library | Result |
-|---|---|
-| Chirale_TensorFlowLite 2.0.0 | **Selected.** Source code, architecture `esp32`, compiles with the core 3.3.12. |
-| ArduTFLite 1.0.2 | A wrapper of the Chirale library with a simpler API. It hides the interpreter and the arena, which Day 3 must show. Not selected. |
-| tflm_esp32 2.0.0 | A compiled binary (`libtflm_esp32.a`, 30 MB) from 2024. The students cannot read the kernels. Not selected. |
-| Arduino_TensorFlowLite (`tflite-micro-arduino-examples`) | Its README says that it is for Arm Cortex-M boards. Not for the ESP32-S3. The Nano 33 modules use it. |
-| esp-tflite-micro by Espressif | A component for ESP-IDF, not an Arduino library. It has the ESP-NN kernels. Not selected, because the course uses the Arduino IDE. |
-
-**Limit of the decision.** The Chirale library has optimized kernels for Arm
-(`cmsis_nn`) but none for the ESP32-S3. On the XIAO it runs the reference
-kernels. Path A can then be slower than a build with the ESP-NN kernels of
-Espressif. The instructor measures path A and path B in the test below. The
-Part 2 of the Day 3 theory can use the result as an example for optimized kernels.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Minimal sketch | Example `hello_world` of Chirale_TensorFlowLite 2.0.0 (`github.com/spaziochirale/Chirale_TensorFlowLite`, Apache-2.0) |
-| Sine model | The same example. The model comes from the TensorFlow Lite Micro "hello world" example of the TensorFlow Authors (Apache-2.0). |
-| Path B | Motion classification chapter and keyword spotting chapter of "Machine Learning Systems", and `XIAOML_Kit_code/` of "XIAO ESP32S3 Sense" |
-| Core version warning for path B | XIAOML Kit setup chapter of "Machine Learning Systems" |
 
 ## Files
 
@@ -146,22 +95,6 @@ PSRAM disabled.
 - Path A and path B install different libraries. They do not conflict,
   because each sketch includes only one of them.
 
-## Code status
-
-| File | State | Source | Change |
-|---|---|---|---|
-| `sketches/tflm_hello/tflm_hello.ino` | changed | `examples/hello_world/hello_world.ino` of Chirale_TensorFlowLite 2.0.0 | The sketch makes its own input values. One operator in place of `AllOpsResolver`. Prints the arena use and the latency. Serial speed 115200. Waits 3 s for the Serial Monitor, not without limit. |
-| `sketches/tflm_hello/model.h` | changed | `examples/hello_world/model.h` of the same library | The same 2488 bytes. `tflite_to_header.py` made the file again, with an include guard. |
-| `models/hello_world.tflite` | copied with no change | The bytes of `model.h` above | none |
-| `tflite_to_header.py` | new | no source | tested on the work computer |
-
-Compile check (no board):
-
-| Sketch | Board name (FQBN) | Result | Date |
-|---|---|---|---|
-| `tflm_hello` | `esp32:esp32:XIAO_ESP32S3:PSRAM=disabled` | compiles: 336 157 bytes flash, 25 616 bytes RAM | 2026-10-01 |
-| `tflm_hello` | `esp32:esp32:XIAO_ESP32S3:PSRAM=opi` | compiles: 341 391 bytes flash, 26 100 bytes RAM | 2026-10-01 |
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -184,12 +117,5 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the core version that works with path B in `Labs/VERSIONS.md`.
-3. If path A is too slow for Day 5, use path B for both Day 5 models.
-
-## Credits
-
-The sketch and the model adapt the example `hello_world` of the library
-Chirale_TensorFlowLite by Chirale and the TensorFlow Authors
-(github.com/spaziochirale/Chirale_TensorFlowLite, Apache-2.0).
+1. Write the core version that works with path B in `Labs/VERSIONS.md`.
+2. If path A is too slow for Day 5, use path B for both Day 5 models.

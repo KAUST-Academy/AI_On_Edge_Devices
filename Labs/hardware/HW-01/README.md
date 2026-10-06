@@ -1,45 +1,6 @@
 # HW-01: MicroPython on the XIAOML Kit
 
-
 Needed by: the Day 2 lab (MicroPython start, sensor input, dataset).
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| Firmware | MicroPython v1.29.0 for the board `SEEED_XIAO_ESP32S3`, file `SEEED_XIAO_ESP32S3-20260824-v1.29.0.bin` |
-| Tools | `esptool` writes the firmware. `mpremote` opens the REPL, copies files, and runs scripts. |
-| IMU driver | The small driver `board/lsm6ds3.py` of this folder |
-| Sensor configuration | 16 g, 2000 degrees per second, 416 Hz output data rate |
-| Sampling | 50 Hz, with one deadline for each sample (`board/imu_stream.py`) |
-| Return to Arduino | Upload an Arduino sketch. Use bootloader mode if the upload fails. |
-
-## Reason
-
-- MicroPython has a firmware for this board. The page
-  `micropython.org/download/SEEED_XIAO_ESP32S3/` says that the firmware works
-  on the XIAO ESP32S3. No generic firmware is necessary.
-- The sources give Arduino code only for the IMU. No source has a MicroPython
-  driver. A driver of about 130 lines is small enough for the students to read on
-  Day 2. It shows the registers that Part 1 of the Day 2 theory explains.
-- The driver uses the default values of the Arduino library "Seeed Arduino
-  LSM6DS3". The Day 3 sketch uses that library. The training data of Day 2 and
-  the inference of Day 3 then use the same sensor configuration.
-- The kit lab collects motion data at 50 Hz. The Day 2 lab uses the same rate,
-  so the Day 2 dataset fits the Day 3 lab.
-- A deadline for each sample keeps the rate constant. A fixed `sleep` after
-  each sample does not: the read time and the print time add to each period.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Firmware and write commands | `micropython.org/download/SEEED_XIAO_ESP32S3/` (read on 2026-10-01) |
-| Register addresses, bit values, scale factors | Library "Seeed Arduino LSM6DS3" 2.0.7, files `LSM6DS3.h` and `LSM6DS3.cpp` (MIT) |
-| I2C address 0x6A, display address 0x3C | XIAOML Kit setup chapter of "Machine Learning Systems", and `XIAOML_Kit_code/imu_test/imu_test.ino` of "XIAO ESP32S3 Sense" |
-| I2C pins: SDA = GPIO5, SCL = GPIO6 | `variants/XIAO_ESP32S3/pins_arduino.h` of the Arduino core "esp32" 3.3.12 |
-| Sampling rate 50 Hz and the deadline method | Motion classification chapter of "Machine Learning Systems" (data collection sketch) |
-| Bootloader mode | `wiki.seeedstudio.com/xiao_esp32s3_getting_started` (section "BootLoader Mode") |
 
 ## Files
 
@@ -161,31 +122,6 @@ Day 3 needs the Arduino firmware again.
 - The script `imu_stream.py` reads the sensor each 20 ms. The sensor makes a
   new sample each 2.4 ms (416 Hz). The read takes the newest sample.
 
-## Difference from the source
-
-The sketch `imu_test.ino` and the kit chapter say "±2g" and "±250 dps". The
-library does not use these values. Its default values are 16 g and 2000
-degrees per second (`LSM6DS3.cpp`, lines 368 and 376). The printed values are
-correct in g, because the library scales with its real range. Only the
-resolution is different: 0.488 mg for each count, not 0.061 mg.
-
-## Code status
-
-| File | State | Source | Change |
-|---|---|---|---|
-| `board/lsm6ds3.py` | new | Register values from `LSM6DS3.h` and `LSM6DS3.cpp` | not tested |
-| `board/i2c_scan.py` | new | no source | not tested |
-| `board/imu_stream.py` | new | Method of the kit data collection sketch | not tested |
-| `host/check_rate.py` | new | no source | tested on the work computer with four synthetic files (constant rate, slow rate, lost lines, large jitter) |
-| `get_firmware.sh` | new | no source | tested on the work computer: the download and the checksum pass |
-
-The driver was tested on the work computer with a simulated I2C bus. The
-test confirms the register writes (`0x12 = 0x44`, `0x10 = 0x64`, `0x11 = 0x6C`)
-and the scale factors. It does not replace a test on the board.
-
-The driver sets the bit BDU (block data update) in `CTRL3_C`. The Arduino
-library does not set this bit. This is one difference to test.
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -213,14 +149,5 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the firmware version in `Labs/VERSIONS.md`.
-3. Correct the Day 2 lab files with the measured rate and the measured times.
-
-## Credits
-
-The register values come from the library "Seeed Arduino LSM6DS3" by Seeed
-Studio (github.com/Seeed-Studio/Seeed_Arduino_LSM6DS3, MIT). The sampling
-method and the board data come from "Machine Learning Systems" by Vijay Janapa
-Reddi and contributors (mlsysbook.ai, CC BY-NC-SA 4.0) and from "XIAO ESP32S3
-Sense" by Marcelo Rovai (github.com/Mjrovai/XIAO-ESP32S3-Sense, Apache-2.0).
+1. Write the firmware version in `Labs/VERSIONS.md`.
+2. Correct the Day 2 lab files with the measured rate and the measured times.

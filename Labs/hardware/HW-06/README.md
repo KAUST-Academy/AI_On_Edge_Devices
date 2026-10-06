@@ -1,60 +1,6 @@
 # HW-06: RTSP from the Raspberry Pi camera
 
-
 Needed by: the Day 11 lab (RTSP server, inference on the stream, latency).
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| RTSP server | MediaMTX v1.21.1, one program with no installation, in `~/mediamtx` |
-| Camera source | The source `rpiCamera` of MediaMTX. It reads the Raspberry Pi camera directly. |
-| Stream address | `rtsp://pi-NN.local:8554/cam` |
-| Start values | 1280 × 720, 30 frames per second, 2 Mbit/s, one keyframe each second |
-| Reader | `rtsp_reader.py`: OpenCV with the FFmpeg backend. A thread keeps only the newest frame. |
-| Transport | RTP over TCP as the default. UDP is the second setting of the lab. |
-| Latency method | A clock on the screen and the stream side by side (`latency_clock.py`). The median of 10 images. |
-
-## Reason
-
-- MediaMTX is one file. It needs no package and no administrator right. The
-  release has a build for the 64-bit Raspberry Pi.
-- The source `rpiCamera` needs no second program. The other method (a camera
-  program that sends to FFmpeg, and FFmpeg that sends to the server) has more
-  parts that can fail.
-- One configuration file sets the resolution, the frame rate, and the bit
-  rate. Part C of the lab changes these values.
-- OpenCV is the library of the Day 8 lab. The reader gives the same frame
-  type (a NumPy array) as the Day 8 code, so the detector needs no change.
-- A slow model reads fewer frames than the stream sends. OpenCV then keeps
-  old frames in a buffer, and the delay grows with time. A thread that always
-  reads, and keeps only the newest frame, prevents this.
-- TCP loses no packet, so the image has no errors on Wi-Fi. UDP can have a
-  smaller delay. The comparison is a lab measurement.
-- The clock method measures the complete path: camera, encoder, network,
-  decoder, and display. It needs no synchronized clocks on two computers,
-  because one screen shows both times.
-
-**Facts that the lab must know:**
-
-- The Raspberry Pi 5 has no hardware H.264 encoder. The setting
-  `rpiCameraCodec: auto` then selects the software encoder (the file
-  `mediamtx.yml` of the release describes this rule). The encoder uses CPU
-  time. A detector on the same Raspberry Pi has less CPU time.
-- Only one program can use the camera. While MediaMTX runs, a `picamera2`
-  script cannot open the camera. Stop MediaMTX before you run the Day 8 code
-  with the camera.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Server, settings, camera source | MediaMTX documentation (`mediamtx.org/docs`) and the file `mediamtx.yml` of the release v1.21.1 (`github.com/bluenviron/mediamtx`, MIT) |
-| Checksums | File `checksums.sha256` of the release v1.21.1 (read on 2026-10-01) |
-| Reader options | OpenCV documentation, video I/O with the FFmpeg backend (`OPENCV_FFMPEG_CAPTURE_OPTIONS`) |
-
-No source repository of the course has RTSP material. All code of this folder
-is new.
 
 ## Files
 
@@ -183,38 +129,6 @@ ffmpeg -re -f lavfi -i testsrc=size=640x480:rate=30 -c:v libx264 \
 Then read `rtsp://localhost:8554/test`. Use this to test the reader when the
 camera does not work.
 
-## Result of the test on the work computer
-
-The work computer has no Raspberry Pi camera. The test used MediaMTX v1.21.1
-for x86, the path `test`, and a Python program that sent a clock image
-through FFmpeg (640 × 480, 30 frames per second, `libx264`).
-
-- `install_mediamtx.sh`: the download, the checksum, and the start pass.
-- `mediamtx_cam.yml`: the server loads the file. On x86, the path `cam`
-  reports "server was compiled without support for the Raspberry Pi Camera".
-  This is correct for a computer that is not a Raspberry Pi.
-- `rtsp_reader.py`: 194 frames in 7 seconds, 30.0 frames per second, 0 frames
-  skipped. A wrong address gives the error "cannot open the stream".
-- `latency_clock.py --no-window`: three images saved. Both clocks are easy to
-  read. Two images gave 544 ms and 548 ms. This number includes the delay of
-  the test program that sent the stream. **It is not a number for the lab.**
-- Correction of 2026-10-03: most of the 544 ms came from the decoder of
-  the reader. OpenCV used 16 decoder threads on the 24 cores of
-  the work computer, and each thread holds one frame (33 ms). With one
-  decoder thread, the age of a frame was 40 ms on the same computer.
-  `rtsp_reader.py` now opens the stream with one decoder thread
-  (`cv2.CAP_PROP_N_THREADS`). An experiment of this course measured this
-  (Part 3 of the Day 11 lecture).
-
-## Code status
-
-| File | State | Source | Change |
-|---|---|---|---|
-| `install_mediamtx.sh` | new | no source | tested on the work computer (x86). Not tested on a Raspberry Pi. |
-| `mediamtx_cam.yml` | new | Key names from `mediamtx.yml` of the release | The file loads on x86. The camera keys are not tested. |
-| `rtsp_reader.py` | new | no source | tested with a synthetic stream. Not tested with the camera, a model, or `--show`. |
-| `latency_clock.py` | new | no source | The mode `--no-window` was tested. The window mode was not tested. |
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -241,14 +155,7 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the MediaMTX version in `Labs/VERSIONS.md`.
-3. Write the measured latency of two settings in the Day 11 lab deck as the
+1. Write the MediaMTX version in `Labs/VERSIONS.md`.
+2. Write the measured latency of two settings in the Day 11 lab deck as the
    expected result.
-4. Install MediaMTX on the master card (`HW-04`, step 4).
-
-## Credits
-
-MediaMTX is a program of the bluenviron project
-(github.com/bluenviron/mediamtx, MIT licence). The scripts of this folder are
-new.
+3. Install MediaMTX on the master card (`HW-04`, step 4).
