@@ -163,6 +163,33 @@ archived/
 !archived/Labs
 !archived/setup.sh
 
+# LaTeX artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex
+*.nav
+*.snm
+*.vrb
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
+*.dvi
+*.pdf
+*.ps
+*.eps
+*.figlist
+*.makefile
+*.xdv
+
 # Local development files
 scripts/python/latex
 scripts/python/pptx

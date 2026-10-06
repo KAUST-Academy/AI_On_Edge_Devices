@@ -1,52 +1,6 @@
 # HW-04: Raspberry Pi 5 image
 
-
 Needed by: the Day 7 lab and the Day 8 lab. Days 9 to 15 use the same card.
-
-## Decision
-
-| Topic | Decision |
-|---|---|
-| Operating system | Raspberry Pi OS (64-bit) with the desktop, written with Raspberry Pi Imager |
-| User name | `edge`, the same on all cards. The instructor sets the password. |
-| Host name | `pi-NN`, where `NN` is the group number. The master card is `pi-00`. |
-| Remote access | SSH, enabled in Raspberry Pi Imager. Name `pi-NN.local`. |
-| Python | Three virtual environments, each with `--system-site-packages`: `~/tflite_env`, `~/yolo`, `~/ollama` |
-| Camera library | `picamera2` from `apt`, not from `pip` |
-| Method for many cards | Prepare one master card. Copy it to all cards. Run `set_hostname.sh` one time on each copy. |
-
-## Reason
-
-- The book uses Raspberry Pi OS (64-bit) with the desktop for the Raspberry
-  Pi 5. The guide for small language models says that a 32-bit operating
-  system cannot run them.
-- The companion book makes one environment for each area: `~/tflite_env`,
-  `~/yolo`, and `~/ollama`. The course keeps these names, so the commands of
-  the book work with no change. Separate environments also keep the package
-  versions of one lab away from the other labs.
-- The companion book gives this rule: use `apt` for system libraries and
-  hardware libraries, and use `pip` in an environment for all other packages.
-  `picamera2` talks to the camera hardware, so it comes from `apt`. The
-  option `--system-site-packages` lets an environment see it.
-- The setup needs large downloads (PyTorch, Ultralytics, Ollama). One master
-  card and a copy are faster than the same setup on each card. All groups
-  then have the same versions.
-- A unique host name lets a group find its Raspberry Pi with no IP address.
-
-The book also removes the file `EXTERNALLY-MANAGED` to permit `pip` with no
-environment. The course does not do this, because all packages are in the
-environments.
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Operating system, Raspberry Pi Imager, SSH, shutdown, file transfer | Raspberry Pi setup chapter of "Machine Learning Systems" (`kits/contents/raspi/setup/setup.qmd`) |
-| Camera commands (`--list-cameras`, `rpicam-jpeg`) | The same chapter, section "Installing a Camera Module on the CSI port" |
-| Environments and packages | "Edge AI Engineering: Raspberry Pi", chapters "Image Classification Fundamentals", "Computer Vision Applications with YOLO", and "Small Language Models" |
-| Rule for `apt` and `pip` | "Edge AI Engineering: Raspberry Pi", chapter "Setup" |
-| Ollama install command, 64-bit rule, cooler | `A_Guide_to_Local_Inference/README.md` of "EdgeML with Raspberry Pi", section 5 |
-| Temperature command | Small language model chapter of "Machine Learning Systems" |
 
 ## Files
 
@@ -220,26 +174,6 @@ sudo shutdown -h now
 
 Wait until the green LED is off.
 
-## Code status
-
-| File | State | Source | Change |
-|---|---|---|---|
-| `setup_pi.sh` | new | Commands from the sources above | not tested on a Raspberry Pi |
-| `check_pi.sh` | new | Camera and temperature commands from the book | Tested on the work computer (x86, no camera): the script runs to the end and reports the missing parts as FAIL. Not tested on a Raspberry Pi. |
-| `prepare_master.sh` | new | no source | not tested |
-| `set_hostname.sh` | new | no source | The checks of the arguments were tested. The changes of the system were not tested. |
-
-Open points for the test:
-
-- The sources were written for the release "Bookworm" (Python 3.11). The
-  current release of Raspberry Pi OS can be newer. A package can need a
-  different version.
-- `ai-edge-litert`, `torch`, and `ultralytics` must have a wheel for the
-  Python version of the operating system.
-- `pip` can install a NumPy version in an environment that is different from
-  the system version. `picamera2` then can fail in that environment.
-  `check_pi.sh` tests the import of `picamera2` in each environment.
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -266,17 +200,8 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the release of the operating system and the package versions in
+1. Write the release of the operating system and the package versions in
    `Labs/VERSIONS.md`.
-3. If a package needs a fixed version, write the version in `setup_pi.sh`.
-4. Keep the file `edgeai-master.img`. A broken card then needs only step 6.5
+2. If a package needs a fixed version, write the version in `setup_pi.sh`.
+3. Keep the file `edgeai-master.img`. A broken card then needs only step 6.5
    and step 7.
-
-## Credits
-
-The steps adapt the Raspberry Pi setup chapter of "Machine Learning Systems"
-by Vijay Janapa Reddi and contributors (mlsysbook.ai, CC BY-NC-SA 4.0), and
-the setup steps of "Edge AI Engineering: Raspberry Pi" by Marcelo Rovai
-(mjrovai.github.io/EdgeML_Made_Ease_ebook) and of "EdgeML with Raspberry Pi"
-(github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0).

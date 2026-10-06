@@ -1,21 +1,20 @@
 # HW-08: Dashboard for the monitored application
 
-
 Needed by: the Day 13 lab (instrument, dashboard, drift, alert).
 
-## Decision
+## Choice
 
 Two dashboard tools are ready. The instructor selects one after the test on
 the Raspberry Pi.
 
-| Option | Tool | State |
-|---|---|---|
-| A | Grafana with Prometheus (`grafana/`) | Prepared. The syllabus names it as the default tool. |
-| B | Python dashboard (`python_dashboard/`) | Prepared. **The lab uses this option until the instructor selects.** |
+| Option | Tool |
+|---|---|
+| A | Grafana with Prometheus (`grafana/`) |
+| B | Python dashboard (`python_dashboard/`) |
 
 Both options read the same MQTT messages:
 
-| Item | Decision |
+| Item | Choice |
 |---|---|
 | Topic | `edgeai/<group>/pi/metrics` |
 | Payload | `{"seq":12,"ts":1790000000.5,"latency_ms":41.3,"fps":22.8,"confidence":0.84,"cpu_temp_c":58.2,"cpu_percent":71.0,"ram_used_mb":1830.4}` |
@@ -28,24 +27,6 @@ application --MQTT--> broker --+--> dashboard.py --> CSV files + web page      (
                                +--> mqtt_exporter.py --> Prometheus --> Grafana (option A)
 ```
 
-## Reason
-
-- Part B of the lab says: "Publish the metrics with MQTT, store them, and
-  build a live dashboard." One message format for both options lets a group
-  change the tool with no change of the application.
-- Option B is one Python file and one web page. It needs only `paho-mqtt`.
-  The page loads no file from the internet, so it works in Part D of Day 12
-  and in a lab with no internet link. A student can read all of its code in
-  the lab time.
-- Option A shows the tools that production systems use: a time-series
-  database, a query language, and alert rules in a file. It needs three
-  services and a bridge, because Prometheus cannot read MQTT. The setup time
-  is the risk.
-- The plan keeps option B as the lab tool until a test on the Raspberry Pi
-  shows that option A fits in the 45 minutes of Part B.
-- The confidence rule needs no labels. Day 13 teaches drift detection from
-  the confidence values.
-
 ## Comparison
 
 | Topic | A: Grafana with Prometheus | B: Python dashboard |
@@ -57,19 +38,6 @@ application --MQTT--> broker --+--> dashboard.py --> CSV files + web page      (
 | History | Days | 10 minutes on the page, all data in the CSV files |
 | Student work in the lab | Add a panel and a rule in a query language | Change Python code |
 | Tested on the work computer | Yes: Prometheus 3.15.0 and Grafana 13.2.3 load the files, and the alert fires | Yes: 52 messages, the alert fires |
-
-## Sources
-
-| Item | Source |
-|---|---|
-| Metrics to collect | Day 13 of the syllabus, and "Machine Learning Systems", chapter "ML Operations" |
-| CSV log | `SLMs_for_IoT_CONTROL/data_logger.py` of "EdgeML with Raspberry Pi" (GPL-3.0) |
-| Temperature command | Lab "Small Language Models" of "Machine Learning Systems" |
-| Prometheus settings and rules | Prometheus documentation (`prometheus.io/docs`) |
-| Grafana install and provisioning | Grafana documentation (`grafana.com/docs/grafana/latest`) |
-| Python client for Prometheus | `prometheus_client` documentation |
-
-All code of this folder is new.
 
 ## Files
 
@@ -207,26 +175,6 @@ of 30 s is 0.49". Grafana 13.2.3 loaded the data source and the dashboard
 into the folder `Edge AI`. All 13 queries of the 12 panels returned the
 status 200 through Grafana. **The dashboard was not opened in a browser.**
 
-## Code status
-
-| File | State | Change |
-|---|---|---|
-| `metrics_publisher.py` | new | tested on the work computer. `vcgencmd` not tested. |
-| `python_dashboard/dashboard.py` | new | tested on the work computer |
-| `python_dashboard/index.html` | new | syntax check only. Not seen in a browser. |
-| `grafana/mqtt_exporter.py` | new | tested on the work computer with Prometheus 3.15.0 |
-| `grafana/prometheus.yml`, `grafana/alert_rules.yml` | new | checked with `promtool` 3.15.0 and tested with Prometheus 3.15.0 |
-| `grafana/provisioning/`, `grafana/dashboards/` | new | loaded by Grafana 13.2.3 on the work computer |
-| `grafana/install_monitoring.sh` | new | not tested. It needs `sudo` and a Raspberry Pi. |
-
-Open points for the test:
-
-- The `apt` package of Prometheus on Raspberry Pi OS is older than version
-  3.15.0. The settings file uses only basic keys. The test must confirm it.
-- The CPU load and the RAM of the three services of option A on the
-  Raspberry Pi are not known. The detector needs the CPU.
-- The Grafana package needs internet access during the installation.
-
 ## Test steps for the instructor
 
 - Date of the test:
@@ -253,15 +201,8 @@ Problems found:
 
 ## After the test
 
-1. Change the line `Hardware status:` to `tested on hardware (YYYY-MM-DD)`.
-2. Write the selected option at the top of this file and in Section 13 of
+1. Write the selected option at the top of this file and in Section 13 of
    the execution plan.
-3. Write the versions in `Labs/VERSIONS.md`.
-4. If the lab uses option A, run `install_monitoring.sh` on the master card
+2. Write the versions in `Labs/VERSIONS.md`.
+3. If the lab uses option A, run `install_monitoring.sh` on the master card
    (`HW-04`, step 4).
-
-## Credits
-
-The CSV log follows `data_logger.py` of "EdgeML with Raspberry Pi" by Marcelo
-Rovai (github.com/Mjrovai/EdgeML-with-Raspberry-Pi, GPL-3.0). The other code
-of this folder is new.

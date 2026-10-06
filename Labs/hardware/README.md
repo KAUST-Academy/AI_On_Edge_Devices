@@ -1,13 +1,6 @@
 # Hardware preparation
 
-Each folder holds one hardware decision of the course: the decision, the
-reason, the source, the code or the commands, and the test steps for the
-instructor.
-
-**No board was connected when this material was prepared (2026-10-01).** Each
-folder has the line `Hardware status:` near the top of its `README.md`. The
-instructor runs the test steps on the real hardware and then changes this
-line.
+Each folder holds the preparation and test steps for one hardware choice. The instructor runs these steps before the lab, and writes the results in the table `Test steps for the instructor` of the folder's `README.md`. 
 
 ## Index
 
@@ -45,16 +38,3 @@ line.
 5. `HW-07`: set the Mosquitto broker.
 6. `HW-08`: install Prometheus and Grafana, if the lab uses option A.
 7. `HW-04`: run `check_pi.sh`, then copy the card.
-
-## What "tested" means in these folders
-
-| Text in a folder | Meaning |
-|---|---|
-| "compiles" | `arduino-cli` built the sketch for the board. No board ran it. |
-| "tested on the work computer" | The script ran on a Linux computer with no board, with simulated input where necessary |
-| "not tested" | The code did not run on the board |
-| "tested on hardware (date)" | The instructor ran the test steps on the real board |
-
-A number in a folder is from the compiler, from a source (with the source
-name), or from a run on the work computer (with this label). All other
-numbers are empty cells for the instructor.
