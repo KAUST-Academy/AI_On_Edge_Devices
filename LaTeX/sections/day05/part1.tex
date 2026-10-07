@@ -99,8 +99,6 @@
     \item This part gives the features, the model, and the two types of
           errors. Part 3 gives the post-processing.
   \end{itemize}
-  \source{Window, features, and classes: kit lab ``Keyword Spotting (KWS)''
-    of \emph{Machine Learning Systems}.}
 \end{frame}
 
 \begin{frame}{Why the model does not take the samples}
@@ -180,7 +178,7 @@
     \item Each frame gets one spectrum. The frames in order give the time
           axis of the spectrogram.
   \end{itemize}
-  \source{Frame length and stride: kit lab ``KWS Feature Engineering'' of
+  \source{``KWS Feature Engineering'' of
     \emph{Machine Learning Systems}.}
 \end{frame}
 
@@ -199,8 +197,6 @@
     \item The features use the power of each bin: the square of the
           magnitude.
   \end{itemize}
-  \source{One frame of the synthetic signal. The FFT adds zeros to the 320
-    samples to get 512 points.}
 \end{frame}
 
 \begin{frame}{Step 3: the Mel scale}
@@ -229,7 +225,7 @@
       \]
       \small
       \renewcommand{\arraystretch}{1.15}
-      \begin{tabular}{@{}rr@{}}
+      \begin{tabular}{@{}cr@{}}
         \toprule
         \textbf{Frequency in Hz} & \textbf{Mel} \\
         \midrule
@@ -268,8 +264,6 @@
     \item The result for all frames is the \textbf{Mel spectrogram}. Other
           name: Mel filter bank energies (MFE).
   \end{itemize}
-  \source{The figure shows 10 filters, so that each filter is visible. The
-    example of this part uses 32 filters.}
 \end{frame}
 
 \begin{frame}{Step 4: logarithm and DCT}
@@ -299,7 +293,7 @@
     \item Keep the first 12 or 13 coefficients. These are the
           \textbf{Mel-frequency cepstral coefficients (MFCC)}.
   \end{itemize}
-  \source{Steps and typical values: kit lab ``KWS Feature Engineering'' of
+  \source{kit lab ``KWS Feature Engineering'' of
     \emph{Machine Learning Systems}.}
 \end{frame}
 
@@ -357,7 +351,7 @@
     \item The feature block is a design decision. Train the model with two
           blocks, and compare the accuracy and the time on the device.
   \end{itemize}
-  \source{Comparison: kit lab ``KWS Feature Engineering'' of \emph{Machine
+  \source{``KWS Feature Engineering'' of \emph{Machine
     Learning Systems}.}
 \end{frame}
 
@@ -386,7 +380,7 @@
           frame are the channels of the first layer.
     \item In \code{int8}, the weights need about 1.6 KB of flash.
   \end{itemize}
-  \source{The model of the kit lab ``Keyword Spotting (KWS)''. Parameter
+  \source{``Keyword Spotting (KWS)''. Parameter
     counts: the training notebook of the repository XIAO-ESP32S3-Sense.}
 \end{frame}
 
