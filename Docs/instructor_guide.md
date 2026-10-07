@@ -415,6 +415,9 @@ Before:
       students estimate the energy from the data sheet values and from the
       published values of the README.
 - [ ] Each Raspberry Pi has the model files of Days 7 and 8.
+- [ ] Decide whether to use the module TH-37 (the D·A·M taxonomy)
+      before Part 1 of the lecture. Its deck is `Lectures/modules/Module_TH-37.pdf`
+      and it needs no hardware.
 
 Lab:
 
@@ -560,6 +563,9 @@ Before:
       `Labs/day15/schedule.py` and publish it at the end of the day.
 - [ ] Decide whether to use the module TH-3 (ML workflow and life cycle)
       before Part 1 of the lecture. Its deck is `Lectures/modules/Module_TH-3.pdf`
+      and it needs no hardware.
+- [ ] Decide whether to use the module TH-37 (the D·A·M taxonomy)
+      before Part 3 of the lecture. Its deck is `Lectures/modules/Module_TH-37.pdf`
       and it needs no hardware.
 
 Lab:

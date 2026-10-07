@@ -473,6 +473,10 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Deliverable:* the benchmark report.
 - *Check:* each number has a method (repetitions, warm-up, input), and the report compares the same task on both boards.
 
+**Recap modules**
+
+- TH-37: The D·A·M taxonomy (25 min, theory only). Use it before Part 1 of the lecture, or in place of Part 1 when the class needs to read a number before it acts.
+
 
 
 
@@ -655,6 +659,7 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 **Recap modules**
 
 - TH-3: ML workflow and life cycle (50 min, theory only). Use it before Part 1 of the lecture, or in place of Part 1 when the class needs the life cycle in depth.
+- TH-37: The D·A·M taxonomy (25 min, theory only). Use it before Part 3 of the lecture, or in place of Part 3 when the class needs the design method in depth.
 
 
 
@@ -703,9 +708,11 @@ Each module has the same parts, so that you can present it alone:
 |---|---|---|---|---|
 | TH-3 | ML workflow and life cycle | T | 50 min | 1, 14 |
 | TH-9 | The machine learning paradigm | T | 50 min | 1 |
+| TH-37 | The D·A·M taxonomy: find the bottleneck | T | 25 min | 9, 14 |
 
 - **TH-3.** The stages of an ML project from the problem definition to monitoring, and the feedback between the stages. *Exercise:* a team finds a limit during monitoring that was never written in the problem definition. Give the cost multiplier of the illustrative model of the chapter, and name the stages to revisit. Deck: `Lectures/modules/Module_TH-3.pdf`.
 - **TH-9.** Rules that a programmer writes and rules that a model learns from data. Features, labels, model, and loss. Regression and classification. Training and inference. *Exercise:* for three problems, decide if written rules or a learned model is the correct tool, and give one reason. Deck: `Lectures/modules/Module_TH-9.pdf`.
+- **TH-37.** Data, Algorithm, and Machine: the three places of a bottleneck. A method to find the bottleneck before you optimize. *Exercise:* name the bottleneck in three cases. Deck: `Lectures/modules/Module_TH-37.pdf`.
 
 ## 7. Assessment
 
