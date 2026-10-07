@@ -76,6 +76,21 @@ bash build.sh --file Day01_Theory.tex
 | 14 | Production edge AI design and capstone start | both | 67 | 18 | A 20, B 50, C 40, D 40 |
 | 15 | Capstone build and demonstrations | both | 28 | 14 | A 80, B 70, C 30 |
 
+### Backup modules
+
+The syllabus names the backup modules that fit each day, and its Section 6
+describes each module. A backup module has its own deck
+(`Lectures/modules/Module_<ID>.pdf`) and its own lab folder (`Labs/modules/<ID>/`).
+Check that the files of a module are in the repository before you plan it.
+Build the deck of a module with `bash build_module.sh --file Module_<ID>.tex`.
+
+Use a backup module when:
+
+- a group completes the core lab early,
+- a core lab fails because of the hardware, the network, or a cloud service,
+- the class needs more depth or less depth on a topic,
+- the class needs a recap of a machine learning topic (modules `TH-n`).
+
 ## 3. Before the course
 
 Do these steps in this order.
@@ -162,6 +177,8 @@ of each day tells the students when to use them.
 - [ ] Print the two quizzes without the section "Answers".
 - [ ] Print the lab check sheet of `Docs/decision_log.md`: one sheet for
       each group and each day.
+- [ ] Select the backup modules that you plan to use, and check their
+      hardware in `Docs/hardware.md`.
 
 ## 4. Checklist for each day
 
@@ -183,6 +200,9 @@ Before:
 - [ ] Explain the daily format, the Decision Log, and the points of a lab
       check (`Docs/decision_log.md`). Say how the students hand in
       `report.md`.
+- [ ] Decide whether to use the module TH-3 (ML workflow and life cycle)
+      before Part 3 of the lecture. Its deck is `Lectures/modules/Module_TH-3.pdf`
+      and it needs no hardware.
 
 Lab:
 
@@ -535,6 +555,9 @@ Before:
       that name Volume II against the current text of the book.
 - [ ] Make the demonstration schedule of Day 15 with
       `Labs/day15/schedule.py` and publish it at the end of the day.
+- [ ] Decide whether to use the module TH-3 (ML workflow and life cycle)
+      before Part 1 of the lecture. Its deck is `Lectures/modules/Module_TH-3.pdf`
+      and it needs no hardware.
 
 Lab:
 

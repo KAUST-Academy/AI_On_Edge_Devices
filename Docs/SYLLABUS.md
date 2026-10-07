@@ -59,6 +59,20 @@ Each theory part has one short exercise of 5 to 10 minutes.
 Each day has two slide decks: one theory deck and one lab deck.
 Each lab has a notebook, a sketch folder, or both.
 
+### How to use the backup modules
+
+Section 6 lists the backup modules. A backup module is a short, independent unit: one slide deck, one lab, or both.
+Each module has its own deck file and its own lab folder, so you can present it alone or add it to a day.
+Each day section names the backup modules that fit that day.
+
+Use a backup module when:
+
+- A group completes the core lab early.
+- A core lab fails because of hardware, network, or cloud service problems.
+- The class needs more depth, or less depth, on a topic.
+- The class needs a recap of a machine learning or deep learning topic. The group "Recap and theory modules" has one module for each topic.
+- You want to replace a lab part with a different application.
+
 
 
 ---
@@ -168,6 +182,11 @@ Training labs use small models. They run on a laptop CPU or on the free tier of 
 - *Part C (55 min): Model budgets.* In a notebook, profile three models (MobileNetV2, ResNet-18, a small depthwise CNN). Report parameters, operations, and peak activation memory. Fill a table for four budgets: a 256 KB microcontroller, the XIAO without PSRAM, the XIAO with PSRAM, and the Raspberry Pi 5.
 - *Deliverable:* the completed table and a Decision Log.
 - *Check:* all five sensor tests pass, and the table gives a reason for each "fits" or "does not fit".
+
+**Recap modules**
+
+- TH-3: ML workflow and life cycle (50 min, theory only). Use it before Part 3 of the lecture, or in place of Part 3 when the class needs the life cycle in depth.
+
 
 
 
@@ -630,7 +649,12 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Part C (40 min): Design review.* Present the proposal to the instructor.
 - *Part D (40 min): Build.* Start the build.
 - *Deliverable:* the approved proposal.
-- *Check:* the proposal meets the five capstone requirements in Section 6.
+- *Check:* the proposal meets the five capstone requirements in Section 7.
+
+**Recap modules**
+
+- TH-3: ML workflow and life cycle (50 min, theory only). Use it before Part 1 of the lecture, or in place of Part 1 when the class needs the life cycle in depth.
+
 
 
 ---
@@ -656,11 +680,31 @@ Part 3 teaches layer fusion, precision calibration, and dynamic shapes with tool
 - *Part B (70 min): Demonstrations.* Each team gives a 10-minute demonstration.
 - *Part C (30 min): Close.* Submit the report. Give course feedback.
 - *Deliverable:* the demonstration and the report.
-- *Check:* the capstone rubric in Section 6.
+- *Check:* the capstone rubric in Section 7.
 
 ---
 
-## 6. Assessment
+## 6. Backup modules
+
+Each backup module is independent of the other backup modules, unless its description names another module. The column "Fits day" gives the core days that use the topic.
+
+Type: **T** is a theory deck. **L** is a lab with a short lab deck. **T+L** is both.
+
+Each module has the same parts, so that you can present it alone:
+
+- One slide deck that compiles alone. The deck has a title frame, the learning outcomes, the content, and the credits frame.
+- One lab folder with the files and a README. The README gives the goal, the hardware, the duration, the steps, and the check criterion.
+- No reference to a slide number or a file of another day.
+
+**Recap and theory modules**
+
+| ID | Module | Type | Time | Fits day |
+|---|---|---|---|---|
+| TH-3 | ML workflow and life cycle | T | 50 min | 1, 14 |
+
+- **TH-3.** The stages of an ML project from the problem definition to monitoring, and the feedback between the stages. *Exercise:* a team finds a limit during monitoring that was never written in the problem definition. Give the cost multiplier of the illustrative model of the chapter, and name the stages to revisit. Sources: *Machine Learning Systems*, Volume I, chapter 3, and the slide deck of the same chapter. Deck: `Lectures/modules/Module_TH-3.pdf`.
+
+## 7. Assessment
 
 This section is a proposal. Align the weights with the KAUST Academy rules.
 
@@ -694,7 +738,7 @@ This section is a proposal. Align the weights with the KAUST Academy rules.
 | Report and presentation | 20% |
 
 
-## 7. Sources and references
+## 8. Sources and references
 
 This course adapts material from the sources below.
 
@@ -737,11 +781,13 @@ Repository: https://github.com/tensorflow/tflite-micro-arduino-examples. Licence
 
 ---
 
-## 8. Layout of the material in this repository
+## 9. Layout of the material in this repository
 
 | Material | Location |
 |---|---|
 | Theory deck of a day | `LaTeX/DayNN_Theory.tex` with sections in `LaTeX/sections/dayNN/` |
 | Lab deck of a day | `LaTeX/DayNN_Lab.tex` with sections in `LaTeX/sections/dayNN_lab/` |
 | Lab files of a day | `Labs/dayNN/` |
+| Backup module deck | `LaTeX/Module_<ID>.tex` with sections in `LaTeX/sections/modules/<ID>/` and the PDF in `Lectures/modules/Module_<ID>.pdf` |
+| Backup module lab files | `Labs/modules/<ID>/` |
 | Credits frame | `LaTeX/sections/credits.tex` |

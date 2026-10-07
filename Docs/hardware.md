@@ -1,7 +1,7 @@
 # Hardware list
 
 This file lists the hardware of the course "AI on Edge Devices": the set of
-one group, and the items of the classroom.
+one group, the items of the classroom, and the parts of each backup module.
 
 A
 group has two students. Multiply the set of one group by the number of

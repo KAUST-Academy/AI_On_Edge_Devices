@@ -74,6 +74,16 @@ bash build.sh --file Day01_Theory.tex
 The PDF goes to `Lectures/`. The script prints an error in its last cleaning
 step. The PDF is still correct.
 
+## Build a module deck
+
+```bash
+bash build_module.sh --file Module_TH-3.tex
+```
+
+The PDF goes to `Lectures/modules/`. Without `--file`, the script builds every
+`Module_*.tex` file and nothing else. The last cleaning step of this script does
+not print an error.
+
 ## Rules for every deck
 
 - Load only `preamble/course.tex`.

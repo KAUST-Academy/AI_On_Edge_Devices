@@ -196,3 +196,6 @@ scripts/python/pptx
 
 # Lectures, comment it out after getting decent internet to push
 #/Lectures
+
+!LaTeX/images/modules/*/*.pdf
+!Lectures/modules/*.pdf
