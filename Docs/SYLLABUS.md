@@ -186,6 +186,7 @@ Training labs use small models. They run on a laptop CPU or on the free tier of 
 **Recap modules**
 
 - TH-3: ML workflow and life cycle (50 min, theory only). Use it before Part 3 of the lecture, or in place of Part 3 when the class needs the life cycle in depth.
+- TH-9: The machine learning paradigm (50 min, theory only). Use it before Part 1 of the lecture, or in place of Part 1 when the class needs the paradigm in depth.
 
 
 
@@ -701,8 +702,10 @@ Each module has the same parts, so that you can present it alone:
 | ID | Module | Type | Time | Fits day |
 |---|---|---|---|---|
 | TH-3 | ML workflow and life cycle | T | 50 min | 1, 14 |
+| TH-9 | The machine learning paradigm | T | 50 min | 1 |
 
-- **TH-3.** The stages of an ML project from the problem definition to monitoring, and the feedback between the stages. *Exercise:* a team finds a limit during monitoring that was never written in the problem definition. Give the cost multiplier of the illustrative model of the chapter, and name the stages to revisit. Sources: *Machine Learning Systems*, Volume I, chapter 3, and the slide deck of the same chapter. Deck: `Lectures/modules/Module_TH-3.pdf`.
+- **TH-3.** The stages of an ML project from the problem definition to monitoring, and the feedback between the stages. *Exercise:* a team finds a limit during monitoring that was never written in the problem definition. Give the cost multiplier of the illustrative model of the chapter, and name the stages to revisit. Deck: `Lectures/modules/Module_TH-3.pdf`.
+- **TH-9.** Rules that a programmer writes and rules that a model learns from data. Features, labels, model, and loss. Regression and classification. Training and inference. *Exercise:* for three problems, decide if written rules or a learned model is the correct tool, and give one reason. Deck: `Lectures/modules/Module_TH-9.pdf`.
 
 ## 7. Assessment
 

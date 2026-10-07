@@ -203,6 +203,9 @@ Before:
 - [ ] Decide whether to use the module TH-3 (ML workflow and life cycle)
       before Part 3 of the lecture. Its deck is `Lectures/modules/Module_TH-3.pdf`
       and it needs no hardware.
+- [ ] Decide whether to use the module TH-9 (the machine learning paradigm)
+      before Part 1 of the lecture. Its deck is `Lectures/modules/Module_TH-9.pdf`
+      and it needs no hardware.
 
 Lab:
 

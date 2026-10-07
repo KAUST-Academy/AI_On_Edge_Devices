@@ -104,6 +104,7 @@ topic. The syllabus lists every module:
 | ID | Module | Fits day | Theory deck | Lab deck | Lab files |
 |---|---|---|---|---|---|
 | TH-3 | ML workflow and life cycle | 1, 14 | [theory](Lectures/modules/Module_TH-3.pdf) | | |
+| TH-9 | The machine learning paradigm | 1 | [theory](Lectures/modules/Module_TH-9.pdf) | | |
 
 A module with a lab has a lab deck `Module_<ID>_Lab.pdf` in
 `Lectures/modules/` and a lab folder `Labs/modules/<ID>/`. The two columns stay
