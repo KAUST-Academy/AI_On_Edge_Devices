@@ -7,8 +7,7 @@ text "measure in the lab".
 
 ## Part A: toolchain
 
-The two lines of the build output for `blink` with PSRAM disabled (result of
-the compiler on the work computer, esp32 core 3.3.12):
+The two lines of the build output for `blink` with PSRAM disabled:
 
 ```
 Sketch uses 271701 bytes (8%) of program storage space. Maximum is 3342336 bytes.

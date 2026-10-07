@@ -77,7 +77,7 @@ def main():
     print("Task C1: complete")
 
     options = {"temperature": 0, "seed": 0, "num_ctx": 2048, "num_predict": 96}
-    if os.environ.get("EDGEAI_CPU"):   # the course tested on a computer with a GPU
+    if os.environ.get("EDGEAI_CPU"):   # set it on a machine with no GPU
         options["num_gpu"] = 0
     facts = read_lines(LAB / "part_c" / "facts.txt")
     start = time.monotonic()

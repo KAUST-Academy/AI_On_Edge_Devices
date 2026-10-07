@@ -42,7 +42,7 @@ x,y_model,y_true,error,latency_us
 0.314,...
 ```
 
-The same model on the work computer (LiteRT 2.2.0) gives a maximum error of
+The same model in LiteRT 2.2.0 on a desktop CPU gives a maximum error of
 0.118 and a mean error of 0.039 for the 20 input values. The board must give
 the same values of `y_model`, because the model uses integer arithmetic.
 
@@ -64,9 +64,8 @@ Then change three places in the sketch:
 
 ## Facts from the compile check
 
-These numbers come from the compiler on the work computer. They are not
-measured on a board. Board: `esp32:esp32:XIAO_ESP32S3`, core 3.3.12,
-PSRAM disabled.
+These numbers come from a compile check. They are not measured on a board.
+Board: `esp32:esp32:XIAO_ESP32S3`, core 3.3.12, PSRAM disabled.
 
 | Sketch | Flash (bytes) | Static RAM (bytes) |
 |---|---|---|

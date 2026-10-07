@@ -307,17 +307,17 @@ when it is full?
 - Part B: `../hardware/HW-07/micropython/mqtt_imu.py` sends 5 messages each second (HW-07). The keyword
   sketch sends one message for each event: at most one each second, because
   of the suppression time of 1000 ms.
-- Part C: the local time from the event to the command was below 1 ms on the
-  work computer of the course. Your delay from the word to the LED also
-  includes the window of the model (Day 5: 250 ms stride, the mean of 3
-  windows) and the Wi-Fi.
+- Part C: the local time from the event to the command was below 1 ms with a
+  simulated board. Your delay from the word to the LED also includes the
+  window of the model (Day 5: 250 ms stride, the mean of 3 windows) and the
+  Wi-Fi.
 - Part C: the broker sends the last will about 1.5 times the keep-alive
   after the last packet: about 22 s for the 15 s of the sketch. Mosquitto
   2.0.11 needed up to 3.6 s more in the lecture experiment. With the USB
   cable out, the board has no power, so the TCP connection does not close.
 - Part D: `pi/decide.py` publishes one summary each 10 s, and the sketch one
   `stats` message each 10 s: about 12 messages each minute go into the
-  queue. In a test on the work computer with a cut of 25 s, the forwarder
+  queue. In a test with a simulated board and a cut of 25 s, the forwarder
   sent its queue of 30 messages at once after the link came back, and the
   cloud got all messages: 0 lost, 0 double. A silent cut (the effect of
   `pi/link.sh`) needed 18.6 s until `link lost`, with the keep-alive of 10 s

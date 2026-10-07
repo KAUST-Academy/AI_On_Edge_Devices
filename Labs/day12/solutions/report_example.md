@@ -1,10 +1,10 @@
 # Day 12 report: example
 
 This example gives the parts that need no board, and the values of a test
-on the work computer of the course. The work computer had two Mosquitto
-2.0.11 brokers, a simulated XIAO, and a proxy for the cut of the link: no
-board, no Wi-Fi, and no Raspberry Pi. Write "measure in the lab" values from
-your own system.
+with a simulated setup. The setup had two Mosquitto 2.0.11 brokers, a
+simulated XIAO, and a proxy for the cut of the link: no board, no Wi-Fi,
+and no Raspberry Pi. Write "measure in the lab" values from your own
+system.
 
 Group: g07. Address of the Raspberry Pi: 192.168.8.107. Address of the
 cloud broker: 192.168.8.10.
@@ -56,7 +56,7 @@ the radio stays off for longer.
 | Value | Result |
 |---|---|
 | First line of `decide.py` | `Task C1: complete` |
-| Local time from the event to the command | 0.08 ms to 0.31 ms on the work computer; measure in the lab |
+| Local time from the event to the command | 0.08 ms to 0.31 ms with the simulated setup; measure in the lab |
 | Delay from the spoken word to the LED | measure in the lab |
 | Does the LED go off 60 s after the last "yes"? | yes, in the test with `--on-seconds 5`: the command `led=0` came 5.1 s after the last "yes" |
 | Seconds from the removed USB cable to `-> FAULT` | measure in the lab; about 22 s expected (1.5 x 15 s) |
@@ -72,7 +72,7 @@ must open, a store room must stay locked (Part 1 of the lecture).
 
 ## Part D: offline operation
 
-Test on the work computer: a cut of 25 s with a summary and a `stats`
+Test with the simulated setup: a cut of 25 s with a summary and a `stats`
 message each 2 s (the lab uses 10 s). The proxy closed the connection and
 refused new connections during the cut.
 
@@ -96,9 +96,9 @@ RESULT: PASS - no lost message
 
 Question D1. The keep-alive of the forwarder (10 s). When nothing comes
 back from the broker, paho sends a PINGREQ, waits for the PINGRESP, and then
-closes the connection: 18.6 s after a silent cut on the work computer. The
-messages of that time stay in the queue, because the forwarder deletes a
-message only after its PUBACK. Messages in flight with no PUBACK are sent
+closes the connection: 18.6 s after a silent cut in the simulated setup.
+The messages of that time stay in the queue, because the forwarder deletes
+a message only after its PUBACK. Messages in flight with no PUBACK are sent
 again: the receiver can get a second copy. The test with the silent cut
 lost no message and had no double copy (149 of 149).
 

@@ -194,7 +194,7 @@
           \code{float32} activations reduce the loss.
   \end{itemize}
   \source{Day 4 (motion model, calibration); Day 7 (MobileNetV2); Day 8
-    (YOLO11n). Work computer, LiteRT.}
+    (YOLO11n). LiteRT on an x86 CPU.}
 \end{frame}
 
 % ------------------------------------------------------------------ smaller
@@ -223,7 +223,7 @@
           percent) reached 85.3 percent: the student needs no labels, and a
           copy of a model needs only its outputs (Day 14).
   \end{itemize}
-  \source{Day 6, Parts 1 to 3 (work computer, LiteRT, one thread; a time
+  \source{Day 6, Parts 1 to 3 (LiteRT on an x86 CPU, one thread; a time
     changes by 5 to 10 $\mu$s between two runs).}
 \end{frame}
 
@@ -422,7 +422,7 @@
     \item A default setting can hide a large delay: measure the age of the
           frame, not only the frame rate.
   \end{itemize}
-  \source{Day 11, Parts 2 and 3 (work computer, MediaMTX, FFmpeg, OpenCV).}
+  \source{Day 11, Parts 2 and 3 (MediaMTX, FFmpeg, OpenCV).}
 \end{frame}
 
 % ------------------------------------------------------------------ decisions
@@ -492,7 +492,7 @@
           that it prevents.
   \end{itemize}
   \source{Day 13, Parts 2 and 3 (simulations); Day 14, Parts 1 and 2
-    (simulation, Mosquitto on the work computer).}
+    (simulation, Mosquitto on one x86 machine).}
 \end{frame}
 
 % ------------------------------------------------------------------ patterns
@@ -500,10 +500,10 @@
   \small
   \begin{enumerate}
     \item \textbf{Send results, not raw data.} Days 1, 5, 11, 12, 14.
-    \item \textbf{Measure on the target.} On the x86 work computer,
-          \code{int8} kernels were 1.6 times slower than \code{float32}
-          (Day 6). On a Raspberry Pi 5, a published \code{int8} model was
-          2.9 times faster (Day 7).
+    \item \textbf{Measure on the target.} On an x86 CPU, \code{int8}
+          kernels were 1.6 times slower than \code{float32} (Day 6). On a
+          Raspberry Pi 5, a published \code{int8} model was 2.9 times
+          faster (Day 7).
     \item \textbf{A published number is not your number.} Its board, its
           settings, and its window are different (Day 9).
     \item \textbf{Check the defaults.} Decoder threads (Day 11), the

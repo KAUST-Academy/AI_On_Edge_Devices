@@ -1,9 +1,8 @@
 # Day 7 lab report: example
 
-This is an example of a complete report. Part C has the output of the
-solution notebook on the work computer of the course, an x86 computer
-(2026-10-02). Parts A, B, and D need a Raspberry Pi. The text "measure in
-the lab" marks each such value.
+Part C has the output of the solution notebook on an x86 computer. Parts
+A, B, and D need a Raspberry Pi. The text "measure in the lab" marks each
+such value.
 
 Group: example
 
@@ -39,8 +38,8 @@ The model of the kit lab with the cat photo:
 | Median of the next runs in ms, 4 threads | measure in the lab |
 | Median of the next runs in ms, 1 thread | measure in the lab |
 
-The five classes after Task B1. These are the values of the work computer.
-The values of the board can differ by some percent.
+The five classes after Task B1. These are the values of the solution
+notebook. The values of the board can differ by some percent.
 
 | Class | Probability in percent |
 |---|---|
@@ -163,8 +162,8 @@ The latency table. Median latency in ms of the second run of `pi/bench.py`:
 | ONNX Runtime | `mnv2_dynamic.onnx` | `float32` | measure in the lab | | |
 | ONNX Runtime | `mnv2_int8.onnx` | `int8` | measure in the lab | | |
 
-`TEST_NOTES.md` has this table for the x86 work computer. Those values are
-not values of the board.
+`TEST_NOTES.md` has this table for an x86 CPU. Those values are not values
+of the board.
 
 | Item | Your result |
 |---|---|

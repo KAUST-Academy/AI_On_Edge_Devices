@@ -61,7 +61,7 @@ each recording when it records it.
 | Budget | Value | Source or method |
 |---|---|---|
 | Latency of the alarm path | 2.6 s of 3.0 s: window 2.0 s, model 0.1 s, two more windows 0.4 s, MQTT 0.1 s | `budget.py latency`; window and stride of Day 2; model and MQTT are budget values to measure |
-| Flash and RAM of the XIAO model | 308 712 of 3 342 336 bytes of flash; arena about 1028 bytes of 305 848 bytes | `budget.py fit` with a program of 300 KB (estimate) and the arena of the Day 4 model (32-bit build on the work computer) |
+| Flash and RAM of the XIAO model | 308 712 of 3 342 336 bytes of flash; arena about 1028 bytes of 305 848 bytes | `budget.py fit` with a program of 300 KB (estimate) and the arena of the Day 4 model (32-bit build) |
 | Power | XIAO on a battery of 1000 mAh: 24.2 mW and 6.4 days with light sleep and Wi-Fi 3 s each hour. Decision: a USB cable for the demonstration. Raspberry Pi: 5 to 7 W, mains supply | `budget.py power`; Day 9 values (data sheet and Seeed); Pi range of *Edge AI Engineering* |
 | Data to the dashboard | 3.5 MB each day with a summary of about 400 bytes each 10 s | `budget.py data` (estimate of the message size) |
 

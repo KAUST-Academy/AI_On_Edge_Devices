@@ -7,8 +7,8 @@
 %
 % The measured numbers of this part are results of an experiment of this
 % course: YOLO11n of Ultralytics, its exported files, and 500 images of the
-% validation set of COCO, on the work computer (an x86 processor with AVX2,
-% 4 threads). The times say nothing about a board. Each frame with such a
+% validation set of COCO, on an x86 processor with AVX2, 4 threads). The
+% times say nothing about a board. Each frame with such a
 % number says so in its source line. The times for a Raspberry Pi are
 % numbers that the author of the companion book published. The frame names
 % the source.
@@ -384,7 +384,7 @@ yolo val model=best_int8.tflite imgsz=320 data=data.yaml
           package selects the runtime from the name.
   \end{itemize}
   \source{The Ultralytics package, version 8.4.171. The export commands
-    ran on the work computer with \texttt{yolo11n.pt} at 640 pixels.}
+    ran with \texttt{yolo11n.pt} at 640 pixels.}
 \end{frame}
 
 \begin{frame}{Measured: one model in four files}

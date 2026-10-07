@@ -7,7 +7,7 @@
 % The facts about the model files of this part are results of an experiment
 % of this course: the three LiteRT files of the kit lab (SSD MobileNet V1,
 % EfficientDet-Lite0, FOMO) and three YOLO models of Ultralytics, read and
-% run on the work computer (an x86 processor with AVX2). The test image is
+% run on an x86 processor with AVX2. The test image is
 % bus.jpg of the Ultralytics package. The times say nothing about a board.
 % Each frame with such a number says so in its source line. The numbers for
 % the Raspberry Pi Zero 2 W are numbers that the author of the companion
@@ -787,8 +787,8 @@ print(int(keep.sum()))              # 47
   \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
-    \item On the work computer, YOLO11n needs 66.7 ms for the network and
-          1.4 ms for the suppression of 47 candidates.
+    \item On an x86 CPU, YOLO11n needs 66.7 ms for the network and 1.4 ms
+          for the suppression of 47 candidates.
     \item With the score threshold 0.001, 727 candidates go to the
           suppression: 43 ms. A validation run uses this low threshold.
     \item Published for a Raspberry Pi Zero 2 W, YOLO11n in NCNN: 2748 ms

@@ -60,7 +60,7 @@ def main():
     print("Task C2: complete")
 
     options = {"temperature": 0, "seed": 0, "num_ctx": 2048, "num_predict": 200}
-    if os.environ.get("EDGEAI_CPU"):   # the course tested on a computer with a GPU
+    if os.environ.get("EDGEAI_CPU"):   # set it on a machine with no GPU
         options["num_gpu"] = 0
     images = [pathlib.Path(args.image)] if args.image else sorted((LAB / "part_c" / "images").glob("*.jpg"))
     valid = 0

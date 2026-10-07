@@ -249,13 +249,13 @@ each alert?
 
 ## Expected values
 
-The values come from a test on the work computer of the course: an x86
-processor with 4 cores, the Day 8 model in NCNN at 320 pixels, and the 100
-test images of the Day 8 dataset in place of the camera. They say nothing
-about the Raspberry Pi. The values of your camera scene are different.
+The values come from a test on an x86 processor with 4 cores: the Day 8
+model in NCNN at 320 pixels, and the 100 test images of the Day 8 dataset
+in place of the camera. They say nothing about the Raspberry Pi. The
+values of your camera scene are different.
 
 - Part A: 16.5 frames each second, a latency of 60.5 ms (mean) and 64.9 ms
-  (p95) for one frame on the work computer. The Raspberry Pi 5 is slower:
+  (p95) for one frame on that machine. The Raspberry Pi 5 is slower:
   the companion book gives about 80 ms for the inference of a custom
   YOLO11n model in NCNN at 320 pixels. A summary record of the log has about
   390 bytes. One summary each 10 s gives 3.21 MB each day, so the rotation

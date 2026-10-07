@@ -1,12 +1,5 @@
 # Day 6 lab report: example
 
-This lab needs no board, so this example is complete. The numbers come from
-the solution notebook on the work computer of the course. The accuracy values
-and the file sizes are the same on each computer with the same software
-versions. The latency is the latency of the work computer with one thread. It
-changes by some microseconds between two runs, and it is different on your
-laptop.
-
 Group: example
 
 ## Part A: pruning
@@ -106,7 +99,7 @@ Answers:
 
 ## Part C: selection
 
-The table of section 8. The latency is the latency of the work computer:
+The table of section 8. The latency is the latency of a laptop CPU:
 
 | Model | Format | Bytes | Accuracy | Latency | Peak |
 |---|---|---|---|---|---|
@@ -153,9 +146,7 @@ highest accuracy of the three: 87.3 percent.
 Raspberry Pi 5: we select the model that is pruned to 12, 24, and 48
 filters, in `float32`. Only two models reach 88.5 percent: the baseline and
 this model. The accuracy decides. The pruned model is a little faster than
-the baseline, and its file is 41 percent smaller. On the work computer, the
-`int8` files are slower than the `float32` files, so we keep `float32`. On
-the Raspberry Pi this can be different: we must measure it there.
+the baseline, and its file is 41 percent smaller.
 
 The trade-off: the model for the XIAO loses about 2 points against the
 baseline. It needs 12 040 bytes of flash in place of 31 280 bytes, and half

@@ -132,7 +132,7 @@ tflite_model = converter.convert()
   \end{tabular}\par\endgroup
   \source{The arena of the dynamic range model is equal to the arena of the
     float model: 1232 bytes for the feature model of Day 3, in a 32-bit
-    build of TensorFlow Lite Micro on the work computer.}
+    build of TensorFlow Lite Micro.}
 \end{frame}
 
 % --------------------------------------------------------------- full integer
@@ -524,9 +524,8 @@ print(correct / len(x_test))
   \vskip 0.2em
   \keypoint{Know which part of a budget is large before you optimize it.
     The gain of a method depends on the model.}
-  \source{Arena values: 32-bit build of TensorFlow Lite Micro on the work
-    computer of the course. The values of the board can be different. You
-    measure them in the lab.}
+  \source{Arena values: 32-bit build of TensorFlow Lite Micro. The values of
+    the board can be different. You measure them in the lab.}
 \end{frame}
 
 \begin{frame}{The steps of post-training quantization}

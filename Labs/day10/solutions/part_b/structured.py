@@ -67,7 +67,7 @@ def main():
     print("Task B1: complete")
 
     options = {"temperature": 0, "seed": 0, "num_ctx": 2048, "num_predict": 64}
-    if os.environ.get("EDGEAI_CPU"):   # the course tested on a computer with a GPU
+    if os.environ.get("EDGEAI_CPU"):   # set it on a machine with no GPU
         options["num_gpu"] = 0
     schema = None if args.no_schema else Command.model_json_schema()
     rows = read_commands(args.commands)
