@@ -79,6 +79,7 @@
 * **day15:** add theory part 1 on the course summary ([7ffd429](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/7ffd429b10609d35e4fab0532ad2bbea94f3d88d))
 * **labs:** add hardware preparation for the boards ([36124a9](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/36124a9aeb9dcc65d0560d79ffa65861ac3fbf91))
 * **mod-th-3:** add ML workflow and life cycle module ([750aee5](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/750aee58d5716a5add88a8d76432bc466316abc1))
+* **mod-th-9:** add machine learning paradigm module ([eb0f4c1](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/eb0f4c126c2f671e8c3d7e5a1df4c6a4f1637060))
 * **release:** Version 1 ([85acb78](https://github.com/KAUST-Academy/AI_On_Edge_Devices/commit/85acb78cf1fad575d1648cf150593335fee4b255))
 
 
