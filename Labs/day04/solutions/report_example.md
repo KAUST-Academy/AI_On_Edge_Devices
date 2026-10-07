@@ -198,11 +198,10 @@ The comparison table:
 | Clipped input values on the board, and on the laptop | not necessary | measure in the lab. The laptop gives 42 of 5040. | not necessary |
 | `invoke_us`: median and largest | measure in the lab | measure in the lab | measure in the lab |
 
-Numbers of a test with no board: a 32-bit build of the same library on the
-work computer of the course gives an arena of 1232 bytes for the `float32`
-model and 1028 bytes for the `int8` model, 80 correct windows of 80 for the
-two models, and 42 clipped input values. The values of the board can be
-different.
+Numbers of a test with no board: a 32-bit build of the same library on a
+laptop gives an arena of 1232 bytes for the `float32` model and 1028 bytes
+for the `int8` model, 80 correct windows of 80 for the two models, and 42
+clipped input values. The values of the board can be different.
 
 Scale and zero point of the `int8` model:
 

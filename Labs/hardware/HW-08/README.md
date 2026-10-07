@@ -37,7 +37,7 @@ application --MQTT--> broker --+--> dashboard.py --> CSV files + web page      (
 | Alert | Rule file of Prometheus | One rule in `dashboard.py` |
 | History | Days | 10 minutes on the page, all data in the CSV files |
 | Student work in the lab | Add a panel and a rule in a query language | Change Python code |
-| Tested on the work computer | Yes: Prometheus 3.15.0 and Grafana 13.2.3 load the files, and the alert fires | Yes: 52 messages, the alert fires |
+| Tested with a simulated publisher | Yes: Prometheus 3.15.0 and Grafana 13.2.3 load the files, and the alert fires | Yes: 52 messages, the alert fires |
 
 ## Files
 
@@ -156,9 +156,9 @@ Metric names:
 
 Each metric has the labels `group` and `device`.
 
-## Result of the test on the work computer
+## Result of the test with a simulated publisher
 
-No Raspberry Pi was used. The test used a broker on the work computer and
+No Raspberry Pi was used. The test used a broker on one machine and
 `metrics_publisher.py --simulate --drift-after`.
 
 **Option B.** `dashboard.py` received 52 messages in 26 seconds with 0 lost.

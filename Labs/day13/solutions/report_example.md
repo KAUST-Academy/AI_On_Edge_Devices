@@ -1,9 +1,9 @@
 # Day 13 report: a monitored inference application (example)
 
-This example comes from the test on the work computer of the course: an x86
-processor with 4 cores, the Day 8 model `cupbottle_320_ncnn_model`, and the
-100 test images of the Day 8 dataset in place of the camera. A value that
-only the Raspberry Pi and its camera can give is "measure in the lab".
+This example comes from a test on an x86 processor with 4 cores: the Day 8
+model `cupbottle_320_ncnn_model`, and the 100 test images of the Day 8
+dataset in place of the camera. A value that only the Raspberry Pi and its
+camera can give is "measure in the lab".
 
 Group: g07 (example). Model file: `cupbottle_320_ncnn_model`.
 
@@ -12,8 +12,8 @@ Group: g07 (example). Model file: `cupbottle_320_ncnn_model`.
 | Value | Result |
 |---|---|
 | Output of `python monitor.py` | `Task A1: complete`, `Task A2: complete` |
-| Frames each second (a printed line) | 16.5 on the work computer; measure in the lab |
-| Latency mean and p95 of a frame | 60.5 ms and 64.9 ms on the work computer; measure in the lab |
+| Frames each second (a printed line) | 16.5 in the example; measure in the lab |
+| Latency mean and p95 of a frame | 60.5 ms and 64.9 ms in the example; measure in the lab |
 | Mean top score with the cup and the bottle in view | 0.538 with the test images; measure in the lab |
 | Brightness and sharpness | 107.4 and about 730 with the test images; measure in the lab |
 | CPU temperature and memory of the detector (`rss`) | about 400 MB of memory; measure the temperature in the lab |

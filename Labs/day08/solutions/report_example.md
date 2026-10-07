@@ -1,11 +1,11 @@
 # Day 8 lab report: example
 
 This is an example of a complete report. Part B and the two tables of the
-export in Part C have the output of the solution notebook on the work
-computer of the course, an x86 computer (2026-10-02). The detections of
-Part A come from a run of the two scripts on that computer. Each time of
-Part A, the live detection of Part C, and Part D need a Raspberry Pi. The
-text "measure in the lab" marks each such value.
+export in Part C have the output of the solution notebook on an x86
+computer. The detections of Part A come from a run of the two scripts on
+that computer. Each time of Part A, the live detection of Part C, and
+Part D need a Raspberry Pi. The text "measure in the lab" marks each such
+value.
 
 Group: example
 
@@ -39,7 +39,7 @@ The four outputs of the SSD file:
 | 3 | 1, `float32` | The number of valid rows |
 
 The detections after Task A1 (image `bus.jpg`). These are the values of the
-work computer. The values of the board can differ by a small amount.
+solution notebook. The values of the board can differ by a small amount.
 
 | Class | Score | Box x1, y1, x2, y2 in pixels |
 |---|---|---|
@@ -130,7 +130,7 @@ The training (section 6):
 
 | Item | Your result |
 |---|---|
-| Training time in minutes | 8.7 (4 cores of the work computer) |
+| Training time in minutes | 8.7 (4 cores of an x86 CPU) |
 | Best epoch | 25 |
 | mAP50 on the validation images | 0.656 |
 | mAP50-95 on the validation images | 0.491 |

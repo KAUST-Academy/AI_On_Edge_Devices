@@ -32,7 +32,7 @@ This lab uses no XIAOML Kit.
 | Tool | Version | Note |
 |---|---|---|
 | Raspberry Pi OS (64-bit) with the environment `~/ollama` | the card of the course | `Labs/hardware/HW-04/` prepares the card. `~/ollama` has the packages `ollama` and `pydantic`. |
-| Ollama | the version of the card (0.32.6 on the work computer of the course) | `Labs/hardware/HW-05/` installs it |
+| Ollama | the version of the card | `Labs/hardware/HW-05/` installs it |
 | Models | `llama3.2:1b` (1.32 GB), `llama3.2:3b` (2.02 GB), `nomic-embed-text` (0.27 GB), `llava-phi3:3.8b` (2.93 GB) | `bash pull_models.sh extras` of `Labs/hardware/HW-05/` downloads them before the lab |
 | SSH client on the laptop | no version | The commands `ssh` and `scp` |
 

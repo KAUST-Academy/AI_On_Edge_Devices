@@ -5,8 +5,8 @@
 % benchmark script.
 %
 % The measured numbers of this part are results of two experiments of this
-% course: MobileNetV2 in LiteRT with one thread on the work computer (an x86
-% processor with AVX2). The times say nothing about a board. Each frame with
+% course: MobileNetV2 in LiteRT with one thread on an x86 processor with AVX2.
+% The times say nothing about a board. Each frame with
 % such a number says so in its source line. The times of the Raspberry Pi
 % Zero 2 W are numbers that the author of the companion book published.
 
@@ -388,8 +388,8 @@
   \vskip 0.4em
   \small
   \begin{itemize}
-    \item A clock read has a cost. On the work computer, one read of
-          \code{perf\_counter\_ns()} needs 146 ns.
+    \item A clock read has a cost. One read of \code{perf\_counter\_ns()}
+          needs 146 ns.
     \item The window must be much longer than the step and the cost of the
           clock. For a window of some microseconds, time 1000 runs with one
           pair of clock reads.

@@ -184,8 +184,6 @@ Use about 8 minutes for each test. All tests use the Serial Monitor at
      and 2.
    - Task 4: the function that decides if a model fits a device.
    - Task 5: the Decision Log.
-
-   The complete notebook runs in less than one minute on a laptop CPU.
 4. **The report (10 min).** Copy the table of section 5 of the notebook into
    `report.md`. Answer the four questions. Write the Decision Log.
 

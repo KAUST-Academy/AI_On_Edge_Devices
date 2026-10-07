@@ -6,8 +6,8 @@
 %
 % The numbers of this part have three origins. Each frame says so in its
 % source line.
-% 1. An experiment of this course on the work computer (x86, FFmpeg 4.4,
-%    MediaMTX v1.21.1): tools/experiments/day11_video.py, values in
+% 1. An experiment of this course (x86, FFmpeg 4.4, MediaMTX v1.21.1):
+%    tools/experiments/day11_video.py, values in
 %    tools/data/day11/day11_video.json. The test video is the camera video
 %    images/xiao_esp32s3_led.MOV of the repository XIAO-ESP32S3-Sense
 %    (Apache-2.0), 300 frames at 30 frames each second. "Moving camera": the
@@ -240,8 +240,8 @@
     \item Compression against raw YUV: 30 to 32 times for MJPEG, 127 to 341
           times for H.264.
   \end{itemize}
-  \source{Experiment of this course: FFmpeg 4.4, x86 work computer.\\
-    Video of the repository XIAO-ESP32S3-Sense.}
+  \source{Experiment of this course: FFmpeg 4.4.\\ Video of the repository
+    XIAO-ESP32S3-Sense.}
 \end{frame}
 
 % ------------------------------------------------------------------ I and P
@@ -272,7 +272,7 @@
     \item The network sees a peak each second. A link with only the mean
           bit rate delays each keyframe.
   \end{itemize}
-  \source{Experiment of this course: FFmpeg 4.4, x86 work computer.\\
+  \source{Experiment of this course: FFmpeg 4.4.\\
     0.26 s = 65\,631 bytes $\times$ 8 / 2 Mbit/s.}
 \end{frame}
 
@@ -307,8 +307,7 @@
     \item The lab uses one keyframe each second
           (\code{rpiCameraIDRPeriod: 30}).
   \end{itemize}
-  \source{Experiment of this course: FFmpeg 4.4 and MediaMTX v1.21.1 on the
-    x86 work computer.}
+  \source{Experiment of this course: FFmpeg 4.4 and MediaMTX v1.21.1.}
 \end{frame}
 
 % ------------------------------------------------------------------ rate control
@@ -346,7 +345,7 @@
     \item The lab starts with 2 Mbit/s (\code{rpiCameraBitrate}). Part C
           of the lab changes it.
   \end{itemize}
-  \source{Experiment of this course: FFmpeg 4.4 on the x86 work computer.}
+  \source{Experiment of this course: FFmpeg 4.4.}
 \end{frame}
 
 % ------------------------------------------------------------------ boards
@@ -439,8 +438,8 @@ seq    timestamp    M  bytes
     \item One lost packet out of 7.6 makes the frame incomplete.
     \item The timestamp step is 3000 for each frame: $90\,000 / 30$.
   \end{itemize}
-  \source{Experiment of this course: MediaMTX v1.21.1, x86 work computer.\\
-    The table shows fields of the packets, not the output of a tool.}
+  \source{Experiment of this course: MediaMTX v1.21.1.\\ The table shows fields
+    of the packets, not the output of a tool.}
 \end{frame}
 
 % ------------------------------------------------------------------ RTSP

@@ -4,9 +4,7 @@ This example has the parts of the report that need no board and no lab
 network: the settings, the method, the calculations, and the form of the
 answers. Each value of the network, the camera, the latency, and the frame
 rate depends on the room, the router, the laptop, and the boards. These cells
-have the text "measure in the lab". A few values come from the test of the
-scripts on the work computer of the course (one computer, no network, no
-camera). The text says so at each such value.
+have the text "measure in the lab". The text says so at each such value.
 
 Connection of the Raspberry Pi: measure in the lab.
 
@@ -43,10 +41,10 @@ channel, and `iperf3` measured one moment only.
 
 | Value | Result |
 |---|---|
-| The line of `ss -tln` with the port 8554 | `LISTEN 0 4096 0.0.0.0:8554 0.0.0.0:*` (MediaMTX on the work computer; `*:8554` is also correct) |
+| The line of `ss -tln` with the port 8554 | `LISTEN 0 4096 0.0.0.0:8554 0.0.0.0:*` (MediaMTX on the machine that runs the server; `*:8554` is also correct) |
 | CPU load of `mediamtx` in `top` | measure in the lab |
 | Seconds until the first image in `ffplay` or VLC | measure in the lab |
-| `stream_detect.py` with no model: `stream_fps` and `processed_fps` | about 30 and about 30. The test on the work computer gave 29.8 and 29.7 with a test stream of 30 frames/s. |
+| `stream_detect.py` with no model: `stream_fps` and `processed_fps` | about 30 and about 30. A run with a test stream of 30 frames/s gave 29.8 and 29.7. |
 
 ## Part C: inference on the stream
 
@@ -55,9 +53,9 @@ channel, and `iperf3` measured one moment only.
 | `yolo11n.pt` | 320 | measure in the lab | measure in the lab | measure in the lab |
 | Day 8 model `cupbottle_320_ncnn_model` | 320 | measure in the lab | measure in the lab | measure in the lab |
 
-The rates depend on the processor of the laptop. On the work computer (four
-cores of an x86 server processor), `yolo11n.pt` at 320 pixels needed 46.9 ms
-and took 19.6 of the 30 frames each second. At 640 pixels it needed 65.4 ms
+The rates depend on the processor of the laptop. On an x86 server
+processor with four cores, `yolo11n.pt` at 320 pixels needed 46.9 ms and
+took 19.6 of the 30 frames each second. At 640 pixels it needed 65.4 ms
 and took 14.3 frames each second. These values say nothing about your
 laptop.
 
@@ -83,8 +81,8 @@ pixels, so the model time changes little.
 
 Question C3. The stream brings 30 frames each second. A reader that takes
 each frame in order and processes F frames each second falls behind by
-1 - F/30 seconds each second. Example of the test on the work computer: F =
-14.0, so 1 - 14.0/30 = 0.53 s each second. The script printed `behind 5.4 s`
+1 - F/30 seconds each second. Example from the solution scripts: F = 14.0,
+so 1 - 14.0/30 = 0.53 s each second. The script printed `behind 5.4 s`
 after 10 s. After 30 s, the same rate gives about 16 s. Your F comes from
 your laptop.
 

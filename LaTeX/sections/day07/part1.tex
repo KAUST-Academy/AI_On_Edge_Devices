@@ -5,10 +5,10 @@
 % plot.
 %
 % The measured numbers of this part are results of an experiment of this
-% course on the work computer: an x86 processor with 12 cores and AVX2 (8
-% values of float32 in one register). They say nothing about a board. Each
-% frame with such a number says so in its source line. For a rate, 1 GB is
-% 10^9 bytes, as 1 GFLOP is 10^9 operations.
+% course on an x86 processor with 12 cores and AVX2 (8 values of float32 in
+% one register). They say nothing about a board. Each frame with such a number
+% says so in its source line. For a rate, 1 GB is 10^9 bytes, as 1 GFLOP is
+% 10^9 operations.
 
 \theorypart{Acceleration fundamentals}%
   {place three workloads on a Roofline plot}
@@ -744,8 +744,8 @@ for (int oc = 0; oc < C_out; oc++)
     \item \code{int8} helps in the two regimes: one quarter of the bytes,
           and 4 times as many values in one register.
     \item This is the limit of the hardware. The kernels decide what you
-          get: on the work computer of Day 6, the \code{int8} models were
-          1.6 times slower.
+          get: in the example of Day 6, the \code{int8} models were 1.6
+          times slower.
     \item A language model that makes one token reads all its weights for
           this token. It is memory-bound (Day 10).
   \end{itemize}
@@ -771,7 +771,7 @@ for (int oc = 0; oc < C_out; oc++)
   \end{tabular}\par\endgroup
   \vskip 0.4em
   \begin{itemize}
-    \item The same calculation for the work computer gives 80 GFLOP/s (2
+    \item The same calculation for an x86 CPU with AVX2 gives 80 GFLOP/s (2
           units, 8 values, 2 operations, 2.5 GHz). The measurement: 82.8.
   \end{itemize}
   \keypoint{On this board, acceleration is: NEON kernels, 4 threads, and

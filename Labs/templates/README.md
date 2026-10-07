@@ -26,14 +26,10 @@ every capital placeholder.
 
 ## Rules
 
-1. Keep the line `Hardware status:` near the top of the lab `README.md`.
-   No board was connected when the material was prepared. A compile check
-   does not replace a test on the board.
-2. Write every changed line and every new file in `TEST_NOTES.md`. The
-   instructor tests that code later.
-3. Do not write a measured number that nobody measured. Use a number from the
+1. Do not write a measured number that nobody measured. Use a number from the
    source and name the source, or write "measure in the lab".
-4. The first cell of a notebook gives the credits of the source.
-5. Add each new package to `Labs/requirements.txt` and each tool version to
+2. Write every changed line and every new file in `TEST_NOTES.md`.
+3. The first cell of a notebook gives the credits of the source.
+4. Add each new package to `Labs/requirements.txt` and each tool version to
    `Labs/VERSIONS.md`.
-6. Add one row for the lab to the index in `Labs/README.md`.
+5. Add one row for the lab to the index in `Labs/README.md`.

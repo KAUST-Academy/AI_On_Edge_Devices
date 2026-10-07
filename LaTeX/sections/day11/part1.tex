@@ -9,14 +9,14 @@
 % source line.
 % 1. Standards (RFC documents, IEEE 802.11n rates) and the documentation of
 %    the boards (Raspberry Pi documentation, ESP32-S3 data sheet).
-% 2. An experiment of this course on the work computer:
+% 2. An experiment of this course:
 %    tools/experiments/day11_network.py, values in
-%    tools/data/day11/day11_network.json (ping and iperf3). The work computer
-%    has no Wi-Fi: no value is a value of the lab network.
+%    tools/data/day11/day11_network.json (ping and iperf3). The machine of the
+%    experiment has no Wi-Fi: no value is a value of the lab network.
 % 3. Example outputs of ip, ss, and ping. They use the address plan of
 %    Labs/hardware/HW-09 (network 192.168.8, pi-07 at 192.168.8.107). The
-%    format comes from iproute2 5.15 and iputils 20211215 on the work
-%    computer. The values are examples of the lab network.
+%    format comes from iproute2 5.15 and iputils 20211215. The values are
+%    examples of the lab network.
 
 \theorypart{Networking for edge devices}%
   {read the output of three network commands and find the fault}
@@ -599,7 +599,7 @@
 % ------------------------------------------------------------------ measured
 \begin{frame}{Measured: near and far}
   \small
-  \code{ping}, 100 requests, one each 0.2 s, from the work computer
+  \code{ping}, 100 requests, one each 0.2 s, from the x86 machine
   (connected by cable):
   \vskip 0.3em
   \footnotesize
@@ -629,8 +629,8 @@
     \item A detector with a budget of 50 ms cannot wait for a server at
           69 ms. The edge device must decide alone.
   \end{itemize}
-  \source{Experiment of this course: \texttt{ping} of iputils 20211215 on
-    the x86 work computer.\\ The values say nothing about the lab network.}
+  \source{Experiment of this course: \texttt{ping} of iputils 20211215 on an
+    x86 machine.\\ The values say nothing about the lab network.}
 \end{frame}
 
 % ------------------------------------------------------------------ ip
@@ -754,7 +754,7 @@ laptop$ iperf3 -c pi-07.local -u -b 20M      # UDP at 20 Mbit/s
     \item 19.2 Gbit/s is the speed of the memory, not of a network. A test
           needs two devices.
   \end{itemize}
-  \source{Experiment of this course: iperf 3.9 on the x86 work computer, 5
+  \source{Experiment of this course: iperf 3.9 on two x86 machines, 5
     s each.\\ The interval and the transfer columns are not shown.}
 \end{frame}
 

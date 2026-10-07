@@ -171,9 +171,6 @@ Write each result in `report.md` when you get it.
    probability for each of the five classes. Write the five lines in the
    report.
 
-   On the work computer of the course, the first class of the cat photo is
-   `tiger cat` with 39 percent.
-
 4. **Use the camera (10 min).** Point the camera at an object of the
    classroom: a keyboard, a mouse, a cup, a bottle, a backpack. Run:
 

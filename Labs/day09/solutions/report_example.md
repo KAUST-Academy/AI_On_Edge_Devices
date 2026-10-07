@@ -29,7 +29,7 @@ The result can be different. Write it in the column "Result".
 
 ## Part B: the microcontroller
 
-The values of the build are from the work computer of the course, with the
+The values of the build are from a compile check with no board, with the
 setting `OPI PSRAM` and the complete file `bench_stats.h`.
 
 | Item | Result |

@@ -6,13 +6,12 @@
 %
 % The numbers of this part have three origins. Each frame says so in its
 % source line.
-% 1. An experiment of this course on the work computer (x86 with 24 cores,
-%    MediaMTX v1.21.1, FFmpeg 4.4, OpenCV 5.0.0):
-%    tools/experiments/day11_buffers.py, values in
+% 1. An experiment of this course (x86 with 24 cores, MediaMTX v1.21.1,
+%    FFmpeg 4.4, OpenCV 5.0.0): tools/experiments/day11_buffers.py, values in
 %    tools/data/day11/day11_buffers.json. A publisher writes its clock time
 %    into each frame (640 x 480, 30 frames each second, H.264 at 1 Mbit/s,
 %    RTSP over TCP). The reader decodes the time and calculates the age of
-%    the frame. The stream does not leave the computer: no value is a value
+%    the frame. The stream does not leave the machine: no value is a value
 %    of a board or of a network.
 % 2. Values of Part 2 and of Day 8, and published values of the sources.
 % 3. Example values for the calculations.
@@ -277,8 +276,7 @@
     \item The stream does not leave the computer: the age has no network
           part. The lab measures with a real network.
   \end{itemize}
-  \source{Experiment of this course: MediaMTX v1.21.1, FFmpeg 4.4, OpenCV
-    5.0.0, x86 work computer.}
+  \source{Experiment of this course: MediaMTX v1.21.1, FFmpeg 4.4, OpenCV 5.0.0.}
 \end{frame}
 
 % ------------------------------------------------------------------ threads
@@ -333,7 +331,7 @@
     \item For a live stream, open the stream with one decoder thread:
           \code{cv2.CAP\_PROP\_N\_THREADS} = 1.
   \end{itemize}
-  \source{Experiment of this course, x86 work computer.}
+  \source{Experiment of this course.}
 \end{frame}
 
 % ------------------------------------------------------------------ slow model
@@ -438,8 +436,7 @@
           12.7 s ago at the end. The newest reader skipped 402 of 601
           frames and kept the age below 75 ms.
   \end{itemize}
-  \source{Experiment of this course: OpenCV 5.0.0, MediaMTX v1.21.1, x86
-    work computer.}
+  \source{Experiment of this course: OpenCV 5.0.0, MediaMTX v1.21.1.}
 \end{frame}
 
 % ------------------------------------------------------------------ drop on purpose

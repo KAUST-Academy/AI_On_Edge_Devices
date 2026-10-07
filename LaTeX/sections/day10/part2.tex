@@ -7,8 +7,8 @@
 %
 % The numbers of this part have three origins. Each frame says so in its
 % source line.
-% 1. An experiment of this course: Ollama 0.32.6 on the work computer (an
-%    x86 processor with two sockets of 12 cores, CPU only with num_gpu 0),
+% 1. An experiment of this course: Ollama 0.32.6 on an x86 processor with
+%    two sockets of 12 cores, CPU only with num_gpu 0,
 %    tools/experiments/day10_runtime.py, values in
 %    tools/data/day10/day10_runtime.json. The values say nothing about a
 %    board. They show the effects that the lab measures on the Raspberry Pi.
@@ -287,9 +287,8 @@ curl http://localhost:11434/api/generate -d '{
     \item A product: keep the model loaded. \code{keep\_alive}: $-1$ keeps it,
           0 unloads it at once.
   \end{itemize}
-  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
-    only.\\ Load times of the board: chapter ``LiteRT-LM'' of \emph{Edge AI
-    Engineering}.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only.\\ Load times of
+    the board: chapter ``LiteRT-LM'' of \emph{Edge AI Engineering}.}
 \end{frame}
 
 % ------------------------------------------------------------------ options
@@ -358,8 +357,8 @@ curl http://localhost:11434/api/generate -d '{
   \end{itemize}
   \keypoint{Calculate the RAM before the lab, then check it with
     \code{ollama ps} and \code{free}.}
-  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
-    only.\\ The RAM of the model does not depend on the computer.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only.\\ The RAM of the
+    model does not depend on the computer.}
 \end{frame}
 
 % ------------------------------------------------------------------ threads
@@ -423,8 +422,7 @@ curl http://localhost:11434/api/generate -d '{
     \item The Raspberry Pi 5 has 4 cores. The guide: threads = number of
           cores. Measure 1, 2, 3, and 4 threads in the lab.
   \end{itemize}
-  \source{Experiment of this course: Ollama 0.32.6,\\ x86 work computer, CPU
-    only.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only.}
 \end{frame}
 
 % ------------------------------------------------------------------ prompt length
@@ -454,8 +452,7 @@ curl http://localhost:11434/api/generate -d '{
   \end{itemize}
   \keypoint{A prompt rate without its prompt length is not a result. Write
     the two numbers.}
-  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
-    only.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only.}
 \end{frame}
 
 % ------------------------------------------------------------------ models
@@ -480,14 +477,14 @@ curl http://localhost:11434/api/generate -d '{
           published value of the Raspberry Pi 5 is 1.70 (Part 1).
     \item The prompt is 2.3 times slower: the prompt follows the
           operations, and the 3B model has 2.6 times the parameters.
-    \item The rates of the work computer are about 2.5 times the rates of
-          the board. The ratio between the two models is almost the same.
+    \item The rates of this x86 CPU are about 2.5 times the rates of the
+          board. The ratio between the two models is almost the same.
   \end{itemize}
   \keypoint{The generation follows the bytes of the file. The prompt follows
     the parameters.}
-  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
-    only. Rates of the\\ board: lab ``Small Language Models'' of
-    \emph{Machine Learning Systems}.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only. Rates of the\\
+    board: lab ``Small Language Models'' of \emph{Machine Learning
+    Systems}.}
 \end{frame}
 
 % ------------------------------------------------------------------ published

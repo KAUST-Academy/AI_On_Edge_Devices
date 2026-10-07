@@ -110,7 +110,6 @@ def make_options(args):
                "temperature": 0, "seed": 0}
     if args.num_thread:
         options["num_thread"] = args.num_thread
-    # The course tested the script on a computer with a GPU.
     # EDGEAI_CPU=1 keeps the model on the CPU, as on the Raspberry Pi.
     if os.environ.get("EDGEAI_CPU"):
         options["num_gpu"] = 0

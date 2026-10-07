@@ -11,7 +11,7 @@
 %    values in tools/data/day12/day12_edge_cloud.json. Steps: data volumes
 %    (calculations), five reporting rules on a synthetic temperature of one
 %    day (seed 0), a cloud outage of 60 s with two Mosquitto 2.0.11 brokers
-%    on one computer, and ten SNTP requests from the work computer.
+%    on one computer, and ten SNTP requests from the same machine.
 % 2. Day 11 measurements: the bit rates of MJPEG and H.264 (1280 x 720,
 %    moving camera). Day 5: one keyword window each 0.5 s.
 % 3. The Mosquitto 2.0.11 manual, RFC 5905 (NTP version 4), the Raspberry Pi
@@ -519,9 +519,8 @@ persistence true
   \begin{itemize}
     \item The formulas assume the same time in the two directions. The
           error of the offset is at most half of the delay.
-    \item Measured: 10 requests from the work computer to
-          \code{pool.ntp.org}: delay 68 to 98 ms, offset 0.2 to
-          5.1 ms. Its clock was within some ms of the server.
+    \item Measured: 10 requests to \code{pool.ntp.org}: delay 68 to 98 ms,
+          offset 0.2 to 5.1 ms. Its clock was within some ms of the server.
     \item A device asks again at intervals, because its clock drifts. A
           clock with an error of 20 ppm (parts per million) drifts 1.7 s
           each day.

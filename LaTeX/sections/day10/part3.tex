@@ -8,8 +8,8 @@
 %
 % The numbers of this part have three origins. Each frame says so in its
 % source line.
-% 1. An experiment of this course: Ollama 0.32.6 on the work computer, CPU
-%    only, 4 threads, temperature 0, seed 0 (tools/experiments/day10_apps.py,
+% 1. An experiment of this course: Ollama 0.32.6, CPU only, 4 threads,
+%    temperature 0, seed 0 (tools/experiments/day10_apps.py,
 %    values in tools/data/day10/day10_apps.json). The counts of valid and
 %    correct answers depend on the model file and the settings, not on the
 %    computer. The times say nothing about a board.
@@ -171,8 +171,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
           (\code{"653"}): convert and check them in your code.
   \end{itemize}
   \keypoint{Let the model select the function. Let your code calculate.}
-  \source{Experiment of this course: Ollama 0.32.6, x86 work computer, CPU
-    only.}
+  \source{Experiment of this course: Ollama 0.32.6, CPU only.}
 \end{frame}
 
 % ------------------------------------------------------------------ RAG
@@ -235,7 +234,7 @@ calls = r.message.tool_calls     # name and arguments, or empty
           starts at 70 percent, and the model said 60.
   \end{itemize}
   \source{Experiment of this course: Ollama 0.32.6, \code{nomic-embed-text},
-    x86 work computer, CPU only.\\ Prompt tokens: mean of the 10 questions.}
+    CPU only.\\ Prompt tokens: mean of the 10 questions.}
 \end{frame}
 
 \begin{frame}{The cost of retrieval on the board}

@@ -93,7 +93,7 @@ def main():
     print("Task B2: complete")
 
     options = {"temperature": 0, "seed": 0, "num_ctx": 2048, "num_predict": 64}
-    if os.environ.get("EDGEAI_CPU"):   # the course tested on a computer with a GPU
+    if os.environ.get("EDGEAI_CPU"):   # set it on a machine with no GPU
         options["num_gpu"] = 0
     prompts = [l.strip() for l in pathlib.Path(args.prompts).read_text(encoding="utf-8").splitlines()
                if l.strip() and not l.startswith("#")]

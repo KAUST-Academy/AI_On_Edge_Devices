@@ -2,7 +2,7 @@
 
 This example has the parts of the report that need no board: the
 estimates, the method, and the counts of valid and correct answers. The
-counts come from the work computer of the course (Ollama 0.32.6, CPU only,
+counts come from a run of the scripts (Ollama 0.32.6, CPU only,
 temperature 0). The counts depend on the model file and the settings, so
 your counts are probably the same or near. A rate, a temperature, and a
 time on a Raspberry Pi are values of the board. These cells have the text
@@ -39,14 +39,14 @@ each token. 114 688 x 2048 = 0.235 GB.
 | `llama3.2:3b` | default | measure in the lab | 38.4 | measure in the lab | measure in the lab | measure in the lab | 2325 | measure in the lab | measure in the lab |
 
 The prompt tokens and the model memory do not depend on the computer. The
-values are from the work computer.
+values are from the solution scripts.
 
 ### Context and threads
 
 | Measurement | Value |
 |---|---|
-| `llama3.2:3b`, `--num-ctx 2048`: model MB | 2325 (work computer) |
-| `llama3.2:3b`, `--num-ctx 8192`: model MB | 3119 (work computer) |
+| `llama3.2:3b`, `--num-ctx 2048`: model MB | 2325 |
+| `llama3.2:3b`, `--num-ctx 8192`: model MB | 3119 |
 | Difference in MB, and your estimate of the difference | 794 MB measured. Estimate: 114 688 x 6144 = 705 MB. The buffers of the runtime also grow a little. |
 | `llama3.2:1b`, 1, 2, and 4 threads: eval tokens/s | measure in the lab |
 
