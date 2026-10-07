@@ -58,3 +58,9 @@ group.
 
 Label each kit, each Raspberry Pi, each card, and each cable with the group
 number.
+
+## 4. Parts for the backup modules
+
+| Module | Part | Notes |
+|---|---|---|
+| MC-3 | None | The lab runs on a laptop. It uses the recordings of the group, or the simulated dataset of `Labs/modules/MC-3/`. |

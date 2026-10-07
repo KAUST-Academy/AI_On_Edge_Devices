@@ -1,0 +1,27 @@
+% Backup module MC-3. Skeleton: see LaTeX/templates/README.md.
+% The deck stands alone. It names no frame and no file of a core day.
+% Build: bash build_module.sh --file Module_MC-3.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Module MC-3]{Module MC-3: Spectral features for motion data}
+
+% Name only the sources that this module uses.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/modules/MC-3/outcomes}
+\input{sections/modules/MC-3/content}
+% A module of type T+L keeps the lab part. A module of type T deletes the
+% next line and the file lab.tex.
+\input{sections/modules/MC-3/lab}
+\input{sections/credits}
+
+\end{document}

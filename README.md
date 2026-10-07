@@ -104,12 +104,12 @@ topic. The syllabus lists every module:
 | ID | Module | Fits day | Theory deck | Lab deck | Lab files |
 |---|---|---|---|---|---|
 | TH-3 | ML workflow and life cycle | 1, 14 | [theory](Lectures/modules/Module_TH-3.pdf) | | |
+| MC-3 | Spectral features for motion data | 3 | [theory](Lectures/modules/Module_MC-3.pdf) | [lab](Lectures/modules/Module_MC-3.pdf) | [`Labs/modules/MC-3/`](Labs/modules/MC-3/README.md) |
 | TH-9 | The machine learning paradigm | 1 | [theory](Lectures/modules/Module_TH-9.pdf) | | |
 | TH-37 | The D·A·M taxonomy: find the bottleneck | 9, 14 | [theory](Lectures/modules/Module_TH-37.pdf) | | |
 
-A module with a lab has a lab deck `Module_<ID>_Lab.pdf` in
-`Lectures/modules/` and a lab folder `Labs/modules/<ID>/`. The two columns stay
-empty for a module of theory only.
+A module with a lab has a lab part in the same deck and a lab folder
+`Labs/modules/<ID>/`. The two columns stay empty for a module of theory only.
 
 Build a module deck with:
 

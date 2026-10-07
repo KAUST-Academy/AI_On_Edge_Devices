@@ -1,0 +1,414 @@
+% Theory part of the module.
+%
+% Module MC-3 of Section 6.1 of the syllabus: "Spectral features for motion
+% data. Time-domain statistics, FFT, and spectral power as model inputs."
+% Type T+L, 90 minutes: about 45 minutes of theory and 45 minutes of lab.
+%
+% Sources: the chapter "DSP Spectral Features" of the XIAOML Kit in
+% "Machine Learning Systems" (the feature list of the Spectral Analysis
+% block, the FFT settings of the project, the Welch method and the function
+% that the Studio uses instead, the wavelet features). The module does not
+% use Edge Impulse Studio, so every setting is given in Python.
+%
+% The numbers of this module have three origins. Each frame says so in its
+% source line.
+% 1. A number that the chapter reports: the 33 features of the first version
+%    of the block, the 13 features of one axis in the second version, the
+%    2 s window at 62.5 Hz of the project, the pair of values for the
+%    skewness of accZ.
+% 2. A number of the lab notebook of this module: the values, the parameters,
+%    and the test accuracies of the five inputs.
+% 3. A value of this course: the example window of 2 s at 50 Hz.
+%
+% Size: 15 to 25 frames for 50 minutes of theory.
+%
+% The three figures are new. The script tools/figures/mc3_spectral.py of the
+% course repository draws them from the simulated signals of the lab.
+
+% ------------------------------------------------------- 1. the raw window
+\begin{frame}{A window is not a feature}
+  \begin{itemize}
+    \item An inertial sensor gives 50 samples per second on each of three
+          axes. A window of 2 s gives 300 values.
+    \item The network must learn by itself that a slow oscillation and a
+          faster one are two different situations. It needs many windows to
+          learn that.
+    \item Signal processing gives the network the same information in fewer
+          values, and the meaning of each value is known before the
+          training starts.
+  \end{itemize}
+  \vskip 0.4em
+  \keypoint{Every value that the network reads has a name and a unit.}
+\end{frame}
+
+% ------------------------------------------------------------- 2. the window
+\begin{frame}{Cut the recording into windows}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \includegraphics[width=\textwidth]{images/modules/MC-3/mc3_windows.pdf}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \small
+      \begin{itemize}
+        \item A window of 2 s, a new window every 0.2 s. Each window is one
+              row of the dataset.
+        \item The window must hold a few cycles of the motion. A window
+              shorter than one cycle hides the frequency.
+        \item The task of the lab is the transport of a container. It rests in
+              a warehouse (\texttt{idle}), rides a truck or a train
+              (\texttt{terrestrial}), is moved by a forklift
+              (\texttt{lift}), or sails (\texttt{maritime}).
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.2em
+\end{frame}
+
+% --------------------------------------------------- 3. what a window hides
+\begin{frame}{What the window hides}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=1.7cm, minimum height=1.3cm}]
+    \node[st] (w) at (0,0) {2 s of\\ acceleration};
+    \node[st] (s) at (3.4,0) {the power at\\ each frequency};
+    \draw[->] (w) -- node[above, font=\scriptsize] {FFT} (s);
+    \node[st, fill=cardinalred!12, minimum height=0.9cm] (n) at (7.4,0)
+      {the position of\\ each oscillation\\ is not in the values};
+    \draw[->] (s) -- (n);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The network sees the shape of the signal. It has no way to ask
+          which frequency the shape contains.
+    \item The RMS of a window says how big the motion is. It says nothing
+          about how fast it is.
+    \item Two motions with the same size and different speed give the same
+          RMS and different spectra.
+  \end{itemize}
+\end{frame}
+
+% --------------------------------------------------------- 4. remove the mean
+\begin{frame}{Remove the mean first}
+  \begin{itemize}
+    \item The kit lies with the display up, so the z axis shows gravity. Its
+          value is near $+1$ g whatever the motion is.
+    \item A large constant shifts every feature and hides the small changes
+          that carry the class.
+    \item Subtract the mean of the window from each sample. Bin 0 of the FFT
+          is then zero, and the answer can start at bin 1.
+  \end{itemize}
+  \vskip 0.4em
+  \keypoint{The RMS before the removal of the mean and after it are two
+    different numbers.}
+\end{frame}
+
+% ------------------------------------------------------------------ 5. the RMS
+\begin{frame}{The root mean square}
+  \begin{equation*}
+    x_{\mathrm{RMS}} = \sqrt{\frac{1}{n}\sum_{i=1}^{n} x_i^2}
+  \end{equation*}
+  \small
+  \begin{itemize}
+    \item One value for the size of the motion. It has the unit of the
+          signal, so it stays in g.
+    \item It is the value of a constant direct current that would give the
+          same power in a resistor.
+    \item It is the cheapest feature of the block, and it is in every
+          version of it.
+  \end{itemize}
+  \vskip 0.3em
+  \small The formulas in this module use no correction for the sample size.
+  Then a laptop and a board give the same number.
+\end{frame}
+
+% ------------------------------------------- 6. skewness and kurtosis
+\begin{frame}{Skewness and kurtosis}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \small
+      \begin{itemize}
+        \item Skewness measures the asymmetry of the distribution of the
+              values of a window. It is below zero when the long tail is on
+              the left.
+        \item Kurtosis measures how heavy the tails are. A normal
+              distribution has 0.
+        \item A value far from 0 says that the motion is not a smooth
+              oscillation. It is a shock or a knock.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \small
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}L{2.1cm}L{2.7cm}@{}}
+        \toprule
+        Signal & Skewness, kurtosis \\
+        \midrule
+        Smooth sine wave & near 0, near -2 \\
+        One shock in the window & large, large \\
+        Sensor noise & near 0, near 0 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.3em
+  \small The kurtosis of a sine wave is $-1.5$, and the sample of a normal
+  distribution is near $-2$, because the module subtracts 3.
+\end{frame}
+
+% ---------------------------------------------- 7. the formula decides
+\begin{frame}{The formula decides the number}
+  \begin{itemize}
+    \item Two definitions of the skewness exist: one with a correction for
+          the sample size, and one with no correction.
+    \item For the z axis of the window of the project of the chapter, the
+          Studio reports $-0.0978$, $0.1735$, and $6.8629$. The same values
+          with the correction are $-0.0990$, $0.1756$, and $6.9463$.
+    \item The two differ by about one percent on the third axis. A model
+          trained on the values of one definition and run on the values of
+          the other one loses accuracy.
+  \end{itemize}
+  \vskip 0.4em
+  \keypoint{Write the formula in the report. A number without a formula is
+    not a feature.}
+  \source{Values reported in "Machine Learning Systems", chapter "DSP
+    Spectral Features", for the window of the project.}
+\end{frame}
+
+% --------------------------------------- 8. the time-domain feature list
+\begin{frame}{The time-domain features of one axis}
+  \footnotesize
+  \begin{tabular}{@{}L{3.6cm}L{3.0cm}L{3.0cm}@{}}
+    \toprule
+    Feature & What it measures & Version \\
+    \midrule
+    RMS & the size of the motion & 1 and 2 \\
+    Skewness & the asymmetry of the values & 2 \\
+    Kurtosis & the weight of the tails & 2 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Three values per axis. The first version of the block computed
+          only the RMS, plus the peaks and the power of the FFT, for 11
+          values per axis and 33 values in total.
+    \item The second version adds the skewness and the kurtosis, and the
+          studio then reports 39 values, so 13 per axis.
+  \end{itemize}
+  \source{Feature lists of "Machine Learning Systems", chapter "DSP
+    Spectral Features", versions 1 and 2 of the Spectral Analysis block.}
+\end{frame}
+
+% ---------------------------------------------------------------- 9. the FFT
+\begin{frame}{The FFT turns samples into bins}
+  \begin{equation*}
+    \text{distance between two bins} = \frac{f_s}{N}
+    \qquad
+    \text{resolution} \approx \frac{1}{T}
+  \end{equation*}
+  \small
+  \begin{itemize}
+    \item $f_s$ is the sampling rate, $N$ is the FFT length, and $T$ is the
+          length of the window.
+    \item A window of 2 s at 50 Hz has 100 samples. An FFT of length 128
+          pads it with 28 zeros. The bins then sit every $50/128 = 0.39$
+          Hz, and no bin is closer than the $0.5$ Hz that 2 s of signal
+          can resolve.
+    \item Padding adds no information. It only draws the same peak on a
+          finer grid.
+  \end{itemize}
+  \vskip 0.3em
+  \keypoint{More bins means a finer grid, not a better sensor.}
+\end{frame}
+
+% ------------------------------------------------------- 10. the spectrum
+\begin{frame}{The power at each frequency}
+  \begingroup\centering
+  \includegraphics[width=0.95\textwidth]{images/modules/MC-3/mc3_power.pdf}
+  \par\endgroup
+  \vskip 0.2em
+  \small Each class that moves has a band of its own, and \texttt{idle} has
+  no band because it does not move. The rate of a class follows the speed of
+  its session, so two bands can touch. The network sees 64 numbers per axis
+  and no shape at all.
+  \source{Figure drawn from the simulated signals of the lab notebook, with
+    the power of the three axes added. The notebook plots one axis at a time.
+    The signals are simulated, so the figure is an illustration.}
+\end{frame}
+
+% ------------------------------------------- 11. max-hold and Welch
+\begin{frame}{Max-hold and Welch's method}
+  \small
+  \begin{itemize}
+    \item A window has more samples than the FFT length. So the window is cut
+          into frames, and the FFT runs on each frame.
+    \item Welch's method averages the power of the frames. The estimate is
+          smooth, and a peak that lasts a short time is reduced.
+    \item The block of the studio keeps the largest power of each bin over
+          all the frames. The function in the chapter divides the signal
+          into frames, takes the power of each frame, and keeps the maximum.
+    \item Max-hold keeps a short event. Welch removes it. Choose with the
+          motion in mind: a pallet that hits once in a window is an event.
+  \end{itemize}
+  \source{Description and function of "Machine Learning Systems", chapter
+    "DSP Spectral Features", section "Spectral features".}
+\end{frame}
+
+% ------------------------------------------ 12. the feature vector
+\begin{frame}{The feature vector of one axis}
+  \footnotesize
+  \begin{tabular}{@{}L{3.6cm}L{2.2cm}L{2.6cm}@{}}
+    \toprule
+    Group & Values & FFT length \\
+    \midrule
+    RMS, skewness, kurtosis & 3 & any \\
+    Spectral power of bins 1 to $N/2$ & $N/2$ & 128 \\
+    \midrule
+    One axis & 67 & 128 \\
+    Three axes & 201 & 128 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The block of the studio also gives the skewness and the kurtosis
+          of the 16 power values. Add two values per axis when you need
+          them.
+    \item With no filter, the number of power values is half the FFT length.
+  \end{itemize}
+  \vskip 0.2em
+  \source{Values of the example of this module. The rule "half the FFT
+    length" is from "Machine Learning Systems", chapter "DSP Spectral
+    Features".}
+\end{frame}
+
+% ------------------------------------------------- 13. the FFT length
+\begin{frame}{The choice of the FFT length}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{2.3cm}L{2.3cm}L{2.4cm}L{2.3cm}@{}}
+    \toprule
+    FFT length & Bins, distance & Values, 3 axes & Parameters \\
+    \midrule
+    32 & 16, 1.56 Hz & 57 & 1414 \\
+    64 & 32, 0.78 Hz & 105 & 2374 \\
+    128 & 64, 0.39 Hz & 201 & 4294 \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The columns are one network with 20, 10, and 4 units, trained on
+          the fallback dataset of the lab.
+    \item Choose the length from the lowest frequency that separates two
+          classes. Then check that the extra values still pay for
+          themselves.
+  \end{itemize}
+  \source{Example model of this module, measured by the notebook of the
+    lab on an x86 processor with AVX2. The values say nothing about a
+    board.}
+\end{frame}
+
+% ------------------------------------------------------ 14. the wavelets
+\begin{frame}{Wavelets: time and frequency together}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \small
+      \begin{itemize}
+        \item The FFT of a window gives one spectrum for the whole window. A
+              shock in the first half and a shock in the second half give
+              the same spectrum.
+        \item The wavelet transform cuts the signal into a low part and a
+              high part. Repeating the cut gives more levels.
+        \item Each level is a signal of its own, and the same features
+              apply to it.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small
+      \setlength{\tabcolsep}{3pt}
+      \begin{tabular}{@{}L{3.2cm}L{1.1cm}@{}}
+        \toprule
+        Feature group & Values \\
+        \midrule
+        Statistics: n5, n25, n75, n95, median, mean, std, var, rms,
+          skewness, kurtosis & 11 \\
+        Zero crossing rate and mean crossing rate & 2 \\
+        Entropy & 1 \\
+        \midrule
+        One level & 14 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vskip 0.2em
+  \small With one level and no filter, 14 values for the signal and 14 for
+  the low part, so 28 per axis and 84 for the three axes.
+  \source{"Machine Learning Systems", chapter "DSP Spectral Features",
+    section "Wavelets".}
+\end{frame}
+
+% ------------------------------------------------------- 15. the measurement
+\begin{frame}{What the module measures}
+  \begingroup\centering
+  \includegraphics[width=0.88\textwidth]{images/modules/MC-3/mc3_inputs.pdf}
+  \par\endgroup
+  \vskip 0.2em
+  \small The network on the raw window fails on this dataset: 1312 training
+  windows are too few for 300 inputs. The nine time-domain values are
+  enough. The 192 power values add nothing here.
+  \source{One run of the lab notebook on the fallback dataset of the module,
+    an x86 processor with AVX2. The signals are simulated.}
+\end{frame}
+
+% ------------------------------------------------------ 16. what to remember
+\begin{frame}{What to remember}
+  \small
+  \begin{enumerate}
+    \item A window of 2 s at 50 Hz gives 100 samples per axis. Cut the
+          recording with a stride, so the windows overlap.
+    \item Remove the mean first. Then compute the RMS, the skewness, and
+          the kurtosis, and write the formula.
+    \item The FFT length sets the number of bins and the distance between
+          two bins. Padding adds no information.
+    \item Keep the largest power of each bin over the frames when the
+          motion has short events.
+    \item The feature set is a trade-off. Measure the accuracy and the
+          model size before you choose it.
+  \end{enumerate}
+\end{frame}
+
+% ------------------------------------------------------------- exercise
+\exerciseframe{Bins down to 0.4 Hz}{
+  A window of 2 s is recorded at 50 Hz. You need the power at every
+  frequency down to 0.4 Hz, and you want the fewest values that still reach
+  that frequency.
+
+  \begin{enumerate}
+    \item Give the FFT length.
+    \item Give the number of values of one axis, with the three
+          time-domain features.
+    \item Give the number of values of the vector of the three axes.
+  \end{enumerate}
+}
+
+\answerframe{Bins down to 0.4 Hz}{
+  \begin{enumerate}
+    \item The distance between two bins is $f_s / N$, so $50 / N \leq 0.4$
+          gives $N \geq 125$. The next power of two is $N = 128$. A window
+          of 2 s cannot resolve less than $0.5$ Hz, so 128 bins are enough
+          for the grid and the data.
+    \item Bin 0 carries the mean, which is zero after the removal, so the
+          answer starts at bin 1. The power values are $128/2 = 64$, and
+          with the three time-domain features one axis has $3 + 64 = 67$
+          values.
+    \item The three axes have $3 \times 67 = 201$ values. A network with 20,
+          10, and 4 units then has 4294 parameters.
+  \end{enumerate}
+  \vskip 0.3em
+  \small The answer of part 1 is the smallest FFT length that reaches
+  0.4 Hz. Whether 201 values are worth their place is a question of
+  measurement, not of arithmetic: the lab measures it.
+}

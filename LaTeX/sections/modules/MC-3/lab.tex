@@ -1,0 +1,205 @@
+% Lab part of the module.
+%
+% Module MC-3 of Section 6.1 of the syllabus: "Spectral features for motion
+% data". Type T+L, 90 minutes: about 45 minutes of theory and 45 minutes of
+% lab. The lab needs no board. It runs on the recordings of a group, or on
+% the simulated fallback dataset of its folder.
+%
+% The parts follow the README of the lab folder. The frame of the expected
+% output shows the form of the output and the values that check the method.
+% No value here is a measurement of a board.
+
+% --------------------------------------------------------------- 1. the goal
+\begin{frame}{Lab: goal and plan}
+  \small
+  \begin{itemize}
+    \item \textbf{Goal.} You compute the features of a motion signal, train
+          a small classifier on them, and compare five inputs for the same
+          task.
+    \item \textbf{Deliverable.} The table of section 8 of the notebook,
+          copied into \code{report.md}, and the answers of its three questions.
+  \end{itemize}
+  \vskip 0.5em
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{1.0cm}L{7.2cm}L{1.5cm}@{}}
+    \toprule
+    Part & Content & Time \\
+    \midrule
+    A & The data, the windows, and the three time-domain features & 12 min \\
+    B & The FFT and the spectral power of one axis & 13 min \\
+    C & The classifier, and its number of parameters & 8 min \\
+    D & Five inputs for the same task, and the FFT length & 12 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+\end{frame}
+
+% ------------------------------------------------------------ 2. the files
+\begin{frame}{Lab: files and data}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.9cm}L{5.3cm}@{}}
+    \toprule
+    File & Content \\
+    \midrule
+    \code{spectral\_features.ipynb} & The notebook. It has four tasks. \\
+    \code{host/motion\_sim.py} & The simulated signals. \\
+    \code{host/make\_dataset.py} & Makes the fallback dataset. \\
+    \code{report.md} & The report to hand in. \\
+    \code{solutions/} & The notebook with all tasks complete and with its output, and an example report. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item The notebook reads the folder \code{data/} when it has recordings of
+          the format of the course. Otherwise it makes the simulated
+          dataset in \code{fallback\_data/}.
+    \item The last session is the test session. A model that separates the
+          sessions has learned the person, not the motion.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- 3. part A
+\begin{frame}[fragile]{Part A: the data and the time features (12 min)}
+  \small
+  \begin{enumerate}
+    \item Start Jupyter from the folder of the lab:
+\begin{lstlisting}[style=shell]
+../../../.venv/bin/jupyter lab spectral_features.ipynb
+\end{lstlisting}
+    \item Run section 1. Write the number of training windows and of test
+          windows in the report.
+    \item \textbf{Task 1.} Write \code{time\_features(window)}: the RMS, the
+          skewness, and the kurtosis of one axis, after the removal of the
+          mean.
+    \item Run the cell after the task.
+  \end{enumerate}
+  \vskip 0.5em
+  \small You see the check of the task, and the three values for the first
+  window:
+  \begin{center}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    RMS & Skewness & Kurtosis \\
+    \midrule
+    0.0038 & $-0.3266$ & $-0.0771$ \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \small The first window is an idle window, so its values are small. That
+  is the answer of the check, not a target for your own window.
+  \source{Values of one run of the solution notebook on the fallback
+    dataset, an x86 processor with AVX2.}
+\end{frame}
+
+% ---------------------------------------------------------------- 4. part B
+\begin{frame}{Part B: the FFT and the spectral power (13 min)}
+  \small
+  \begin{enumerate}
+    \item Run section 3. The cell draws the spectral power of one window of
+          each class on the z axis. The z axis of \code{terrestrial} is almost
+          still, because the motion of a truck sits in the horizontal plane.
+          Write in the report which frequency holds the power of the class
+          \code{lift}, and which one holds the power of \code{maritime}.
+    \item \textbf{Task 2.} Write \code{axis\_features(window, nfft)}: the three
+          time-domain features, then the power of bins 1 to \code{nfft // 2}.
+    \item Run the cell after the task, then section 4.
+  \end{enumerate}
+  \vskip 0.5em
+  \small You see the number of values of one axis, and it must be
+  $3 + 128 / 2 = 67$. Then the feature matrix has 201 columns and the
+  notebook prints the mean and the standard deviation of the first nine
+  features.
+  \vskip 0.3em
+\small The first three values of the feature vector are the RMS, the
+skewness, and the kurtosis of the axis `x`. The next six are power values.
+\end{frame}
+
+% ---------------------------------------------------------------- 5. part C
+\begin{frame}{Part C: the classifier (8 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Task 3.} Write \code{make\_model(n\_inputs)}: a layer of 20 units
+          with ReLU, a layer of 10 units with ReLU, and 4 outputs with
+          softmax.
+    \item Run the cell after the task. The check calculates the expected
+          number of parameters itself.
+    \item Run the next cell to train it.
+  \end{enumerate}
+  \vskip 0.5em
+  \begin{center}
+  \begin{tabular}{@{}l@{}}
+    \toprule
+    input values 201, parameters 4294 (expected 4294), outputs 4 \\
+    the model on the spectral features: 4294 parameters, \\
+    test accuracy 98.8 percent \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \small The names of the layers and of the input matter. Without them, the
+  file of the model changes size with each model that the notebook builds.
+  \source{Values of one run of the solution notebook on the fallback
+    dataset, an x86 processor with AVX2.}
+\end{frame}
+
+% ---------------------------------------------------------------- 6. part D
+\begin{frame}{Part D: five inputs for the same task (12 min)}
+  \small
+  \begin{enumerate}
+    \item Run section 6. It trains the same network on the raw window, on
+          the time-domain features, and on the spectral features.
+    \item Write the three lines of output in the report.
+    \item \textbf{Task 4.} Before you run section 7, complete the table with
+          the number of values of one axis for the FFT lengths 32, 64, and
+          128. Then write the length that you expect to win, and why.
+    \item Run section 7 and section 8, and copy the table into the report.
+  \end{enumerate}
+  \vskip 0.4em
+  \small The notebook prints the same table as the figure of the lecture:
+  the raw window reaches 58.5 percent, the nine time-domain values reach
+  100.0 percent, and the spectral values reach 98.8 percent with an FFT
+  length of 128.
+  \source{Values of one run of the solution notebook on the fallback
+    dataset, an x86 processor with AVX2. The signals are simulated.}
+\end{frame}
+
+% ------------------------------------------------------------ 7. the check
+\begin{frame}{Check criterion and Decision Log}
+  \small
+  \begin{itemize}
+    \item The notebook prints \code{complete} for tasks 1, 2, 3, and 4.
+    \item The table of the report has five rows, each with the number of
+          values, the number of parameters, and a measured test accuracy.
+    \item The three questions of the report have answers with numbers from
+          your own run.
+    \item The Decision Log names one decision and one number.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Question of the Decision Log: a device must classify the motion
+    of a pallet for a year on a battery. Which feature set do you put in
+    the firmware, and which number of your table decides it?}
+\end{frame}
+
+% ------------------------------------------------------- 8. common problems
+\begin{frame}{Common problems}
+  \small
+  \begin{tabular}{@{}L{4.4cm}L{5.0cm}@{}}
+    \toprule
+    Problem & Fix \\
+    \midrule
+    The notebook says that it uses the fallback dataset & Your group has no
+      recording in \code{data/}. The signals are simulated. \\
+    \code{Task 2} says that the answer needs 67 values & Your answer has a
+      different number. Return one value for each bin. \\
+    \code{Task 3} says that the model raises an error & A layer is missing, or a
+      layer is added with a tensor instead of with its input. \\
+    The accuracies change between two runs & Write the seed, and run the
+      same cells again. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small The README of the lab folder has the full list of the checks of the
+  notebook and the run time.
+\end{frame}

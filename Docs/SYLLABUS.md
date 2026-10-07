@@ -258,6 +258,10 @@ Training labs use small models. They run on a laptop CPU or on the free tier of 
 - *Deliverable:* a live demonstration and a comparison table.
 - *Check:* the board classifies four motions correctly, and the table has measured numbers for both paths.
 
+**Backup modules**
+
+- MC-3: Spectral features for motion data (90 min, theory and lab). Use it after Part 3 of the lecture, or in place of Part A of the lab when Edge Impulse Studio is not available. Its lab runs on a laptop, with no board.
+
 
 
 
@@ -701,6 +705,14 @@ Each module has the same parts, so that you can present it alone:
 - One slide deck that compiles alone. The deck has a title frame, the learning outcomes, the content, and the credits frame.
 - One lab folder with the files and a README. The README gives the goal, the hardware, the duration, the steps, and the check criterion.
 - No reference to a slide number or a file of another day.
+
+**Microcontroller modules (XIAOML Kit)**
+
+| ID | Module | Type | Time | Fits day |
+|---|---|---|---|---|
+| MC-3 | Spectral features for motion data | T+L | 90 min | 3 |
+
+- **MC-3.** Time-domain statistics, FFT, and spectral power as model inputs. The lab computes the features in a notebook and compares five inputs for the same motion task. *Exercise:* a window of 2 s at 50 Hz needs the power down to 0.4 Hz. Give the FFT length, the number of values of one axis, and the number of values of the vector of the three axes. Deck: `Lectures/modules/Module_MC-3.pdf`. Lab: `Labs/modules/MC-3/`.
 
 **Recap and theory modules**
 

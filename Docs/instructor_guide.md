@@ -269,7 +269,10 @@ Fallback:
   group, or the notebook uses the simulated dataset.
 - The inference code is not complete: the sketch of `solutions/`.
 - Edge Impulse Studio is not available: the group completes only the column
-  of its own sketch.
+  of its own sketch. The module MC-3 replaces the whole Part A and Part D of
+  the lab in this case. Its deck is
+  `Lectures/modules/Module_MC-3.pdf`, its lab is `Labs/modules/MC-3/`, and it
+  needs no board.
 
 
 
