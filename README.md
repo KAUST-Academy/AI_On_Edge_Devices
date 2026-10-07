@@ -92,11 +92,40 @@ Each theory part has one short exercise of 5 to 10 minutes.
   [`Docs/capstone.md`](Docs/capstone.md) has the requirements and the
   rubric.
 
+### The backup modules
+
+A backup module is a short unit that you can use instead of part of a day. It
+has its own deck and its own lab folder, and each part stands alone. Use a
+backup module when your group finishes the core lab early, when the core lab
+fails because of the hardware or the network, or when you need more depth on a
+topic. The syllabus lists every module:
+[`Docs/SYLLABUS.md`](Docs/SYLLABUS.md), Section 6.
+
+| ID | Module | Fits day | Theory deck | Lab deck | Lab files |
+|---|---|---|---|---|---|
+| TH-3 | ML workflow and life cycle | 1, 14 | [theory](Lectures/modules/Module_TH-3.pdf) | | |
+| TH-9 | The machine learning paradigm | 1 | [theory](Lectures/modules/Module_TH-9.pdf) | | |
+| TH-37 | The D·A·M taxonomy: find the bottleneck | 9, 14 | [theory](Lectures/modules/Module_TH-37.pdf) | | |
+
+A module with a lab has a lab deck `Module_<ID>_Lab.pdf` in
+`Lectures/modules/` and a lab folder `Labs/modules/<ID>/`. The two columns stay
+empty for a module of theory only.
+
+Build a module deck with:
+
+```bash
+bash build_module.sh --file Module_TH-3.tex
+```
+
+The PDF goes to `Lectures/modules/`, so it does not mix with the decks of the
+core days.
+
 ## 3. Where the material is
 
 | Path | Content |
 |---|---|
-| `Lectures/` | The slide decks as PDF files: `DayNN_Theory.pdf` and `DayNN_Lab.pdf` |
+| `Lectures/` | The slide decks of the core days as PDF files: `DayNN_Theory.pdf` and `DayNN_Lab.pdf` |
+| `Lectures/modules/` | The slide decks of the backup modules as PDF files: `Module_<ID>.pdf` |
 | `Labs/dayNN/` | The lab of day `NN`: `README.md` (the steps), `report.md` (the report that you hand in), the notebooks, the sketches, the scripts, and `solutions/` |
 | [`Labs/SETUP.md`](Labs/SETUP.md) | The setup of your laptop |
 | [`Labs/VERSIONS.md`](Labs/VERSIONS.md) | The software versions of the course |
@@ -104,7 +133,7 @@ Each theory part has one short exercise of 5 to 10 minutes.
 | [`Docs/capstone.md`](Docs/capstone.md) | The capstone brief |
 | [`Docs/reading.md`](Docs/reading.md) | The books and the reading for each day |
 | [`Docs/SYLLABUS.md`](Docs/SYLLABUS.md) | The complete syllabus |
-| `LaTeX/` | The sources of the slide decks |
+| `LaTeX/` | The sources of the slide decks. A module deck is `LaTeX/Module_<ID>.tex` with its sections in `LaTeX/sections/modules/<ID>/` |
 
 ## 4. Setup
 
@@ -198,7 +227,7 @@ The instructor confirms the weights on Day 1.
 | File | Content |
 |---|---|
 | [`Docs/instructor_guide.md`](Docs/instructor_guide.md) | The checklist before the course and the checklist for each day |
-| [`Docs/hardware.md`](Docs/hardware.md) | The hardware of one group and of the classroom |
+| [`Docs/hardware.md`](Docs/hardware.md) | The hardware of one group, of the classroom, and of each backup module |
 | [`Labs/hardware/README.md`](Labs/hardware/README.md) | The preparation and the test steps of the boards, the router, and the microSD card |
 | `Labs/dayNN/TEST_NOTES.md` | The code status and the test checklist of each lab |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | The build script of the decks and the format of the commit messages |

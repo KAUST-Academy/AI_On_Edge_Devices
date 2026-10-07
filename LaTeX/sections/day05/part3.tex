@@ -165,8 +165,6 @@
     \item The word still passes the threshold, one window later than
           before. Smoothing costs a delay.
   \end{itemize}
-  \source{The same example values. The red line is their mean of the last
-    three windows.}
 \end{frame}
 
 \begin{frame}{One event for one word}
@@ -330,6 +328,7 @@
     f = \frac{\text{time with stage 2 on}}{\text{total time}}
   \]
   \renewcommand{\arraystretch}{1.15}
+  \begingroup\centering
   \begin{tabular}{@{}L{0.62\textwidth}r@{}}
     \toprule
     \textbf{Quantity} & \textbf{Value} \\
@@ -343,13 +342,11 @@
     Mean power with stage 2 always on                  & 830 mW \\
     \bottomrule
   \end{tabular}
+  \par\endgroup
   \vskip 0.5em
   \vskip 0.2em
   The cascade needs 75 times less power. Stage 2 is almost always off, so
   the power of stage 1 decides the result.
-  \source{830 mW: the peak power of the image model in the kit lab ``Image
-    Classification''. The value of stage 1 and the number of events are
-    examples.}
 \end{frame}
 
 \begin{frame}{Rules for the design of a cascade}

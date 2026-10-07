@@ -21,8 +21,10 @@ This repository contains a Bash script to compile LaTeX (`.tex`) files into PDFs
 
 project-root/
 │
-├── build.sh           # The build script
+├── build.sh           # The build script for the core day decks
+├── build_module.sh    # The build script for the backup module decks
 ├── Lectures/          # (Default) Output directory for generated PDFs
+│   └── modules/       # Output directory of build_module.sh
 └── LaTeX/             # Directory containing .tex source files
     ├── file1.tex
     ├── file2.tex
@@ -62,21 +64,37 @@ Replace `filename.tex` with the name of the LaTeX file (located inside the `LaTe
 ./build.sh --output CustomOutputDir
 ```
 
-You can combine this with the `--file` flag:
+You can combine these with the `--file` flag:
 
 ```bash
 ./build.sh --file filename.tex --output CustomOutputDir
 ```
 
+## 📦 Build the Backup Module Decks
+
+`build_module.sh` builds the backup module decks. It takes the same options as
+`build.sh`, but its default output directory is `Lectures/modules/`:
+
+```bash
+./build_module.sh --file Module_TH-3.tex
+```
+
+Without `--file`, the script builds every `Module_*.tex` file and no core day
+deck. The script also stops if LaTeX does not write the PDF of a file, and its
+last cleaning step does not print an error.
+
 ## 🧹 Cleanup
 
-The script automatically cleans up auxiliary files generated during the build process, such as `.aux`, `.log`, `.toc`, etc.
+The scripts automatically clean up auxiliary files generated during the build process, such as `.aux`, `.log`, `.toc`, etc.
 
 ## ❗ Notes
 
 * All LaTeX source files **must be located in the `LaTeX/` directory**.
 * If the specified file does not exist, the script will exit with an error.
-* If no `--file` is provided, the script will default to building all `.tex` files.
+* `build.sh` without `--file` builds all `.tex` files. `build_module.sh` without
+  `--file` builds all `Module_*.tex` files.
+* The template ignores `*.pdf`, so a new PDF under `Lectures/` needs
+  `git add -f`.
 
 ## 📄 License
 
