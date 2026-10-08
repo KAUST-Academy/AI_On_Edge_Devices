@@ -64,3 +64,4 @@ number.
 | Module | Part | Notes |
 |---|---|---|
 | MC-3 | None | The lab runs on a laptop. It uses the recordings of the group, or the simulated dataset of `Labs/modules/MC-3/`. |
+| MC-5 | None | The lab runs on a laptop. It uses the public keyword dataset of Edge Impulse, which `Labs/modules/MC-5/host/get_keywords.py` downloads. |

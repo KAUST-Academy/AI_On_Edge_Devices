@@ -326,6 +326,12 @@ Fallback:
   file of the shared folder.
 - The library does not build with the core 3.3.12: the core 2.0.17.
 - Tasks A1 and A2 are not complete: `solutions/sketches/kws_stream/postprocess.h`.
+- The training of the keyword model is not available, or the room has no
+  network: the module MC-5 replaces Part A. Its deck is
+  `Lectures/modules/Module_MC-5.pdf`, its lab is `Labs/modules/MC-5/`, and
+  it needs no board. Its lab downloads the dataset of Edge Impulse
+  (139 MB), so download it into a USB drive before the lab when the
+  network of the room is small.
 
 
 

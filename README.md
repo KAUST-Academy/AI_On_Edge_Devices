@@ -105,6 +105,7 @@ topic. The syllabus lists every module:
 |---|---|---|---|---|---|
 | TH-3 | ML workflow and life cycle | 1, 14 | [theory](Lectures/modules/Module_TH-3.pdf) | | |
 | MC-3 | Spectral features for motion data | 3 | [theory](Lectures/modules/Module_MC-3.pdf) | [lab](Lectures/modules/Module_MC-3.pdf) | [`Labs/modules/MC-3/`](Labs/modules/MC-3/README.md) |
+| MC-5 | Keyword spotting features and training in Python | 5 | [theory](Lectures/modules/Module_MC-5.pdf) | [lab](Lectures/modules/Module_MC-5.pdf) | [`Labs/modules/MC-5/`](Labs/modules/MC-5/README.md) |
 | TH-9 | The machine learning paradigm | 1 | [theory](Lectures/modules/Module_TH-9.pdf) | | |
 | TH-37 | The D·A·M taxonomy: find the bottleneck | 9, 14 | [theory](Lectures/modules/Module_TH-37.pdf) | | |
 

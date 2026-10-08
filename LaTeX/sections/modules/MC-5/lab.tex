@@ -1,0 +1,222 @@
+% Lab part of the module.
+%
+% Module MC-5 of Section 6.1 of the syllabus: "Keyword spotting features and
+% training in Python". Type T+L, 90 minutes: about 45 minutes of theory and
+% 45 minutes of lab. The lab needs no board. It runs on a laptop CPU and
+% needs the public dataset of Edge Impulse, which a script of the folder
+% downloads.
+%
+% The parts follow the README of the lab folder. The frames show the form of
+% the output and the values that check the method. No value here is a
+% measurement of a board.
+
+% --------------------------------------------------------------- 1. the goal
+\begin{frame}{Lab: goal and plan}
+  \small
+  \begin{itemize}
+    \item \textbf{Goal.} You compute the cepstral coefficients of a clip of
+          one second with numpy only, and you train a small classifier on
+          them, with no tool of Edge Impulse Studio.
+    \item \textbf{Deliverable.} The table of section 10 of the notebook,
+          copied into \code{report.md}, and the answers of its three questions.
+  \end{itemize}
+  \vskip 0.5em
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{1.0cm}L{7.2cm}L{1.5cm}@{}}
+    \toprule
+    Part & Content & Time \\
+    \midrule
+    A & The clips, and the triangular filters of the Mel scale & 12 min \\
+    B & The cepstral coefficients, and the plot of one clip & 13 min \\
+    C & The classifier, and its number of parameters & 8 min \\
+    D & Three inputs for the same task & 12 min \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+\end{frame}
+
+% ---------------------------------------------------------- 2. the dataset
+\begin{frame}{Lab: the dataset}
+  \small
+  \begin{itemize}
+    \item The script \code{host/get\_keywords.py} downloads the file
+          \code{keywords2.zip} of Edge Impulse (139 MB) into the folder
+          \code{downloads/}, one time. Then it writes 240 clips of each of
+          the four classes into \code{keywords/clips/}.
+    \item The four classes are \code{no}, \code{noise}, \code{unknown}, and
+          \code{yes}. Each clip has 1 s of audio at 16 kHz.
+    \item The notebook reads the amplitudes from text files, so it needs no
+          audio package.
+  \end{itemize}
+  \vskip 0.5em
+  \begin{center}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Class & Clips & Training & Test \\
+    \midrule
+    \code{no} & 240 & 192 & 48 \\
+    \code{noise} & 240 & 192 & 48 \\
+    \code{unknown} & 240 & 192 & 48 \\
+    \code{yes} & 240 & 192 & 48 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \small The split is random, so a clip of one speaker can be in both sets.
+  The notebook says so in section 6.
+\end{frame}
+
+% ------------------------------------------------------------- 3. the files
+\begin{frame}{Lab: files}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.9cm}L{5.3cm}@{}}
+    \toprule
+    File & Content \\
+    \midrule
+    \code{mfcc\_training.ipynb} & The notebook. It has four tasks. \\
+    \code{host/get\_keywords.py} & Downloads the dataset. \\
+    \code{report.md} & The report to hand in. \\
+    \code{solutions/} & The notebook with all tasks complete and with its
+      output, and an example report. \\
+    \code{TEST\_NOTES.md} & The code status and the steps to run the lab. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item Section 2 of the notebook gives the functions of the pipeline that
+          need no decision from you. Two of the four tasks use them.
+    \item Section 6 caches the features in the file \code{features.npz}, so
+          the second run of the notebook is fast.
+  \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------- 4. part A
+\begin{frame}[fragile]{Part A: the clips and the filter bank (12 min)}
+  \small
+  \begin{enumerate}
+    \item Get the dataset, one time, from the folder of the lab:
+\begin{lstlisting}[style=shell]
+python3 host/get_keywords.py
+\end{lstlisting}
+    \item Start Jupyter from the folder of the lab, and run sections 0 and 1.
+    \item \textbf{Task 1.} Write \code{mel\_filters(n\_filters, n\_bins,
+          f\_min, f\_max, sample\_rate)}: the matrix of the 32 triangular
+          filters of the Mel scale.
+    \item Run the cell after the task.
+  \end{enumerate}
+  \vskip 0.4em
+  \small You see the peak of the first filter at bin 2 and of the last one
+  at bin 236. The first filter is 3 bins wide and the last one 40 bins wide.
+  That is the Mel scale: narrow at the bottom, wide at the top.
+\end{frame}
+
+% ---------------------------------------------------------------- 5. part B
+\begin{frame}{Part B: the cepstral coefficients (13 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Task 2.} Write \code{mfcc(clip, filters=None)}: the
+          pre-emphasis, the framing, the Hamming window, the FFT, the
+          filters, the logarithm, and the cosine transform.
+    \item Run the cell after the task. Then run section 5.
+    \item Look at the three panels. Write in the report what the middle
+          panel shows and what the bottom panel shows.
+    \item Run section 6. Write the run time of the features in the report.
+  \end{enumerate}
+  \vskip 0.4em
+  \small The notebook prints the mean of the first coefficient, which is
+  $-13.071$, and the mean of the last one, which is $0.064$. The first
+  coefficient is large because it holds the energy of the frame, and the
+  logarithm of a small power is a large negative number.
+\end{frame}
+
+% ---------------------------------------------------------------- 6. part C
+\begin{frame}{Part C: the classifier (8 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Task 3.} Write \code{make\_model(n\_frames, n\_features)}:
+          two \code{Conv1D} layers with 16 and with 32 filters of 3 frames,
+          each with a max pooling of 2, then a \code{Dense} layer with 4
+          outputs.
+    \item Run the cell after the task. The check calculates the expected
+          number of parameters itself, with the length that each
+          convolution and each pooling layer leaves.
+    \item Run the next cell to train the model.
+  \end{enumerate}
+  \vskip 0.5em
+  \begin{center}
+  \begin{tabular}{@{}l@{}}
+    \toprule
+    the input has 50 frames of 13 values, and 11 frames after the two \\
+    convolutions and the two pooling layers \\
+    parameters 3620 (expected 3620), outputs 4 \\
+    the cepstral coefficients: 650 values per clip, 3620 parameters, \\
+    test accuracy 77.1 percent \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+% ---------------------------------------------------------------- 7. part D
+\begin{frame}{Part D: three inputs for the same task (12 min)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Task 4.} Before you run the next cell, complete
+          \code{values\_per\_clip} with the number of values that one clip
+          gives for each of the three inputs, and write in
+          \code{best\_input} the input that you expect to win.
+    \item Run the next cell and section 10, and copy the table into the
+          report.
+    \item Answer the three questions of the notebook.
+  \end{enumerate}
+  \vskip 0.4em
+  \small The three lines of the notebook: the raw audio has 16000 values
+  and 513380 parameters, the log Mel spectrogram 1600 values and 4532
+  parameters, and the cepstral coefficients 650 values and 3620 parameters.
+\end{frame}
+
+% ------------------------------------------------------------ 8. the check
+\begin{frame}{Check criterion and Decision Log}
+  \small
+  \begin{itemize}
+    \item The notebook prints \code{complete} for tasks 1, 2, 3, and 4.
+    \item The table of the report has three rows, each with the number of
+          values, the number of parameters, and a measured test accuracy.
+    \item The three questions of the report have answers with numbers from
+          your own run.
+    \item The Decision Log names one decision and one number.
+  \end{itemize}
+  \vskip 0.5em
+  \keypoint{Question of the Decision Log: the device must say one word every
+    500 ms on a battery. Which of the three inputs do you put in the
+    firmware, and which number of your table decides it?}
+\end{frame}
+
+% ------------------------------------------------------- 9. common problems
+\begin{frame}{Common problems}
+  \small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}L{4.0cm}L{5.2cm}@{}}
+    \toprule
+    Problem & Fix \\
+    \midrule
+    The notebook stops with \code{No clip in the folder} & Run
+      \code{host/get\_keywords.py} first. The download is 139 MB. \\
+    \code{Task 1} says that the last filter must reach bin 205 & A bin is
+      \code{frequency * nfft / sample\_rate}, and \code{nfft} is
+      \code{2 * (n\_bins - 1)}. \\
+    \code{Task 2} says that the answer needs 50 rows & A clip of 16000
+      samples at a stride of 320 gives 50 frames. Return one row for each. \\
+    \code{Task 3} says that the model raises an error & A layer is missing,
+      or a layer was added with a tensor instead of with its input. \\
+    The plot of section 5 is empty & Delete \code{features.npz} and run
+      section 6 again. \\
+    The notebook is slow & The first run computes the features of 960
+      clips. The file \code{features.npz} makes the next run fast. \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small The README of the lab folder has the full list of the checks of the
+  notebook and the run time.
+\end{frame}
