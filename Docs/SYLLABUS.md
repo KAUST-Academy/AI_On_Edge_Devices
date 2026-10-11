@@ -258,6 +258,10 @@ Training labs use small models. They run on a laptop CPU or on the free tier of 
 - *Deliverable:* a live demonstration and a comparison table.
 - *Check:* the board classifies four motions correctly, and the table has measured numbers for both paths.
 
+**Backup modules**
+
+- MC-3: Spectral features for motion data (90 min, theory and lab). Use it after Part 3 of the lecture, or in place of Part A of the lab when Edge Impulse Studio is not available. Its lab runs on a laptop, with no board.
+
 
 
 
@@ -328,6 +332,10 @@ Training labs use small models. They run on a laptop CPU or on the free tier of 
 - *Part C (15 min): Measure.* Report latency and RAM for both models.
 - *Deliverable:* two live demonstrations and the measurement table.
 - *Check:* the keyword model gives no false activation in 30 seconds of normal speech, and the image model classifies three test objects.
+
+**Backup modules**
+
+- MC-5: Keyword spotting features and training in Python (90 min, theory and lab). Use it in place of Part A of the lab, or before Part A when the class needs the features before the training. Its lab computes the features in a notebook with numpy, needs no board, and needs the public dataset of Edge Impulse.
 
 
 
@@ -701,6 +709,16 @@ Each module has the same parts, so that you can present it alone:
 - One slide deck that compiles alone. The deck has a title frame, the learning outcomes, the content, and the credits frame.
 - One lab folder with the files and a README. The README gives the goal, the hardware, the duration, the steps, and the check criterion.
 - No reference to a slide number or a file of another day.
+
+**Microcontroller modules (XIAOML Kit)**
+
+| ID | Module | Type | Time | Fits day |
+|---|---|---|---|---|
+| MC-3 | Spectral features for motion data | T+L | 90 min | 3 |
+| MC-5 | Keyword spotting features and training in Python | T+L | 90 min | 5 |
+
+- **MC-3.** Time-domain statistics, FFT, and spectral power as model inputs. The lab computes the features in a notebook and compares five inputs for the same motion task. *Exercise:* a window of 2 s at 50 Hz needs the power down to 0.4 Hz. Give the FFT length, the number of values of one axis, and the number of values of the vector of the three axes. Deck: `Lectures/modules/Module_MC-3.pdf`. Lab: `Labs/modules/MC-3/`.
+- **MC-5.** Compute MFCC features and train the keyword classifier in a notebook, without Edge Impulse training. The lab computes the Mel filter bank and the cepstral coefficients with numpy, then compares the raw audio, the log Mel spectrogram, and the cepstrum. *Exercise:* count the values of one second of audio before and after the pipeline, count the operations of the first convolution, and name the step that reduces the number of values the most. Deck: `Lectures/modules/Module_MC-5.pdf`. Lab: `Labs/modules/MC-5/`. The lab needs the public dataset of Edge Impulse, which a script of the lab folder downloads (139 MB).
 
 **Recap and theory modules**
 

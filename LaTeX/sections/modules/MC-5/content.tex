@@ -1,0 +1,382 @@
+% Theory part of the module.
+%
+% Module MC-5 of Section 6.1 of the syllabus: "Keyword spotting features and
+% training in Python. Compute MFCC features and train the keyword classifier
+% in a notebook, without Edge Impulse training." Type T+L, 90 minutes: about
+% 45 minutes of theory and 45 minutes of lab.
+%
+% Sources: the chapter "KWS Feature Engineering" of the XIAOML Kit in
+% "Machine Learning Systems" (the six steps of the pipeline, the sampling
+% rate of speech, the pre-emphasis, the framing, the Hamming window, the
+% power spectrum, the Mel filters, the logarithm, the cosine transform, and
+% the rule that decides between the cepstrum and the spectrogram). The
+% repository XIAO-ESP32S3-Sense (the four keyword classes and the public
+% dataset keywords2.zip).
+%
+% The numbers of this module have three origins. Each frame says so in its
+% source line.
+% 1. A number that the chapter reports: 16000 samples for one second at
+%    16 kHz, 20 to 40 ms for a frame, 20 to 40 triangular filters, 12 or 13
+%    coefficients, a pre-emphasis factor near 0.97, and the 8 kHz that the
+%    voice reaches.
+% 2. A number of the lab notebook of this module: the number of frames, the
+%    number of values, the number of parameters, and the test accuracies of
+%    the three inputs.
+% 3. An arithmetic value that the lab notebook also prints.
+%
+% Size: 15 to 25 frames for 50 minutes of theory.
+%
+% The four figures are new. The script tools/figures/mc5_mfcc.py of the
+% course repository draws them from the public dataset of the lab.
+
+% ------------------------------------------------------------- 1. the module
+\begin{frame}{What this module builds}
+  \begin{itemize}
+    \item A device listens to the room and must say one of four things at
+          every moment: \code{yes}, \code{no}, \code{unknown}, or
+          \code{noise}.
+    \item The microphone gives 16000 values every second. No model of a
+          microcontroller can read them.
+    \item The pipeline of this module turns one second of audio into 650
+          values, and a small network turns those values into the class.
+  \end{itemize}
+  \vskip 0.4em
+  \keypoint{The pipeline runs on the device at every window. Its cost is
+    part of the latency of the product.}
+\end{frame}
+
+% ------------------------------------------------------- 2. the signal
+\begin{frame}{What the microphone gives}
+  \begin{itemize}
+    \item The sampling rate says how many values a second the microphone
+          gives. 16 kHz is the usual rate for speech.
+    \item The voice has no content above 8 kHz. The telephone system uses
+          8 kHz for that reason, and the CD uses 44.1 kHz because it keeps
+          the music.
+    \item The rate must be at least twice the highest frequency that the
+          signal carries, or the samples cannot show it.
+  \end{itemize}
+  \vskip 0.4em
+  \small One second of audio at 16 kHz is 16000 values with 16 bits each.
+  That is 32000 bytes for one second of sound.
+  \source{Sampling rates and the 8 kHz of the voice, from "Machine Learning
+    Systems", chapter "KWS Feature Engineering", section "Overview to Audio
+    Signals".}
+\end{frame}
+
+% ------------------------------------------------------ 3. why not raw
+\begin{frame}{Why not the raw audio}
+  \small
+  \begin{itemize}
+    \item 16000 values for one second is a lot of input. A first layer with
+          16 filters of three values already has 768 parameters.
+    \item A network must learn that a form of the spectrum means a word.
+          It learns that from data, and the data is expensive.
+    \item The same sound changes with the distance to the microphone, with
+          the direction of the mouth, and with the room. Raw samples carry
+          all of that, and the model has to remove it.
+    \item Speech carries no more than 8 kHz, so 8000 of the 16000 samples
+          of each second carry nothing.
+  \end{itemize}
+  \vskip 0.4em
+  \keypoint{Reduce the values first, with a method whose output you can
+    name.}
+  \source{The reasons for not using raw audio, from "Machine Learning
+    Systems", chapter "KWS Feature Engineering", section "Why Not Raw
+    Audio?".}
+\end{frame}
+
+% --------------------------------------------------------- 4. the pipeline
+\begin{frame}{The pipeline of the module}
+  \begingroup\centering
+  \begin{tikzpicture}[font=\scriptsize, >=stealth,
+      st/.style={draw=coolgray, rounded corners=2pt, fill=boxgray,
+                 align=center, text width=2.1cm, minimum height=0.9cm},
+      nxt/.style={font=\scriptsize, text=cardinalred}]
+    \node[st] (s)  at (0,0)       {samples\\16000};
+    \node[st] (p)  at (2.45,0)    {pre-emphasis};
+    \node[st] (f)  at (4.90,0)    {framing\\50 frames};
+    \node[st] (w)  at (7.35,0)    {Hamming\\window};
+    \node[st] (t)  at (0,-2.0)    {FFT\\257 bins};
+    \node[st] (m)  at (2.45,-2.0) {Mel filters\\32, log};
+    \node[st] (d)  at (4.90,-2.0) {cosine\\13 values};
+    \node[st, fill=cardinalred!12] (r) at (7.35,-2.0) {one clip\\650 values};
+    \draw[->] (s) -- (p); \draw[->] (p) -- (f); \draw[->] (f) -- (w);
+    \draw[->] (w.south) -- ++(0,-0.55) -| (t.north);
+    \draw[->] (t) -- (m); \draw[->] (m) -- (d); \draw[->] (d) -- (r);
+  \end{tikzpicture}\par\endgroup
+  \vskip 0.4em
+  \small The numbers are those of the lab of this module. Every step is six
+  lines of numpy, and every step runs on the device.
+\end{frame}
+
+% ------------------------------------------------------ 5. pre-emphasis
+\begin{frame}{Step 1: the pre-emphasis}
+  \begin{equation*}
+    y[n] = x[n] - \alpha x[n-1], \qquad \alpha \approx 0.97
+  \end{equation*}
+  \small
+  \begin{itemize}
+    \item The filter takes the difference between two consecutive samples.
+    \item The high frequencies are small in the spectrum of a voice, so the
+          difference lifts them. The spectrum is then flatter.
+    \item The step is one subtraction and one multiplication per sample.
+    \item The factor 0.97 is a convention. A value from 0.9 to 0.98 gives
+          the same result on this task.
+  \end{itemize}
+  \vskip 0.3em
+  \small The first sample of a clip has no sample before it. The lab keeps
+  it unchanged.
+  \source{The formula and the factor of the chapter, from "Machine Learning
+    Systems", chapter "KWS Feature Engineering", section "Computing MFCCs".}
+\end{frame}
+
+% ---------------------------------------------------------- 6. framing
+\begin{frame}{Step 2: the framing}
+  \begin{itemize}
+    \item The spectrum of one second says nothing about when the sound
+          happened. So the clip is cut into short frames.
+    \item A frame lasts 20 to 40 ms. Inside such a frame the frequencies of
+          the signal stay about the same.
+    \item The stride is the distance between two frames. The same value as
+          the frame length means no overlap.
+  \end{itemize}
+  \vskip 0.4em
+  \small At 16 kHz, a frame of 20 ms is 320 samples. A clip of 1 s gives
+  $1 + (16000 - 320)/320 = 50$ frames.
+  \source{The length of a frame, from "Machine Learning Systems", chapter
+    "KWS Feature Engineering", section "Computing MFCCs". The count of 50
+    frames is the value of the lab of this module.}
+\end{frame}
+
+% ------------------------------------------------------- 7. the window
+\begin{frame}{Step 3: the window}
+  \begingroup\centering
+  \includegraphics[width=0.86\textwidth]{images/modules/MC-5/mc5_window.pdf}
+  \par\endgroup
+  \vskip 0.2em
+  \small
+  \begin{itemize}
+    \item A frame starts and ends in the middle of the sound. The jump at
+          each end looks like a high frequency that is not there.
+    \item The Hamming window multiplies the frame by a curve that is 1 in
+          the middle and close to 0 at the two ends.
+    \item It removes the jump, and it removes a little resolution. A
+          longer frame resolves better and says less about the time.
+  \end{itemize}
+\end{frame}
+
+% --------------------------------------------------------- 8. the FFT
+\begin{frame}{Step 4: the FFT and the power}
+  \begin{itemize}
+    \item The FFT of a frame of 320 values with 512 points gives 257 bins.
+    \item The bins are 31.25 Hz apart, and bin 0 is the direct current.
+    \item The power spectrum is the square of the magnitude:
+          $P(f) = |X(f)|^2$. Squaring lifts the strong frequencies over the
+          weak ones.
+  \end{itemize}
+  \vskip 0.4em
+  \small The frame is shorter than the FFT, so the FFT pads it with 192
+  zeros. The bins then sit closer than the frame can resolve, and the curve
+  is smoother. The resolution stays that of 20 ms, which is 50 Hz.
+  \source{"Machine Learning Systems", chapter "KWS Feature Engineering",
+    the steps "FFT" and the note on the power spectrum.}
+\end{frame}
+
+% -------------------------------------------------------- 9. the Mel scale
+\begin{frame}{The Mel scale}
+  \begin{equation*}
+    \text{mel}(f) = 2595 \log_{10}\left(1 + \frac{f}{700}\right)
+  \end{equation*}
+  \small
+  \begin{itemize}
+    \item 1000 Hz on the linear scale is 1000 mel. 1000 Hz on the Mel scale
+          is 1500 mel, and 3000 Hz is 2000 mel.
+    \item The ear hears the difference between two low tones better than the
+          difference between two high tones of the same width in hertz.
+    \item So the filters of the bank are narrow at the bottom and wide at
+          the top. With 32 filters from 0 to 8000 Hz, the first is about
+          60 Hz wide and the last about 660 Hz.
+  \end{itemize}
+  \vskip 0.3em
+  \small The number of filters is a choice. The chapter recommends 20 to 40
+  triangles.
+  \source{The Mel scale and the number of filters, from "Machine Learning
+    Systems", chapter "KWS Feature Engineering", the steps "Mel Filter
+    Banks" and the section "Computing MFCCs". The two widths are the value
+    of the lab of this module.}
+\end{frame}
+
+% ------------------------------------------------------- 10. the bank
+\begin{frame}{Step 5: the filter bank and the logarithm}
+  \begingroup\centering
+  \includegraphics[width=0.90\textwidth]{images/modules/MC-5/mc5_melbank.pdf}
+  \par\endgroup
+  \vskip 0.2em
+  \small Each filter is a triangle that rises from 0 to 1 and falls back to
+  0. Two filters touch at their half point, so no frequency is lost. The
+  energy of one filter is the sum of the power of the bins under it.
+  \vskip 0.2em
+  \small The logarithm comes next: it turns the wide dynamic range of
+  audio into a range that a network can work with.
+\end{frame}
+
+% ------------------------------------------------------- 11. the cepstrum
+\begin{frame}{Step 6: the cosine transform}
+  \begin{equation*}
+    c[k] = \sum_{m=0}^{N-1} \log E[m]
+      \cos\left(\frac{\pi k (2m + 1)}{2N}\right)
+  \end{equation*}
+  \small
+  \begin{itemize}
+    \item The cosine transform mixes the 32 log energies of a frame into 13
+          numbers.
+    \item The first coefficient is the mean of the 32 values, so it holds
+          the energy of the frame.
+    \item The other coefficients describe the shape of the spectrum: the
+          first ones the envelope, the last ones the fine structure.
+    \item Mixing decorrelates the values, so the network sees numbers that
+          do not repeat one another.
+  \end{itemize}
+  \vskip 0.3em
+  \small The chapter keeps the first 12 or 13 coefficients and drops the
+  rest.
+  \source{"Machine Learning Systems", chapter "KWS Feature Engineering",
+    the step "Discrete Cosine Transform (DCT)".}
+\end{frame}
+
+% ------------------------------------------------------ 12. three forms
+\begin{frame}{One second of audio in three forms}
+  \begingroup\centering
+  \includegraphics[width=0.78\textwidth]{images/modules/MC-5/mc5_features.pdf}
+  \par\endgroup
+  \vskip 0.1em
+  \small The top row is the waveform, the middle row the energy of the 32
+  filters for the 50 frames, and the bottom row the coefficient 1 to 12 of
+  each frame. The first coefficient is not drawn: it is the energy.
+\end{frame}
+
+% ------------------------------------------------------ 13. the sizes
+\begin{frame}{What each step does to the number of values}
+  \footnotesize
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{@{}L{3.4cm}L{2.6cm}L{3.6cm}@{}}
+    \toprule
+    After & Values per frame & What it is \\
+    \midrule
+    The samples & 16000 & one second, no frame \\
+    The framing & 320 & 20 ms of samples \\
+    The FFT & 257 & one value per bin \\
+    The Mel filters & 32 & the energy of each filter \\
+    The logarithm & 32 & the energy in a decibel scale \\
+    The cosine transform & 13 & the cepstral coefficients \\
+    \bottomrule
+  \end{tabular}
+  \vskip 0.5em
+  \small
+  \begin{itemize}
+    \item A clip of 1 s has 50 frames, so it gives $50 \times 13 = 650$
+          values instead of 16000. The pipeline divides the number of
+          values by 24.6.
+    \item Only two steps reduce the number of values: the filters and the
+          cosine transform.
+  \end{itemize}
+\end{frame}
+
+% --------------------------------------------------- 14. the comparison
+\begin{frame}{The cepstrum against the spectrogram}
+  \begingroup\centering
+  \includegraphics[width=0.88\textwidth]{images/modules/MC-5/mc5_inputs.pdf}
+  \par\endgroup
+  \vskip 0.2em
+  \small One network, three inputs, the same 768 training clips. The
+  cepstrum wins on all three counts: the fewest values, the fewest
+  parameters, and the best test accuracy.
+  \vskip 0.2em
+  \small The raw audio needs 25 times more values than the cepstrum, 142
+  times more parameters, and it does not learn with this little data.
+\end{frame}
+
+% ------------------------------------------------------- 15. when to use
+\begin{frame}{When the spectrogram is the better choice}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \small\textbf{The cepstrum is stronger for}
+      \begin{itemize}
+        \item speech and keywords,
+        \item the identity of a speaker,
+        \item the emotion of a voice,
+        \item a device with little memory.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \small\textbf{The spectrogram is stronger for}
+      \begin{itemize}
+        \item music and the instruments in it,
+        \item rain, wind, and traffic,
+        \item the calls of birds,
+        \item finding a click in a recording.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vskip 0.4em
+  \small The cepstrum keeps the envelope of the spectrum and drops its fine
+  structure, so it is stable against the noise and against a change of
+  loudness. A task that lives in the fine structure needs the whole
+  spectrum.
+  \source{"Machine Learning Systems", chapter "KWS Feature Engineering",
+    the sections "MFCCs are particularly strong for" and "Spectrograms or
+    MFEs are often more suitable for".}
+\end{frame}
+
+% ---------------------------------------------------- 16. what to remember
+\begin{frame}{What to remember}
+  \small
+  \begin{enumerate}
+    \item One second of audio at 16 kHz is 16000 values. The model must not
+          read them.
+    \item Six steps: the pre-emphasis, the framing, the window, the FFT, the
+          Mel filters with the logarithm, and the cosine transform.
+    \item The Mel scale gives the low frequencies more filters, because the
+          ear resolves them better.
+    \item The cosine transform is the only step that reduces the number of
+          values by a large factor: 32 energies become 13 coefficients.
+    \item Choose between the cepstrum and the spectrogram from the task,
+          and check the choice with a measurement.
+  \end{enumerate}
+\end{frame}
+
+% ------------------------------------------------------------- exercise
+\exerciseframe{Count the values}{A device samples at 16 kHz, cuts the signal
+into frames of 20 ms with the same stride, uses an FFT of 512 points, 32
+triangular filters of the Mel scale, and keeps 13 cepstral coefficients.
+
+\begin{enumerate}
+  \item How many values does one second of audio give before the pipeline,
+        and after it?
+  \item How many multiply-accumulate operations does the first convolution
+        of the lab network need for one clip, with 16 filters of 3 frames
+        and 13 input values?
+  \item Name the step that reduces the number of values the most.
+\end{enumerate}
+}
+
+\answerframe{Count the values}{
+  \begin{enumerate}
+    \item Before: 16000 samples. After: a clip of 1 s has
+          $1 + (16000 - 320)/320 = 50$ frames, and each frame gives 13
+          values, so $50 \times 13 = 650$ values. The pipeline divides the
+          number of values by 24.6.
+    \item A convolution with 3 frames and no padding leaves
+          $50 - 2 = 48$ positions. Each position needs
+          $3 \times 13 \times 16 = 624$ multiply-accumulate operations, so
+          the layer needs $48 \times 624 = 29952$ operations for one clip.
+    \item The cosine transform, which turns the 32 log energies of a frame
+          into 13 coefficients. The FFT raises the number of values from
+          320 to 257 before the filters, and the filters keep 32.
+  \end{enumerate}
+  \vskip 0.3em
+  \small Part 2 assumes the network of the lab, with valid convolutions.
+  A convolution with a padding of `same` would keep the 50 positions and
+  need 31200 operations.
+}

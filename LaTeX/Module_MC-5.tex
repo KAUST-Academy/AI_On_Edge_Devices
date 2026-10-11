@@ -1,0 +1,28 @@
+% Backup module MC-5. Skeleton: see LaTeX/templates/README.md.
+% The deck stands alone. It names no frame and no file of a core day.
+% Build: bash build_module.sh --file Module_MC-5.tex
+
+\documentclass[10pt]{beamer}
+
+\input{preamble/course}
+
+\title[Module MC-5]{Module MC-5: Keyword spotting features and training in Python}
+
+% Name only the sources that this module uses.
+\renewcommand{\coursecredits}{%
+  \creditmlsys
+  \creditxiao
+}
+
+\begin{document}
+
+\input{sections/cover}
+
+\input{sections/modules/MC-5/outcomes}
+\input{sections/modules/MC-5/content}
+% A module of type T+L keeps the lab part. A module of type T deletes the
+% next line and the file lab.tex.
+\input{sections/modules/MC-5/lab}
+\input{sections/credits}
+
+\end{document}
